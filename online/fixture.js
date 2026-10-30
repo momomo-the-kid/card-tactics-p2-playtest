@@ -1,0 +1,2 @@
+'use strict';
+globalThis.B2Fixture={deck(){const rules=B2Protocol.deckRules(B2Runtime.definitions);let saved;try{saved=JSON.parse(localStorage.getItem('cardTacticsDeckConfirmedV1'));}catch{}return rules.toCardIds(saved)||rules.toCardIds(rules.defaultCounts());},create(Core,definitions,{matchId}){const seed=new Uint32Array(1);crypto.getRandomValues(seed);return {matchId,seed:seed[0],random:B2Runtime.random,hostDeck:B2Fixture.deck()};}};

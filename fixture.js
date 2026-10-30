@@ -1,5 +1,0 @@
-(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.B2Fixture=factory();})(typeof globalThis==='object'?globalThis:this,function(){
-'use strict';
-function create(Core,defs,{matchId,activeSide='p',nonce}){const piece=side=>({type:'歩兵',side,owner:side,atk:defs['歩兵'].atk,hp:defs['歩兵'].hp,m:false,a:false,attacksUsed:0,sourceInstanceId:'public-'+side+'-pawn'}),board=Array(25).fill(null);board[17]=piece('p');board[7]=piece('c');const players={},privateData={};for(const side of ['p','c']){players[side]={kingHp:20,mana:3,maxMana:3,graveyard:[]};privateData[side]={hand:[{instanceId:side+'-hand-'+nonce,cardId:side==='p'?'圧殺':'転移魔法'}],deck:[{instanceId:side+'-deck-a-'+nonce,cardId:'ソーサラー'},{instanceId:side+'-deck-b-'+nonce,cardId:'サラマンダー'}]};}return Core.createGame({board,players,privateData,activeSide,serverData:{matchId,rngState:3735928559,privateProbe:nonce},enchantments:[{instanceId:'hidden-mine-'+nonce,cardId:'マイン',owner:'p',caster:'p',controller:'p',target:{kind:'cell',k:20},remainingTurns:4,createdTurn:0,zone:'board',hidden:true}]});}
-return {create};
-});
