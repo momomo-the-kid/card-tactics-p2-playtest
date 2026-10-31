@@ -720,4 +720,45 @@ body.tutorial-mode #app{padding-bottom:240px}
 .overlayPiece .sharedHitBurst,.cell>.sharedHitBurst{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(28px,9vw,54px);z-index:120;pointer-events:none;animation:hitPop .70s ease-out forwards;}
 
 
-body{margin:0;background:#141f29;color:#eee;font-family:system-ui}main{max-width:1000px;margin:auto;padding:12px}section{position:relative;background:#243747;padding:14px;border-radius:12px;margin:12px 0}.notice{padding:10px;border-left:4px solid #edc45d}#lobby{display:flex;flex-wrap:wrap;gap:8px}label{display:inline-flex;flex-direction:column}input,select,textarea{padding:8px;max-width:100%;box-sizing:border-box}textarea{width:100%}button{cursor:pointer}button:disabled{cursor:default}[hidden]{display:none!important}#board{display:grid;grid-template-columns:repeat(5,1fr);width:min(100%,500px);aspect-ratio:1;margin:8px auto;gap:4px}.cell{position:relative;min-width:0;min-height:0;padding:2px;aspect-ratio:1;background:#315063}.cell .piece{position:relative;inset:auto;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;font-size:12px}.cell.selected{outline:3px solid #fdca67}.cell.legal{outline:2px solid #52d89a}.piece.player{background:#235989}.piece.cpu{background:#8b4149}.piece .pname{font-size:clamp(9px,2.5vw,15px)}.hand{display:flex;overflow:auto;gap:5px;max-width:100%;padding:8px 0}.card{position:relative;flex:0 0 130px;min-height:110px;text-align:left;padding:8px;color:#eee;background:#294b67}.card.selected{outline:3px solid #fdca67}.card .desc{white-space:normal;font-size:11px}#actions{display:flex;flex-wrap:wrap;gap:6px;max-height:240px;overflow:auto;padding:8px}#actions button{font-size:12px}#ownKing,#enemyKing{display:block;margin:auto;background:#5b4963}#enemyHand{font-size:13px;text-align:center;padding:5px}#result{font-size:22px;font-weight:bold}dialog{color:#eee;background:#243747;border:2px solid #aaa;border-radius:12px}a{color:#9cd4ff}#inviteLink{width:300px}.controls{flex-wrap:wrap}#diagnosticLog{font-size:11px}
+/* The existing SVG is the king fallback when no PNG has loaded. The legacy
+   image switch hid it with display:none even after resetting its opacity. */
+body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
+/* Keep the foreground row's name and HP/ATK above the adjacent king crown. */
+#pieceOverlay{z-index:13}
+
+/* Only online chrome: the normal CPU stylesheet supplies the board, overlays,
+   kings, hand, detail and ranges verbatim. No in-cell visibility overrides. */
+[hidden]{display:none!important}
+main{max-width:760px;margin:auto;padding:8px}
+#onlineHeader{display:flex;justify-content:space-between;gap:6px;font-size:13px;margin:5px 0}
+#buildLabel{font-size:10px;color:#b3bac7}
+summary{cursor:pointer;padding:8px;color:#c7d8ed}
+details{background:#20252c;border-radius:9px;margin:7px 0}
+details section{padding:8px}
+.notice{padding:8px;margin:0;font-size:12px;line-height:1.5}
+#lobby{display:flex;flex-wrap:wrap;gap:8px;background:#222832;border-radius:10px;padding:10px}
+#lobby p{flex-basis:100%;font-size:12px;margin:3px}
+label{display:inline-flex;flex-direction:column;font-size:12px;max-width:100%}
+input,select,textarea{padding:7px;max-width:100%;box-sizing:border-box}
+#inviteLink{width:300px}textarea{width:100%}
+#match{padding:0;margin:0;background:none}
+#app{padding:0}
+.cell{padding:0;border-radius:0;background-color:transparent;cursor:pointer;touch-action:manipulation}
+.hand .card{color:inherit;flex:0 0 auto;font-weight:normal;cursor:pointer;touch-action:manipulation}
+.card .name{font-weight:800}
+#actions{padding:0 6px 6px;max-height:45%;overflow-y:auto;flex-shrink:0}
+#actions:empty{display:none}
+#actions .useCardButton{display:block;width:100%;margin-top:6px;font-size:12px}
+#infoContent{position:relative}
+.controls{flex-wrap:wrap}
+#matchStatus{position:sticky;top:0;z-index:30;background:#593f20;color:#fff2be;border-radius:8px;font-size:12px}
+#matchStatus:not(:empty){padding:8px}
+#result{font-size:21px;font-weight:800;text-align:center}
+#resultTitle{display:block;margin:10px auto}
+dialog{color:#eee;background:#243747;border:2px solid #aaa;border-radius:12px}
+a{color:#9cd4ff}
+#diagnosticLog{font-size:11px}
+.online-playing #lobby{display:none}
+.online-playing #connectionPanel{font-size:11px}
+.online-playing #help{display:none}
+@media(max-width:600px){#onlineHeader{font-size:11px}main{padding:6px}#app h1{white-space:normal}.status{font-size:8px}#actions .useCardButton{font-size:10px;padding:8px 3px}}
