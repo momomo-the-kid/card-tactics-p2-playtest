@@ -130,5 +130,69 @@ function rangeDiagram(p,action,pattern){
 function rangePair(p,pattern){return `<div class="rangePair">${rangeDiagram(p,'move',pattern)}${rangeDiagram(p,'attack',pattern)}</div>`;}
 
 function cardHTML(t,d,{spell,enchant,text}){return enchant?`<div class="name">${t==="封魔"?"🔒":t==="王の覚醒"?"👑":t==="防御結界"?"🛡️":"💢"} ${t}</div><div class="cost">エンチャント / コスト ${d.cost}</div><div class="desc">${text}</div>`:spell?`<div class="name">${t==="ファイヤーボルト"?"🔥":t==="ホープ"?"✨":t==="転移魔法"?"🌀":t==="解呪"?"✨":t==="裏切り"?"↩️":t==="圧殺"?"💥":"💧"} ${t}</div><div class="cost">スペル / コスト ${d.cost}</div><div class="desc">${t==="ファイヤーボルト"?"対象に2ダメージ":t==="ホープ"?"対象のプレイヤーが2枚引く":t==="転移魔法"?"敵味方の駒を空きマスへ転移":t==="解呪"?"公開エンチャント・一時効果を解除（盤面全体も対象）":t==="裏切り"?"敵味方の駒の支配権を反転":t==="圧殺"?"自軍10体以上なら相手王のHPを0に":"自分の最大・未使用マナ+1（上限10）"}</div>`:`<div class="name">${t}</div><div class="cost">コスト ${d.cost}</div><div class="desc">ATK ${d.atk} / HP ${d.hp}${d.abilities?.length?`<br>${text}`:""}</div>`;}
-globalThis.NormalGameUI=Object.freeze({clear(){current=null;},renderPieces,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset});
+function createVisualSettings({includeCPU=true}={}){
+const KING_ASSET_PATHS={
+ default:'assets/kings/default.png',
+ dark:'assets/kings/dark.png',
+ simple1:'assets/kings/simple1.png',
+ simple2:'assets/kings/simple2.png'
+};
+let kingAssetRequestId=0;
+function loadImageAsset(src){return new Promise(resolve=>{const img=new Image();img.onload=()=>resolve(true);img.onerror=()=>resolve(false);img.src=src;});}
+async function applyKingAsset(kind){
+ const requestId=++kingAssetRequestId;
+ const requested=KING_ASSET_PATHS[kind]||KING_ASSET_PATHS.default;
+ let src=requested;
+ let ok=await loadImageAsset(src);
+ if(!ok && src!==KING_ASSET_PATHS.default){src=KING_ASSET_PATHS.default;ok=await loadImageAsset(src);}
+ if(requestId!==kingAssetRequestId)return;
+ if(ok){
+   document.documentElement.style.setProperty('--king-image',`url("${src}")`);
+   document.body.classList.add('king-external-loaded');
+ }else{
+   document.documentElement.style.removeProperty('--king-image');
+   document.body.classList.remove('king-external-loaded');
+ }
+}
+const VisualSettings={
+ state:{board:'antique',king:'dark',creatureNames:true,...(includeCPU?{cpuDifficulty:'weak'}:{})},
+ load(){try{const v=JSON.parse(localStorage.getItem('phase2VisualSettings')||'{}');if(['light','antique','rich','simple'].includes(v.board))this.state.board=v.board;if(v.king==='pop')v.king='default';if(v.king==='simple')v.king='simple1';if(['default','dark','simple1','simple2'].includes(v.king))this.state.king=v.king;if(typeof v.creatureNames==='boolean')this.state.creatureNames=v.creatureNames;if(includeCPU&&['weak','strong'].includes(v.cpuDifficulty))this.state.cpuDifficulty=v.cpuDifficulty}catch(e){}this.apply()},
+ apply(){document.body.classList.remove('board-light','board-antique','board-rich','board-simple','king-default','king-dark','king-simple1','king-simple2','creature-names-off');document.body.classList.add('board-'+this.state.board,'king-'+this.state.king);if(!this.state.creatureNames)document.body.classList.add('creature-names-off');applyKingAsset(this.state.king);document.querySelectorAll('.settingsChoices[data-setting]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.value===this.state[g.dataset.setting])));document.querySelectorAll('#creatureNameChoices button').forEach(b=>b.classList.toggle('active',(b.dataset.nameVisible==='true')===this.state.creatureNames));try{localStorage.setItem('phase2VisualSettings',JSON.stringify({...JSON.parse(localStorage.getItem('phase2VisualSettings')||'{}'),...this.state}))}catch(e){}},
+ set(key,value){if(!Object.hasOwn(this.state,key))return;this.state[key]=value;this.apply()}
+};
+function openSettings(){document.getElementById('settingsOverlay').classList.add('show');document.getElementById('settingsOverlay').setAttribute('aria-hidden','false')}
+function closeSettings(){document.getElementById('settingsOverlay').classList.remove('show');document.getElementById('settingsOverlay').setAttribute('aria-hidden','true')}
+document.getElementById('settingsButton').addEventListener('click',openSettings);
+document.getElementById('settingsClose').addEventListener('click',closeSettings);
+document.getElementById('settingsOverlay').addEventListener('click',e=>{if(e.target.id==='settingsOverlay')closeSettings()});
+document.querySelectorAll('.settingsChoices[data-setting]').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button[data-value]');if(b)VisualSettings.set(g.dataset.setting,b.dataset.value)}));
+document.getElementById('creatureNameChoices').addEventListener('click',e=>{const b=e.target.closest('button[data-name-visible]');if(b)VisualSettings.set('creatureNames',b.dataset.nameVisible==='true')});
+VisualSettings.load();return VisualSettings;
+
+}
+function renderTurn({activeSide,viewer,paused=false,ended=false}){
+ const e=$('turnIndicator');if(!e)return;e.hidden=paused||ended;
+ const own=activeSide===viewer;e.textContent=own?'あなたのターン中':'相手ターン中';
+ e.classList.toggle('ownTurn',own);e.classList.toggle('enemyTurn',!own);
+}
+function bindHandScroll(){
+ const hand=$('hand'),left=$('handScrollLeft'),right=$('handScrollRight');if(!hand||!left||!right)return ()=>{};
+ const update=()=>{left.disabled=hand.scrollLeft<=3;right.disabled=hand.scrollLeft+hand.clientWidth>=hand.scrollWidth-3;};
+ const scroll=direction=>{hand.scrollBy({left:direction*Math.max(100,hand.clientWidth*.75),behavior:'instant'});update();};
+ left.onclick=()=>scroll(-1);right.onclick=()=>scroll(1);hand.addEventListener('scroll',update,{passive:true});
+ window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(hand);
+ return update;
+}
+const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const infoLine=x=>`<div class="infoLine">${escape(x)}</div>`;
+ function attackStatus(piece,limit){const remaining=Math.max(0,limit-(piece.attacksUsed??(piece.a?limit:0)));return limit>1?(remaining?`攻撃 残${remaining}`:'攻撃 済'):(remaining?'攻撃 可':'攻撃 済');}
+ function creatureInfoHTML({piece:p,viewer,definition:d,power:current,limit,range,abilityHTML='',description='',berserkDescription='基本攻撃力2倍、移動・攻撃は前方1マスのみ。',cellEffects=[]}){
+  return `<div class="infoName creatureInfoName">${escape(p.type)}</div><div class="creatureBasics">`+infoLine(`${p.side===viewer?'自軍':'敵軍'} / コスト ${d.cost}`)+infoLine(`HP ${p.hp} / ${d.hp}　ATK ${current.total}（基本 ${current.base}${current.dancer?` / 踊り子 +${current.dancer}`:''}${current.pack?` / 味方 +${current.pack}`:''}）`)+infoLine(`🔵 移動 ${p.m?'済':'可'} / 🔴 ${attackStatus(p,limit)}`)+range+'</div>'+abilityHTML+(d.abilities?.length?`<div class="infoEffect">${escape(description)}</div>`:'')+(p.berserk>0?`<div class="infoEffect">バーサーク：残り${p.berserk}ターン<br>${escape(berserkDescription)}</div>`:'')+(current.battle?`<div class="infoEffect">決戦：${current.battleTurns.map(t=>t+'T').join('・')} / ATK +${current.battle}</div>`:'')+cellEffects.map(e=>`<div class="infoEffect">このマス：${escape(e.cardId)} 残り${e.remainingTurns}ターン<br>${escape(e.description||'')}</div>`).join('');
+ }
+ function graveyardHTML(cards,label){const counts=new Map();for(const c of cards)counts.set(c.cardId,(counts.get(c.cardId)||0)+1);return `<div class="infoName">${escape(label)}の墓地 🪦${cards.length}</div>`+(cards.length?[...counts].map(([id,n])=>infoLine(`${id} ×${n}`)).join(''):infoLine('墓地は空です。'))+infoLine('カードは元の持ち主の墓地に入ります。');}
+ function globalEffectsHTML(cards){return `<div class="infoName">全体エンチャント 🔮${cards.length}</div>`+(cards.length?cards.map(c=>`<button type="button" class="globalEnchantButton" data-effect-detail="${escape(c.instanceId)}">《${escape(c.cardId)}》${c.remainingTurns!=null?`　残り${c.remainingTurns}ターン`:''}</button>`).join(''):infoLine('効果中の全体エンチャントはありません。'));}
+ function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
+ function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
+ function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
+globalThis.NormalGameUI=Object.freeze({clear(){current=null;},renderPieces,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();
