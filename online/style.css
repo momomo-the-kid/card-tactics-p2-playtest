@@ -729,15 +729,24 @@ body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
 /* Shared CPU / online card geometry: content wraps inside a stable card. */
 .hand .card{box-sizing:border-box;flex:0 0 100px;width:100px;min-width:0;max-width:100px;font-family:inherit;font-size:16px;white-space:normal;overflow-wrap:anywhere}
 .turnIndicator{display:inline-block;align-self:flex-start;position:relative;z-index:15;border-radius:10px;padding:8px 12px;margin:0 0 9px;color:#fff;font-weight:800;font-size:13px;line-height:1.3;animation:turnPulse 3s ease-in-out infinite;pointer-events:none}
-.turnIndicator.ownTurn{background:#205d9e}.turnIndicator.enemyTurn{background:#a32e3c}
+.turnIndicator.ownTurn{background:#205d9e;--turn-bright:#2d78bd;--turn-dark:#10304f}.turnIndicator.enemyTurn{background:#a32e3c;--turn-bright:#c63f50;--turn-dark:#511720}
 .turnIndicator[hidden]{display:none!important}
-@keyframes turnPulse{0%,100%{opacity:1}50%{opacity:.78}}
+@keyframes turnPulse{0%,100%{background-color:var(--turn-bright)}50%{background-color:var(--turn-dark)}}
 @media(prefers-reduced-motion:reduce){.turnIndicator{animation:none}}
 
 /* Native button content otherwise centres vertically, unlike the normal card div. */
 .hand .card{display:flex;flex-direction:column;justify-content:flex-start;align-items:stretch}
 
 .royalPedestal>.sharedHitBurst{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(28px,9vw,54px);z-index:120;pointer-events:none;animation:hitPop .70s ease-out forwards}
+
+/* Keep long settings reachable on small screens, including native range touch targets. */
+.settingsPanel{max-height:calc(100dvh - 36px);overflow-y:auto}
+.bgmVolumeRow{display:flex;align-items:center;gap:10px;margin-top:12px}
+#bgmVolume{flex:1;min-width:0;min-height:44px;accent-color:#e7bc65}
+#bgmVolumeValue{min-width:4em;text-align:right;font-variant-numeric:tabular-nums}
+#bgmVolume:focus-visible{outline:3px solid #ffe095;outline-offset:2px}
+/* Artwork stays beneath names/stats and never receives game input. */
+.overlayCreatureAsset{object-fit:contain;user-select:none;-webkit-user-drag:none}
 
 /* Only online chrome: the normal CPU stylesheet supplies the board, overlays,
    kings, hand, detail and ranges verbatim. No in-cell visibility overrides. */
