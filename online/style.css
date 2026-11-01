@@ -785,3 +785,13 @@ a{color:#9cd4ff}
 .appHeader{display:flex;align-items:center;justify-content:space-between;gap:8px}
 
 #recoveryExit{padding:10px;border:1px solid #b89556;border-radius:10px;background:#342b20;font-size:12px}#recoveryExit button{width:100%}
+
+/* Keep the disabled input lock, but do not wash out the confirmed board/hand
+   for a normal round-trip. Recovery, results and unrelated buttons keep their
+   existing disabled appearance. This rule is online-only. */
+#match.awaiting-response #board .cell:disabled,
+#match.awaiting-response #hand .card:disabled,
+#match.awaiting-response .royalPedestal:disabled{opacity:1}
+/* Reserve one small line so both short and long request waits keep geometry. */
+#requestStatus{height:18px;line-height:18px;margin:0 0 4px;font-size:11px;color:#bac8db;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#requestStatus.slow-response{color:#fff2be;background:#593f20;border-radius:4px;padding:0 5px}

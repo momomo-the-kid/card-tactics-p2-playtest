@@ -8,6 +8,18 @@
  let state=null,selected=null,source=null,target=null,mode='combat',lastRevision=null,lastStatus=null,hadMatch=false,renderedRevision=null,renderGeneration=0;
  function clear(){if($('infoContent'))$('infoContent').scrollTop=0;selected=null;source=null;target=null;mode='combat';}
  const usable=()=>!!state?.view&&state.status==='connected'&&!state.inFlight&&!state.view.gameOver&&!state.aborted;
+ // Presentation only: the existing usable()/submit guards remain authoritative.
+ let responseTimer=null,responseSlow=false;
+ const awaitingResponse=()=>!!state?.view&&state.status==='connected'&&state.inFlight&&!state.view.gameOver&&!state.aborted&&!state.view.surrenderPending;
+ function renderRequestStatus(){
+  const awaiting=awaitingResponse(),label=$('requestStatus');
+  $('match').classList.toggle('awaiting-response',awaiting);$('match').setAttribute('aria-busy',String(awaiting));
+  if(!awaiting){clearTimeout(responseTimer);responseTimer=null;responseSlow=false;}
+  else if(responseTimer===null&&!responseSlow)responseTimer=setTimeout(()=>{responseTimer=null;if(awaitingResponse()){responseSlow=true;renderRequestStatus();}},1500);
+  label.textContent=awaiting?(responseSlow?'応答待ち・操作停止中':'送信中…'):'';
+  label.classList.toggle('slow-response',awaiting&&responseSlow);
+ }
+
  function button(text,fn,disabled=false){const b=document.createElement('button');b.type='button';b.textContent=text;b.disabled=disabled;b.onclick=fn;return b;}
  function choose(o){if(o&&usable())B3Poc.choose(o.choiceId);}
  function belongs(o,v){const a=o.action;if(v.choice)return ['chooseTokenCell','choosePromotion'].includes(a.type);if(!selected)return false;
@@ -67,7 +79,7 @@
   if(imageType){const asset=N.requestCreatureAsset(imageType);if(asset?.status==='loaded'){const img=document.createElement('img');img.className='infoCreatureBackdrop';img.alt='';img.src=asset.image.src;info.prepend(img);}}
  }
  function drawPieces(){const v=state?.view;if(!v)return;N.renderPieces({board:v.board,viewer:v.viewer,rights:p=>C.combatRights(p,D,{enchantments:v.enchantments}),power:k=>v.power[k],redrawInfo:renderInfo,afterRender:restoreHits,enchantVisual:p=>{const cards=v.enchantments.filter(e=>e.target?.kind==='creature'&&e.target.instanceId===p.sourceInstanceId);return cards.length?{cards,colors:[...new Set(cards.map(e=>D[e.cardId]?.visual?.auraColor||'#b985ff'))]}:null;}});const column=document.querySelector('.boardColumn');if(column?.offsetHeight)$('infoPanel').style.setProperty('--panel-height',column.getBoundingClientRect().height+'px');}
- function render(current){const priorView=state?.view;if(priorView&&current.view?.revision!==priorView.revision)presentationBefore=priorView.board;state=current;const waiting=!!current.waitingRecovery;$('recoveryExit').hidden=!waiting;if(!waiting&&$('recoveryExitDialog').open)$('recoveryExitDialog').close();const v=current.view;$('match').hidden=!v;document.body.classList.toggle('online-playing',!!v);if(!v){$('turnIndicator').hidden=true;$('settingsOverlay').classList.remove('show');$('settingsOverlay').setAttribute('aria-hidden','true');clear();N.clear();$('overlay').classList.remove('show');lastRevision=null;lastStatus=null;hadMatch=false;if($('surrenderDialog').open)$('surrenderDialog').close();for(const id of ['board','pieceOverlay','hand','enemyHand','actions','infoContent','result'])$(id).replaceChildren();$('matchStatus').textContent='';$('log').replaceChildren();logSeen.clear();hitEffects.clear();clearTimeout(hitCleanup);hitCleanup=null;presentationBefore=null;renderedRevision=null;return;}
+ function render(current){const priorView=state?.view;if(priorView&&current.view?.revision!==priorView.revision)presentationBefore=priorView.board;state=current;renderRequestStatus();const waiting=!!current.waitingRecovery;$('recoveryExit').hidden=!waiting;if(!waiting&&$('recoveryExitDialog').open)$('recoveryExitDialog').close();const v=current.view;$('match').hidden=!v;document.body.classList.toggle('online-playing',!!v);if(!v){$('turnIndicator').hidden=true;$('settingsOverlay').classList.remove('show');$('settingsOverlay').setAttribute('aria-hidden','true');clear();N.clear();$('overlay').classList.remove('show');lastRevision=null;lastStatus=null;hadMatch=false;if($('surrenderDialog').open)$('surrenderDialog').close();for(const id of ['board','pieceOverlay','hand','enemyHand','actions','infoContent','result'])$(id).replaceChildren();$('matchStatus').textContent='';$('log').replaceChildren();logSeen.clear();hitEffects.clear();clearTimeout(hitCleanup);hitCleanup=null;presentationBefore=null;renderedRevision=null;return;}
   if(!hadMatch){$('connectionPanel').open=false;hadMatch=true;}
   if(v.revision!==lastRevision||current.status!==lastStatus||current.inFlight)clear();lastRevision=v.revision;lastStatus=current.status;
   const enemy=opposite(v.viewer),own=v.players[v.viewer],other=v.players[enemy],enabled=usable();
@@ -82,9 +94,9 @@
    if(v.enchantments.some(x=>x.cardId==='マイン'&&x.owner===v.viewer&&x.target?.k===k))e.classList.add('mineCell','ownMine');if(v.enchantments.some(x=>x.target?.k===k))e.classList.add('cellEnchanted');board.append(e);
   }
   const hand=$('hand'),handScroll=hand.scrollLeft;hand.replaceChildren();for(const card of v.ownHand){const d=D[card.cardId],e=button('',()=>pickCard(card),!enabled||!!v.choice);e.className='card'+(d.type==='spell'?' spell':d.type==='enchant'?' enchant':'')+(selected?.id===card.instanceId?' selected':'');e.dataset.card=card.cardId;e.dataset.instance=card.instanceId;e.innerHTML=N.cardHTML(card.cardId,d,{spell:d.type==='spell',enchant:d.type==='enchant',text:d.description});hand.append(e);}
-  hand.scrollLeft=handScroll;updateHandScroll();N.renderTurn({activeSide:v.activeSide,viewer:v.viewer,paused:!enabled||v.surrenderPending,ended:v.gameOver||current.aborted});
+  hand.scrollLeft=handScroll;updateHandScroll();N.renderTurn({activeSide:v.activeSide,viewer:v.viewer,paused:current.status!=='connected'||v.surrenderPending,ended:v.gameOver||current.aborted});
   $('selection').textContent=v.choice?(v.choice.kind==='promotion'?'進化を選んでください':'バリケードの配置先を選んでください'):selected?.kind==='card'?selected.cardId+(source?'：転移先を選択':'：色の付いた対象を選択'):mode==='ability'?'能力：対象の駒・王をタップ':selected?.kind==='piece'?'移動先・攻撃対象・王を選べます。':'カード・駒・王を選択してください';
-  $('matchStatus').textContent=['match-recovering','resyncing'].includes(current.status)?$('recovery').textContent:current.inFlight?'要求の確定待ち・操作停止':current.aborted?'復帰期限到達・勝敗なし中止':v.surrenderPending?'投了要求を受け付けました。安全な処理境界で結果を確定します。':'';
+  $('matchStatus').textContent=['match-recovering','resyncing'].includes(current.status)?$('recovery').textContent:current.aborted?'復帰期限到達・勝敗なし中止':v.surrenderPending?'投了要求を受け付けました。安全な処理境界で結果を確定します。':'';
   const end=v.options.find(o=>o.action.type==='end_turn'),surrender=v.options.find(o=>o.action.type==='surrender');$('endTurn').disabled=!enabled||!end;$('endTurn').onclick=()=>choose(end);$('onlineSurrender').disabled=!enabled||!surrender||v.surrenderPending;$('onlineSurrender').onclick=()=>{$('surrenderDialog').showModal();$('continueMatch').focus();};$('continueMatch').onclick=()=>$('surrenderDialog').close();$('confirmSurrender').onclick=()=>{$('surrenderDialog').close();choose(surrender);};
   $('overlay').classList.toggle('show',v.gameOver||!!current.aborted);$('resultTitle').hidden=!v.gameOver&&!current.aborted;$('result').textContent=v.gameOver?(v.outcome.draw?'引き分け':v.winner===v.viewer?'勝利':'敗北')+' / '+v.outcome.reason:v.surrenderPending?'投了要求を受け付けました。安全な処理境界で結果を確定します。':'';if(current.aborted&&!v.gameOver)$('result').textContent='勝敗なしで中止（復帰期限到達）。この端末で未受信の相手の確定結果は確認できません。';if((v.gameOver||current.aborted)&&$('surrenderDialog').open)$('surrenderDialog').close();
   renderInfo();drawPieces();renderedRevision=v.revision;renderGeneration++;$('board').dataset.renderedRevision=String(v.revision);
