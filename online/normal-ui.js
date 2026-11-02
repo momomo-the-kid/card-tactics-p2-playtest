@@ -11,17 +11,18 @@ const landscapeQuery=matchMedia('(orientation: landscape) and (min-width: 640px)
 function fixedProject(x,y,size,yaw){const a=yaw*Math.PI/180,t=55*Math.PI/180,u=(x*Math.cos(a)-y*Math.sin(a))*size,v=(x*Math.sin(a)+y*Math.cos(a))*size,w=1-v*Math.sin(t)/1000;return {x:u/w,y:v*Math.cos(t)/w};}
 // Central-column ray meets the outer edge; the complete 64x36 royal target
 // stays outside its supporting half-plane. This is presentation geometry only.
+function hpOnLeft(name){return !landscapeQuery.matches&&presentationView==='left'?name==='player':name==='enemy';}
 function royalAnchor(name,size,yaw){
  const y=name==='enemy'?-.5:.5,edge=fixedProject(0,y,size,yaw),a=fixedProject(-.1,y,size,yaw),b=fixedProject(.1,y,size,yaw),outside=fixedProject(0,y*1.2,size,yaw);
  let nx=-(b.y-a.y),ny=b.x-a.x;const len=Math.hypot(nx,ny);nx/=len;ny/=len;
  const dx=outside.x-edge.x,dy=outside.y-edge.y;if(nx*dx+ny*dy<0){nx=-nx;ny=-ny;}
- const distance=(32*Math.abs(nx)+18*Math.abs(ny)+3)/(nx*dx+ny*dy);
+ const distance=(Math.max(...(!landscapeQuery.matches?[[-32,-18],[32,-18],[32,18],[-32,18]]:hpOnLeft(name)?[[-80,-18],[32,-18],[32,18],[-80,18]]:[[-32,-18],[80,-18],[80,18],[-32,18]]).map(([x,y])=>-nx*x-ny*y))+3)/(nx*dx+ny*dy);
  return {x:edge.x+dx*distance,y:edge.y+dy*distance};
 }
 function projectCells(cells,wrap){
  const active=document.body.classList.contains('projected-board'),grid=wrap.querySelector('.boardGrid');
  if(!active){for(const c of cells){for(const key of ['position','left','top','width','height','clip-path'])c.style.removeProperty(key);delete c.dataset.logicalSize;}return;}
- const size=parseFloat(wrap.style.getPropertyValue('--logical-board')),ox=wrap.clientWidth/2+parseFloat(wrap.style.getPropertyValue('--plane-offset-x')),oy=wrap.clientHeight/2+parseFloat(wrap.style.getPropertyValue('--plane-offset-y')),yaw=presentationView==='left'?-28:0;
+ const size=parseFloat(wrap.style.getPropertyValue('--logical-board')),ox=wrap.clientWidth/2+parseFloat(wrap.style.getPropertyValue('--plane-offset-x')),oy=wrap.clientHeight/2+parseFloat(wrap.style.getPropertyValue('--plane-offset-y')),yaw=presentationView==='left'?-45:0;
  const at=(x,y)=>{const p=fixedProject(x-.5,y-.5,size,yaw);return {x:p.x+ox,y:p.y+oy};};
  const point=(c,name,p,x,y)=>{const e=mark(c,name,0,0);e.style.left=(p.x-x)+'px';e.style.top=(p.y-y)+'px';};
  cells.forEach((c,i)=>{
@@ -31,7 +32,7 @@ function projectCells(cells,wrap){
   for(const [j,name]of ['nw','ne','se','sw'].entries())point(c,name,q[j],x,y);
   point(c,'foot',at((col+.5)/5,(row+.5)/5),x,y);point(c,'left',at(col/5,(row+.5)/5),x,y);point(c,'right',at((col+1)/5,(row+.5)/5),x,y);
  });
- for(const name of ['enemy','player']){const e=wrap.querySelector('.royalFoot.'+name),q=landscapeQuery.matches?royalAnchor(name,size,yaw):fixedProject(0,name==='enemy'?-.74:.74,size,yaw);e.style.left=(q.x+ox)+'px';e.style.top=(q.y+oy)+'px';}
+ for(const name of ['enemy','player']){const e=wrap.querySelector('.royalFoot.'+name),q=royalAnchor(name,size,yaw);e.style.left=(q.x+ox)+'px';e.style.top=(q.y+oy)+'px';}
  grid.setAttribute('viewBox','0 0 '+wrap.clientWidth+' '+wrap.clientHeight);grid.replaceChildren();
  const line=(axis,a,b)=>{const e=document.createElementNS('http://www.w3.org/2000/svg','path');e.dataset.gridAxis=axis;e.setAttribute('d','M'+a.x+' '+a.y+'L'+b.x+' '+b.y);grid.append(e);};
  for(let i=0;i<=5;i++){line('column',at(i/5,0),at(i/5,1));line('row',at(0,i/5),at(1,i/5));}
@@ -62,8 +63,7 @@ function syncLayout(){
  if(message&&panel&&area){if(landscape)panel.insertBefore(message,$('infoContent'));else app.insertBefore(message,area);}
  if(projected){
   // Fit both views to one shared envelope, including off-board royal bases/crowns.
-  const portraitEnvelope=size=>{const pts=[];for(const yaw of [0,-28])for(const [x,y,king]of [[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5],[0,-.74,true],[0,.74,true]]){const p=fixedProject(x,y,size,yaw);pts.push([p.x-(king?40:0),p.y-(king?54:0)],[p.x+(king?40:0),p.y+(king?18:0)]);}return {x1:Math.min(...pts.map(p=>p[0])),x2:Math.max(...pts.map(p=>p[0])),y1:Math.min(...pts.map(p=>p[1])),y2:Math.max(...pts.map(p=>p[1]))};};
-  const envelope=size=>{if(!landscapeQuery.matches)return portraitEnvelope(size);const pts=[];for(const yaw of [0,-28]){for(const [x,y]of [[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]]){const p=fixedProject(x,y,size,yaw);pts.push([p.x,p.y]);}for(const name of ['enemy','player']){const p=royalAnchor(name,size,yaw);pts.push([p.x-32,p.y-18],[p.x+32,p.y+18]);}}return {x1:Math.min(...pts.map(p=>p[0])),x2:Math.max(...pts.map(p=>p[0])),y1:Math.min(...pts.map(p=>p[1])),y2:Math.max(...pts.map(p=>p[1]))};};
+  const envelope=size=>{const pts=[];for(const yaw of [0,-45]){for(const [x,y]of [[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]]){const p=fixedProject(x,y,size,yaw);pts.push([p.x,p.y]);}for(const name of ['enemy','player']){const p=royalAnchor(name,size,yaw);pts.push([p.x-(landscapeQuery.matches&&hpOnLeft(name)?80:32),p.y-18],[p.x+(landscapeQuery.matches&&!hpOnLeft(name)?80:32),p.y+18]);}}return {x1:Math.min(...pts.map(p=>p[0])),x2:Math.max(...pts.map(p=>p[0])),y1:Math.min(...pts.map(p=>p[1])),y2:Math.max(...pts.map(p=>p[1]))};};
   let lo=70,hi=800;for(let i=0;i<16;i++){const size=(lo+hi)/2,b=envelope(size);if(b.x2-b.x1<=wrap.clientWidth-8&&b.y2-b.y1<=wrap.clientHeight-8)lo=size;else hi=size;}
   const size=lo,b=envelope(size);wrap.style.setProperty('--logical-board',size+'px');wrap.style.setProperty('--plane-offset-x',(-(b.x1+b.x2)/2)+'px');wrap.style.setProperty('--plane-offset-y',(-(b.y1+b.y2)/2)+'px');
  }
@@ -90,6 +90,8 @@ function startPlayPresentation(){const log=document.querySelector('.layoutLog');
 function positionBattleLog(){const log=document.querySelector('.layoutLog');if(!log?.open)return;const panel=log.querySelector('.logPanel'),summary=log.querySelector('summary'),r=summary.getBoundingClientRect();if(!panel)return;const anchorTop=landscapeQuery.matches?r.top:log.closest('.controls').getBoundingClientRect().top,width=Math.min(360,innerWidth-16);panel.style.width=width+'px';panel.style.left=Math.max(8,Math.min(r.right-width,innerWidth-width-8))+'px';const space=Math.max(64,Math.min(190,anchorTop-16));panel.style.maxHeight=space+'px';panel.style.setProperty('--log-space',space+'px');panel.style.top=Math.max(8,anchorTop-panel.offsetHeight-6)+'px';}
 window.addEventListener('resize',positionBattleLog);window.visualViewport?.addEventListener('resize',positionBattleLog);window.addEventListener('scroll',positionBattleLog,{passive:true});
 function tutorialSelectors(selectors){return selectors.map(selector=>{
+ if(selector==='.kingZone.enemy .kingStat:not(.manaStat)')return '.royalHP.enemy';
+ if(selector==='.kingZone.player .kingStat:not(.manaStat)')return '.royalHP.player';
  if(selector==='.kingZone.player .manaStat'&&landscapeQuery.matches)return '.manaDock .manaStat';
  return selector;
 });}
@@ -135,12 +137,13 @@ function pieceLabel(name){
 function positionRoyalPedestals(){
  const wrap=$('board')?.closest('.boardWrap'), cells=$('board')?.querySelectorAll('.cell');
  if(!wrap||!cells||cells.length!==25)return;
+ for(const [kind,id]of [['enemy','enemyPedestal'],['player','playerPedestal']]){let hud=wrap.querySelector('.royalHP.'+kind);if(!hud){hud=document.createElement('span');hud.className='royalHP '+kind;hud.setAttribute('aria-label',kind==='enemy'?'相手の王HP':'自分の王HP');wrap.append(hud);}const stat=document.querySelector('.kingZone.'+kind+' .kingStat:not(.manaStat)');if(stat){stat.firstChild.textContent='❤️';hud.append(stat);}}
  if(document.body.classList.contains('projected-board')){
   for(const [id,kind]of [['enemyPedestal','enemy'],['playerPedestal','player']]){
    const el=$(id),anchor=wrap.querySelector('.royalFoot.'+kind);if(!el||!anchor)continue;
-   const point=screenPoint(anchor,wrap),width=landscapeQuery.matches?64:Math.max(64,Math.min(120,parseFloat(wrap.style.getPropertyValue('--logical-board'))*.30));
-   el.style.left=point.x+'px';el.style.top=point.y+'px';el.style.width=width+'px';el.style.height=(landscapeQuery.matches?36:32)+'px';el.style.zIndex=String(100+Math.round(point.y));
-  }return;
+   const point=screenPoint(anchor,wrap),width=64;
+   el.style.left=point.x+'px';el.style.top=point.y+'px';el.style.width=width+'px';el.style.height='36px';el.style.zIndex=String(100+Math.round(point.y));
+  }positionRoyalHP(wrap);return;
  }
  const wr=wrap.getBoundingClientRect();
  const specs=[['enemyPedestal',0,1,2,3,-1],['playerPedestal',20,21,22,23,1]];
@@ -148,20 +151,13 @@ function positionRoyalPedestals(){
   const pedestal=$(id);if(!pedestal)continue;
   const first=cells[colStart].getBoundingClientRect(),last=cells[colEnd].getBoundingClientRect();
   const row=cells[rowStart].getBoundingClientRect();
-  const width=Math.max(20,last.right-first.left);
-  const depth=Math.max(15,row.height);
-  const baseGap=Math.max(4,Math.min(8,depth*.09));
-  const height=depth;
-  const x=(first.left+last.right)/2-wr.left;
-  // 手前側は従来の約半分の隙間。奥側は約30%広げ、
-  // rotateXで台座が盤上へせり出して見える分も奥へ補正する。
-  const gap=dir<0 ? (baseGap*1.30 + height*.10)*.85 : baseGap*.50;
-  const y=dir<0?row.top-wr.top-gap-height:row.bottom-wr.top+gap;
-  pedestal.style.left=x+'px';pedestal.style.top=y+'px';
-  pedestal.style.width=width+'px';pedestal.style.height=height+'px';
-  pedestal.style.borderRadius=Math.max(7,Math.min(20,height*.3))+'px';
- }
+  const width=64,height=36,x=(cells[colMid].querySelector('[data-plane-point="foot"]').getBoundingClientRect().left-wr.left);
+  const edge=dir<0?cells[colMid].querySelector('[data-plane-point="nw"]').getBoundingClientRect().top:cells[colMid].querySelector('[data-plane-point="sw"]').getBoundingClientRect().top;
+  const y=edge-wr.top+dir*28;
+  pedestal.style.left=x+'px';pedestal.style.top=y+'px';pedestal.style.width=width+'px';pedestal.style.height=height+'px';
+ }positionRoyalHP(wrap);
 }
+function positionRoyalHP(wrap){for(const [kind,id]of [['enemy','enemyPedestal'],['player','playerPedestal']]){const hud=wrap.querySelector('.royalHP.'+kind),b=$(id).getBoundingClientRect(),w=wrap.getBoundingClientRect();hud.style.left=(!landscapeQuery.matches?b.left-w.left+32:hpOnLeft(kind)?b.left-w.left-48:b.right-w.left+4)+'px';hud.style.top=(b.top-w.top+(!landscapeQuery.matches?4:(b.height-24)/2))+'px';}}
 const CREATURE_ASSET_IDS={
  "歩兵":"infantry","銀級兵":"silver","金級兵":"gold","チャリオット":"chariot","アーチャー":"archer",
  "盗賊":"thief","サラマンダー":"salamander","踊り子":"dancer","戦狼":"war_wolf","ディアブロ":"diablo",
