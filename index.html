@@ -763,57 +763,57 @@ body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
 .layoutHandScroll{display:none}
 .layoutLog summary{font-size:12px;cursor:pointer;padding:6px}.layoutLog:not([open]) #log{display:none}
 body.layout-landscape{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-body.layout-landscape main{max-width:none;padding:4px}
-body.layout-landscape #app{max-width:1600px;width:100%;padding:4px 8px;display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,29%);gap:5px;margin:auto}
+body.layout-landscape main{max-width:none;padding:0 4px}
+body.layout-landscape #app{box-sizing:border-box;max-width:1600px;width:100%;height:var(--play-height,100dvh);min-height:340px;padding:2px 6px;display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,28%);grid-template-rows:34px minmax(0,1fr) clamp(68px,13dvh,100px) 38px;gap:4px;margin:auto}
 body.layout-landscape #app.gameScreenHidden{display:none!important}
-body.layout-landscape .gameTopBar,body.layout-landscape .appHeader{grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:space-between;margin:0;gap:8px}
-body.layout-landscape .status{grid-column:2;grid-row:1;font-size:10px;margin:0;padding:3px;gap:3px;max-height:58px;overflow:auto;white-space:normal;flex-wrap:wrap}
+body.layout-landscape .gameTopBar,body.layout-landscape .appHeader{grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:space-between;margin:0;gap:6px;min-width:0}
+body.layout-landscape .status{grid-column:2;grid-row:1;font-size:10px;margin:0;padding:0;gap:3px;min-height:0;overflow:auto;flex-wrap:wrap;white-space:normal}
 body.layout-landscape .status .badge{padding:3px 5px}
 body.layout-landscape #app button{touch-action:manipulation}
-body.layout-landscape .gameTopBar>button,body.layout-landscape .appHeader>button{font-size:12px;padding:8px 10px;min-height:34px}
-body.layout-landscape .playArea{grid-row:2;grid-column:1/-1;grid-template-columns:minmax(0,1fr) minmax(210px,29%);align-items:stretch;gap:8px;margin:0}
-body.layout-landscape .boardColumn{position:relative;min-height:260px;height:max(260px,calc(100dvh - 190px));gap:0}
-body.layout-landscape .boardWrap{height:100%;width:100%;aspect-ratio:auto;min-height:0;margin:0!important}
-body.layout-landscape .turnIndicator{position:absolute;left:0;top:0;z-index:900;margin:0;font-size:13px;padding:7px 10px}
-body.layout-landscape .kingZone.enemy,body.layout-landscape .kingZone.player{width:105px!important;height:38px!important;min-height:0;grid-template-columns:1fr auto!important;grid-template-rows:1fr!important;z-index:700!important;left:0!important;pointer-events:none!important}
-body.layout-landscape .kingZone.enemy{top:42px!important;bottom:auto!important}
-body.layout-landscape .kingZone.player{top:auto!important;bottom:0!important}
+body.layout-landscape .gameTopBar>button,body.layout-landscape .appHeader>button{font-size:12px;padding:6px 8px;min-height:32px}
+body.layout-landscape .playArea{grid-row:2;grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,28%);min-height:0;height:100%;align-items:stretch;gap:8px;margin:0}
+body.layout-landscape .boardColumn{position:relative;min-height:0;height:100%;gap:0;min-width:0}
+body.layout-landscape .boardWrap{position:absolute;top:34px;left:0;height:calc(100% - 34px);width:100%;aspect-ratio:auto;min-height:0;margin:0!important}
+body.layout-landscape .turnIndicator{position:absolute;left:50%;top:0;transform:translateX(-50%);z-index:900;margin:0;font-size:13px;padding:7px 8px;white-space:nowrap}
+body.layout-landscape .kingZone.enemy,body.layout-landscape .kingZone.player{width:100px!important;height:32px!important;min-height:0;grid-template-columns:1fr auto!important;grid-template-rows:1fr!important;z-index:700!important;top:0!important;bottom:auto!important;pointer-events:none!important}
+body.layout-landscape .kingZone.enemy{left:0!important}
+body.layout-landscape .kingZone.player{left:auto!important;right:0!important}
 body.layout-landscape .kingZone .kingStat{font-size:12px!important;grid-column:1!important;grid-row:1!important;align-self:center!important}
-body.layout-landscape .kingZone .graveButton{grid-column:2!important;grid-row:1!important;padding:8px!important;min-width:36px;min-height:36px}
+body.layout-landscape .kingZone .graveButton{grid-column:2!important;grid-row:1!important;padding:7px!important;min-width:34px;min-height:32px}
 body.layout-landscape .kingZone .king{display:none}
-body.layout-landscape #infoPanel{height:100%!important;max-height:100%!important;min-height:0;position:relative}
-body.layout-landscape .infoHeading{font-size:13px;padding:5px 8px}
-body.layout-landscape #infoContent{font-size:13px;line-height:1.35;padding:7px 8px}
-body.layout-landscape #message{font-size:12px;line-height:1.3;min-height:24px;margin:0;padding:5px 8px;flex-shrink:0}
+body.layout-landscape #infoPanel{height:100%!important;max-height:100%!important;min-height:0;overflow:hidden;position:relative}
+body.layout-landscape .infoHeading{font-size:13px;padding:5px 8px;flex:0 0 auto}
+body.layout-landscape #infoContent{font-size:13px;line-height:1.35;padding:7px 8px;min-height:0;flex:1 1 0;overflow:auto;overscroll-behavior:contain}
+body.layout-landscape #message{font-size:12px;line-height:1.3;min-height:0;max-height:32px;overflow:auto;margin:0;padding:3px 6px;flex:0 0 auto}
 body.layout-landscape #requestStatus{grid-column:1/-1;grid-row:2;position:relative;align-self:end;pointer-events:none;z-index:850;margin:0;width:55%;height:18px}
-body.layout-landscape #actions{max-height:45%;overflow:auto}
+body.layout-landscape #actions{min-height:0;max-height:45%;overflow:auto;flex:0 1 auto}
 body.layout-landscape #actions .useCardButton,body.layout-landscape #infoContent .useCardButton{min-height:36px;font-size:12px;padding:8px}
-body.layout-landscape .handTitle{grid-row:3;grid-column:1/-1;margin:0;font-size:11px}
-body.layout-landscape .handScroller{grid-row:4;grid-column:1/-1;position:relative;min-width:0;padding:0 30px}
-body.layout-landscape .hand{height:clamp(78px,16dvh,130px);overflow-x:auto;overflow-y:hidden;align-items:stretch;margin:0;padding:2px 0 4px;gap:6px}
-body.layout-landscape .hand .card{flex:0 0 120px;width:120px;overflow:hidden;padding:5px;font-size:14px}
+body.layout-landscape .handTitle{display:none}
+body.layout-landscape .handScroller{grid-row:3;grid-column:1/-1;position:relative;min-width:0;min-height:0;padding:0 30px}
+body.layout-landscape .hand{box-sizing:border-box;height:100%;overflow-x:auto;overflow-y:hidden;align-items:stretch;margin:0;padding:2px 0 4px;gap:6px}
+body.layout-landscape .hand .card{flex:0 0 112px;width:112px;max-width:none;overflow:hidden;padding:5px;font-size:14px}
 body.layout-landscape .hand .card .name{font-size:14px;line-height:1.1}.layout-landscape .hand .card .cost{font-size:11px}.layout-landscape .hand .card .desc{font-size:10px;line-height:1.15}
 body.layout-landscape .layoutHandScroll{display:block;position:absolute;z-index:50;top:calc(50% - 20px);min-width:28px;min-height:40px;padding:4px}
 body.layout-landscape [data-scroll-hand="-1"]{left:0}body.layout-landscape [data-scroll-hand="1"]{right:0}
-body.layout-landscape .controls{grid-row:5;grid-column:1/-1;position:sticky;bottom:0;z-index:950;display:flex;align-items:center;gap:7px;margin:0;background:#15171bf5;padding:2px 0 max(2px,env(safe-area-inset-bottom));flex-wrap:wrap}
-body.layout-landscape .controls button{min-height:38px;font-size:12px;padding:8px 10px}
+body.layout-landscape .controls{grid-row:4;grid-column:1/-1;position:relative;z-index:950;display:flex;align-items:center;gap:6px;min-height:0;margin:0;background:#15171b;padding:0;flex-wrap:nowrap}
+body.layout-landscape .controls button{min-height:36px;font-size:12px;padding:6px 9px}
 body.layout-landscape .controls #endTurn{order:99;margin-left:auto;background:#4d86c7}
 body.layout-landscape .manaDock,body.layout-landscape .enemyManaDock{display:flex;align-items:center;gap:4px;order:-1;padding:5px 8px;border:1px solid #536071;border-radius:8px;white-space:nowrap}
 body.layout-landscape .manaDock::before{content:"自分"}
 body.layout-landscape .enemyManaDock{order:0;margin-left:auto;flex-shrink:0}
 body.layout-landscape .enemyManaDock::before{content:"相手"}
 body.layout-landscape .manaDock::before,body.layout-landscape .enemyManaDock::before{font-size:12px;font-weight:700}
-body.layout-landscape .enemyManaDock .manaStat{font-size:15px;white-space:nowrap}
-body.layout-landscape .manaDock .manaStat{font-size:15px;white-space:nowrap}
-body.layout-landscape .layoutLog{grid-row:6;grid-column:1/-1;margin:0}
-body.layout-landscape #log{height:100px;margin:0}
+body.layout-landscape .enemyManaDock .manaStat,body.layout-landscape .manaDock .manaStat{font-size:15px;white-space:nowrap}
+body.layout-landscape .layoutLog{grid-row:4;grid-column:1/-1;justify-self:end;align-self:center;margin-right:100px;z-index:960}
+body.layout-landscape .layoutLog summary{padding:7px 6px;font-size:11px;min-height:32px}
+body.layout-landscape .layoutLog[open]{position:fixed;right:10px;top:80px;bottom:auto;margin:0;width:min(360px,45vw);max-height:45dvh;overflow:auto;background:#20252c;border:1px solid #536071;border-radius:8px}
+body.layout-landscape #log{height:100px;min-height:0;margin:0}
 body.layout-landscape #onlineHeader{margin:0;font-size:11px}.online-playing.layout-landscape #onlineHeader{display:none}
 body.layout-landscape.online-playing #connectionPanel{margin:0;font-size:10px}
-body.layout-landscape.online-playing #connectionPanel>summary{padding:3px 8px}
+body.layout-landscape.online-playing #connectionPanel>summary{padding:2px 8px}
 body.layout-landscape.online-playing #diagnosticsPanel{font-size:11px}
 body.layout-landscape.online-playing main>p{font-size:10px;margin:4px}
 body.layout-landscape #app h1{font-size:12px;margin:0;white-space:normal}
-
 /* A/B share the same logical square, 25 native cells and the same viewport frame. */
 body.projected-board .boardWrap{perspective:none;isolation:isolate}
 body.projected-board .boardGrid path{stroke:#b99b62;stroke-width:1.2;fill:none;vector-effect:non-scaling-stroke;pointer-events:none}
@@ -829,27 +829,18 @@ body.projected-board .overlayDot{top:21%;width:8px;height:8px}.projected-board .
 body.projected-board .royalPedestal{transform:translate(-50%,-50%)!important;border-radius:8px!important;min-height:32px;padding:0 3px;align-items:flex-end}
 body.projected-board .royalPedestal .kingLabel{font-size:10px;margin-bottom:2px;line-height:1.1}
 body.projected-board .royalPedestal .crownModel{bottom:18px!important;width:56px!important;height:40px!important;transform:translateX(-50%)!important}
-@media(orientation:landscape) and (max-height:460px){
- body.layout-landscape #app{gap:3px;padding:3px 6px}
- body.layout-landscape .boardColumn{height:260px;min-height:260px}
- body.layout-landscape .hand{height:78px}
- body.layout-landscape .hand .card{flex-basis:112px;width:112px}
- body.layout-landscape .status{max-height:38px;font-size:9px}
- body.layout-landscape .controls button{min-height:36px;padding:6px 9px}
- body.layout-landscape #infoContent .rangeCell{font-size:10px}
-}
-/* Keep the hand unobscured: the footer is in normal flow, not over the cards. */
-body.layout-landscape .boardColumn{height:max(260px,calc(100dvh - 230px))}
-body.layout-landscape .handTitle{display:none}
-body.layout-landscape .controls{position:relative;bottom:auto}
-body.layout-landscape .hand .card{max-width:none}
-body.layout-landscape .layoutLog{grid-row:5;grid-column:1/-1;justify-self:end;align-self:center;margin-right:105px;z-index:960}
-body.layout-landscape .layoutLog summary{padding:8px 6px;font-size:11px;min-height:34px}
-body.layout-landscape .layoutLog[open]{position:fixed;right:10px;bottom:48px;margin:0;width:min(360px,50vw);background:#20252c;border:1px solid #536071;border-radius:8px}
 body.projected-board .overlayPiece .overlayNameLayer{color:#fff!important;-webkit-text-fill-color:#fff!important;-webkit-text-stroke-width:0!important;text-shadow:none!important}
-@media(orientation:landscape) and (max-height:460px){body.layout-landscape .boardColumn{height:260px}body.layout-landscape .hand{height:74px}body.layout-landscape .status{max-height:30px}.layout-landscape .gameTopBar>button,.layout-landscape .appHeader>button{min-height:30px;padding:6px 9px}}
-body.layout-landscape.tutorial-mode #app{padding-bottom:4px}
-body.layout-landscape #tutorialCoach{left:auto;right:12px;top:74px;bottom:auto;transform:none;width:calc(29vw - 24px);max-height:calc(100dvh - 100px);min-width:195px}
+body.layout-landscape.tutorial-mode #app{padding-bottom:2px}
+body.layout-landscape #tutorialCoach{transform:none;box-sizing:border-box;min-width:0;z-index:1000;overflow:auto;padding:8px 10px}
+body.layout-landscape .tutorialText{font-size:13px;line-height:1.4}
+body.layout-landscape .tutorialActions{margin-top:5px}
+body.layout-landscape .tutorialActions button{min-height:34px;padding:6px 9px}
+/* Explanation rings use the actual cell corners in either orientation. Native
+   animation/position overrides must never displace the input cells. */
+#board .cell.tutorialGlow{animation:none!important;box-shadow:none!important;outline:none!important;filter:none!important;z-index:auto!important}
+body.projected-board #board .cell.tutorialGlow{position:absolute!important}
+.tutorialGrid{display:block;position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:80}
+.tutorialGrid polygon{fill:none;stroke:#ffe277;stroke-width:3;vector-effect:non-scaling-stroke}
 /* A single fixed projection supplies both the 25 native clip polygons and grid.
    There are no 3D transformed input surfaces or coordinate-to-ID conversions. */
 body.projected-board .boardPlane{display:block;position:absolute;inset:0;width:100%;height:100%;transform:none}
@@ -980,7 +971,8 @@ function projectCells(cells,wrap){
   for(const [j,name]of ['nw','ne','se','sw'].entries())point(c,name,q[j],x,y);
   point(c,'foot',at((col+.5)/5,(row+.5)/5),x,y);point(c,'left',at(col/5,(row+.5)/5),x,y);point(c,'right',at((col+1)/5,(row+.5)/5),x,y);
  });
- for(const [name,y]of [['enemy',-.24],['player',1.24]]){const e=wrap.querySelector('.royalFoot.'+name),p=at(.5,y);e.style.left=p.x+'px';e.style.top=p.y+'px';}
+ const corners=[at(0,0),at(1,0),at(1,1),at(0,1)],left=Math.min(...corners.map(p=>p.x)),right=Math.max(...corners.map(p=>p.x));
+ for(const [name,x,y]of [['enemy',left-42,Math.min(...corners.map(p=>p.y))+54],['player',right+42,Math.max(...corners.map(p=>p.y))-16]]){const e=wrap.querySelector('.royalFoot.'+name),old=at(.5,name==='enemy'?-.24:1.24);e.style.left=(landscapeQuery.matches?x:old.x)+'px';e.style.top=(landscapeQuery.matches?y:old.y)+'px';}
  grid.setAttribute('viewBox','0 0 '+wrap.clientWidth+' '+wrap.clientHeight);grid.replaceChildren();
  const line=(axis,a,b)=>{const e=document.createElementNS('http://www.w3.org/2000/svg','path');e.dataset.gridAxis=axis;e.setAttribute('d','M'+a.x+' '+a.y+'L'+b.x+' '+b.y);grid.append(e);};
  for(let i=0;i<=5;i++){line('column',at(i/5,0),at(i/5,1));line('row',at(0,i/5),at(1,i/5));}
@@ -991,17 +983,18 @@ function refreshCellRings(cells,wrap,grid){grid.querySelectorAll('polygon,text')
  // These rings reflect existing presenter classes, never recalculate legal actions.
  for(const c of cells)if(c.classList.contains('cellEnchanted')&&!current?.board[Number(c.dataset.cell)]){const e=document.createElementNS('http://www.w3.org/2000/svg','text'),p=screenPoint(c.querySelector('[data-plane-point="foot"]'),wrap);e.setAttribute('x',p.x);e.setAttribute('y',p.y+4);e.setAttribute('text-anchor','middle');e.setAttribute('font-size','12');e.dataset.cellEffect=c.dataset.cell;e.textContent=c.classList.contains('ownMine')?'✹':'🔮';grid.append(e);}
 
- for(const c of cells){const colors=[['selected','#55a8ff'],['spellTarget','#ffad4e'],['cpuSelected','#ffd36b'],['cellEnchanted','#9b7cff'],['tutorialGlow','#ffe277']];for(const [name,color]of colors)if(c.classList.contains(name)){const e=document.createElementNS('http://www.w3.org/2000/svg','polygon');e.setAttribute('points',['nw','ne','se','sw'].map(name=>{const p=screenPoint(c.querySelector('[data-plane-point='+name+']'),wrap);return p.x+','+p.y;}).join(' '));e.setAttribute('fill','none');e.setAttribute('stroke',color);e.setAttribute('stroke-width','3');e.dataset.highlight=name;grid.append(e);}}
+ for(const c of cells){const colors=[['selected','#55a8ff'],['spellTarget','#ffad4e'],['cpuSelected','#ffd36b'],['cellEnchanted','#9b7cff']];for(const [name,color]of colors)if(c.classList.contains(name)){const e=document.createElementNS('http://www.w3.org/2000/svg','polygon');e.setAttribute('points',['nw','ne','se','sw'].map(name=>{const p=screenPoint(c.querySelector('[data-plane-point='+name+']'),wrap);return p.x+','+p.y;}).join(' '));e.setAttribute('fill','none');e.setAttribute('stroke',color);e.setAttribute('stroke-width','3');e.dataset.highlight=name;grid.append(e);}}
 }
 function syncLayout(){
  const landscape=landscapeQuery.matches;
- if(previousLandscape!==landscape){const log=document.querySelector('.layoutLog');if(log)log.open=!landscape;previousLandscape=landscape;}
+ if(previousLandscape!==landscape){const log=document.querySelector('.layoutLog');if(log&&previousLogExplanation)log.open=true;else if(log&&previousLandscape===null)log.open=!landscape;previousLandscape=landscape;}
  const projected=landscape||presentationView==='left';
  document.body.classList.toggle('layout-landscape',landscape);
  document.body.classList.toggle('view-left',presentationView==='left');
  document.body.classList.toggle('projected-board',projected);
  const app=$('app'),column=document.querySelector('.boardColumn'),wrap=$('board')?.closest('.boardWrap');
  if(!app||!wrap)return;
+ if(landscape){const viewport=visualViewport?.height||innerHeight,top=app.getBoundingClientRect().top+scrollY,safe=parseFloat(getComputedStyle(document.body).paddingBottom)||0;app.style.setProperty('--play-height',Math.max(340,Math.floor(viewport-top-safe-4))+'px');}else app.style.removeProperty('--play-height');
  const mana=column?.querySelector('.kingZone.player .manaStat')||app.querySelector('.manaDock .manaStat'),dock=app.querySelector('.manaDock'),zone=column?.querySelector('.kingZone.player');
  if(mana&&dock&&zone)(landscape?dock:zone).append(mana);
  const enemyZone=column?.querySelector(".kingZone.enemy"),enemyDock=app.querySelector(".enemyManaDock"),enemyMana=enemyZone?.querySelector(".manaStat")||enemyDock?.querySelector(".manaStat");
@@ -1010,8 +1003,9 @@ function syncLayout(){
  if(message&&panel&&area){if(landscape)panel.insertBefore(message,$('infoContent'));else app.insertBefore(message,area);}
  if(projected){
   // Fit both views to one shared envelope, including off-board royal bases/crowns.
-  const envelope=size=>{const pts=[];for(const yaw of [0,-28])for(const [x,y,king]of [[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5],[0,-.74,true],[0,.74,true]]){const p=fixedProject(x,y,size,yaw);pts.push([p.x-(king?40:0),p.y-(king?54:0)],[p.x+(king?40:0),p.y+(king?18:0)]);}return {x1:Math.min(...pts.map(p=>p[0])),x2:Math.max(...pts.map(p=>p[0])),y1:Math.min(...pts.map(p=>p[1])),y2:Math.max(...pts.map(p=>p[1]))};};
-  let lo=80,hi=500;for(let i=0;i<16;i++){const size=(lo+hi)/2,b=envelope(size);if(b.x2-b.x1<=wrap.clientWidth-20&&b.y2-b.y1<=wrap.clientHeight-8)lo=size;else hi=size;}
+  const portraitEnvelope=size=>{const pts=[];for(const yaw of [0,-28])for(const [x,y,king]of [[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5],[0,-.74,true],[0,.74,true]]){const p=fixedProject(x,y,size,yaw);pts.push([p.x-(king?40:0),p.y-(king?54:0)],[p.x+(king?40:0),p.y+(king?18:0)]);}return {x1:Math.min(...pts.map(p=>p[0])),x2:Math.max(...pts.map(p=>p[0])),y1:Math.min(...pts.map(p=>p[1])),y2:Math.max(...pts.map(p=>p[1]))};};
+  const envelope=size=>{if(!landscapeQuery.matches)return portraitEnvelope(size);const pts=[];for(const yaw of [0,-28]){const q=[[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]].map(([x,y])=>fixedProject(x,y,size,yaw));const x1=Math.min(...q.map(p=>p.x)),x2=Math.max(...q.map(p=>p.x)),y1=Math.min(...q.map(p=>p.y)),y2=Math.max(...q.map(p=>p.y));pts.push([x1-80,y1],[x2+80,y2]);}return {x1:Math.min(...pts.map(p=>p[0])),x2:Math.max(...pts.map(p=>p[0])),y1:Math.min(...pts.map(p=>p[1])),y2:Math.max(...pts.map(p=>p[1]))};};
+  let lo=70,hi=800;for(let i=0;i<16;i++){const size=(lo+hi)/2,b=envelope(size);if(b.x2-b.x1<=wrap.clientWidth-8&&b.y2-b.y1<=wrap.clientHeight-8)lo=size;else hi=size;}
   const size=lo,b=envelope(size);wrap.style.setProperty('--logical-board',size+'px');wrap.style.setProperty('--plane-offset-x',(-(b.x1+b.x2)/2)+'px');wrap.style.setProperty('--plane-offset-y',(-(b.y1+b.y2)/2)+'px');
  }
 }
@@ -1035,9 +1029,35 @@ function bindPresentation(){
 }
 function tutorialSelectors(selectors){return selectors.map(selector=>{
  if(selector==='.kingZone.player .manaStat'&&landscapeQuery.matches)return '.manaDock .manaStat';
- if(selector==='#log'){const log=$('log')?.closest('details');if(log)log.open=true;}
  return selector;
 });}
+let tutorialExplanation=null,tutorialPresentationFrame=0,previousLogExplanation=false;
+function refreshTutorialGeometry(){
+ const board=$('board'),wrap=board?.closest('.boardWrap');if(!wrap)return;
+ let svg=wrap.querySelector('.tutorialGrid');if(!svg){svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('tutorialGrid');svg.setAttribute('aria-hidden','true');wrap.append(svg);}
+ svg.setAttribute('viewBox','0 0 '+wrap.clientWidth+' '+wrap.clientHeight);svg.replaceChildren();
+ for(const cell of board.querySelectorAll('.cell.tutorialGlow')){const e=document.createElementNS('http://www.w3.org/2000/svg','polygon');e.dataset.tutorialCell=cell.dataset.cell;e.setAttribute('points',['nw','ne','se','sw'].map(name=>{const p=screenPoint(cell.querySelector('[data-plane-point='+name+']'),wrap);return p.x+','+p.y;}).join(' '));svg.append(e);}
+}
+function presentTutorial(explanation){
+ tutorialExplanation=explanation;
+ const log=explanation?.glow?.includes('#log')||false,details=$('log')?.closest('details');
+ if(log!==previousLogExplanation&&details)details.open=log;previousLogExplanation=log;
+ queueTutorialPresentation();
+}
+function queueTutorialPresentation(){if(tutorialPresentationFrame)return;tutorialPresentationFrame=requestAnimationFrame(()=>{tutorialPresentationFrame=0;positionTutorialExplanation();refreshTutorialGeometry();});}
+function positionTutorialExplanation(){
+ const coach=$('tutorialCoach');if(!coach||!document.body.classList.contains('tutorial-mode'))return;
+ const step=tutorialExplanation;if(!step)return;
+ const panel=$('infoPanel'),content=$('infoContent');let selectors=tutorialSelectors(step.glow||[]);
+ if(step.action?.kind==='use')selectors=[...selectors,'#infoContent .useCardButton'];
+ const targets=selectors.flatMap(s=>[...document.querySelectorAll(s)]),infoTarget=targets.find(e=>panel?.contains(e)),logTarget=targets.some(e=>e.id==='log');
+ // Scroll only the internal detail scroller, never the page or the board.
+ if(infoTarget&&content?.contains(infoTarget)){const a=infoTarget.getBoundingClientRect(),b=content.getBoundingClientRect();if(a.top<b.top||a.bottom>b.bottom)content.scrollTop+=a.top-b.top-4;}
+ coach.classList.toggle('tutorialBesideInfo',!!infoTarget||logTarget);
+ if(landscapeQuery.matches){const host=(infoTarget||logTarget)?document.querySelector('.boardColumn'):panel,r=host.getBoundingClientRect();coach.style.left=Math.max(4,r.left+6)+'px';coach.style.width=Math.max(195,Math.min(infoTarget||logTarget?350:r.width-12,r.width-12))+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';coach.style.top=Math.max(4,r.bottom-coach.offsetHeight-6)+'px';}
+ else{for(const k of ['left','top','width','max-height','bottom','right'])coach.style.removeProperty(k);}
+}
+window.addEventListener('resize',queueTutorialPresentation);window.visualViewport?.addEventListener('resize',queueTutorialPresentation);window.addEventListener('scroll',queueTutorialPresentation,{passive:true});
 function pieceNameParts(name){
  const glyphs=Array.from(String(name));
  return [glyphs[0]||"",glyphs.slice(1).join("")];
@@ -1055,7 +1075,7 @@ function positionRoyalPedestals(){
  if(document.body.classList.contains('projected-board')){
   for(const [id,kind]of [['enemyPedestal','enemy'],['playerPedestal','player']]){
    const el=$(id),anchor=wrap.querySelector('.royalFoot.'+kind);if(!el||!anchor)continue;
-   const point=screenPoint(anchor,wrap),width=Math.max(64,Math.min(120,parseFloat(wrap.style.getPropertyValue('--logical-board'))*.30));
+   const point=screenPoint(anchor,wrap),width=Math.max(64,Math.min(landscapeQuery.matches?72:120,parseFloat(wrap.style.getPropertyValue('--logical-board'))*.30));
    el.style.left=point.x+'px';el.style.top=point.y+'px';el.style.width=width+'px';el.style.height='32px';el.style.zIndex=String(100+Math.round(point.y));
   }return;
  }
@@ -1148,6 +1168,7 @@ function renderPieces(model){
   if(assetImg)bindCreatureAsset(assetImg,v,p.type);
  });
  if(model.afterRender)model.afterRender();
+ refreshTutorialGeometry();queueTutorialPresentation();
  if(document.body.classList.contains("projected-board"))refreshCellRings(cells,board.closest(".boardWrap"),board.closest(".boardWrap").querySelector(".boardGrid"));
 }
 const RANGE_ARROWS={'-1,-1':'↖','-1,0':'↑','-1,1':'↗','0,-1':'←','0,1':'→','1,-1':'↙','1,0':'↓','1,1':'↘',
@@ -1256,7 +1277,7 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({tutorialSelectors,clear(){current=null;},renderPieces,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;},renderPieces,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();
 </script><script>
 (function(){const modules={"./effective-rules.js":function(module,exports,require){
@@ -3054,19 +3075,19 @@ const TutorialController={
   delete S.cardIdentities;delete S.coreBridge;delete S.pendingCardTransfers;delete S.pendingSummon;delete S.pendingEntry;delete S.pendingChoice;delete S.pendingEntryHtml;Object.assign(S,{turn:1,side:'p',manaBySide:{p:1,c:2},maxManaBySide:{p:1,c:2},manaBonus:{p:0,c:0},pHp:20,cHp:20,board:Array(25).fill(null),hand:['歩兵','歩兵','銀級兵','銀級兵','金級兵'],deck:[...Array(31).fill('歩兵'),'バーサーク','チャリオット','ファイヤーボルト','マナ'],cHand:['歩兵','踊り子','金級兵','チャリオット','銀級兵'],cDeck:Array(35).fill('歩兵'),card:null,piece:null,inspect:null,gameOver:false,mines:Array(25).fill(null),enchantments:[],battles:[],graveyards:{p:[],c:[]},nextCardInstanceId:1,kingAction:{p:{},c:{}},kingAttackMode:false,sorcererMode:false,tokenPlacement:null,teleportSource:null,dispelTarget:null,cpuPreview:null});
   $('log').innerHTML='';clearOneStepUndo();document.body.classList.add('tutorial-mode');startGameScreen();this.show();
  },
- clearGlow(){document.querySelectorAll('.tutorialGlow,.tutorialZoom').forEach(e=>e.classList.remove('tutorialGlow','tutorialZoom'))},
- show(){const s=this.current;if(!s)return;this.historyViewing=false;this.phase=s.id;if(s.clear){S.card=null;S.piece=null;S.inspect=null}if(s.select!=null){S.card=null;S.piece=s.select;S.inspect=null}render();this.showCurrentExplanation();$('tutorialCoach').classList.add('show');this.decorate();requestAnimationFrame(()=>{if(!this.active)return;const target=[...document.querySelectorAll('.tutorialGlow')].find(e=>getComputedStyle(e).visibility!=='hidden');target?.scrollIntoView({block:'center',inline:'center',behavior:'smooth'})});},
- showCurrentExplanation(){const s=this.current;if(!s)return;this.historyViewing=false;$('tutorialStep').textContent=`step${s.step}. ${s.title||''}`;$('tutorialText').textContent=s.text;$('tutorialBack').disabled=this.index===0;$('tutorialNext').style.display=s.action?'none':'inline-block';$('tutorialNext').textContent=s.finish?'タイトルへ戻る':'次へ';},
- backExplanation(){if(!this.active||this.index<=0||this.historyViewing)return;const prev=this.steps[this.index-1];if(!prev)return;this.historyViewing=true;$('tutorialStep').textContent=`step${prev.step}. ${prev.title||''}`;$('tutorialText').textContent=prev.text;$('tutorialBack').disabled=true;$('tutorialNext').style.display='inline-block';$('tutorialNext').textContent='現在の説明へ';},
+ clearGlow(){document.querySelectorAll('.tutorialGlow,.tutorialZoom').forEach(e=>e.classList.remove('tutorialGlow','tutorialZoom'));NormalGameUI.refreshTutorialGeometry()},
+ show(){const s=this.current;if(!s)return;this.historyViewing=false;this.phase=s.id;if(s.clear){S.card=null;S.piece=null;S.inspect=null}if(s.select!=null){S.card=null;S.piece=s.select;S.inspect=null}render();this.showCurrentExplanation();$('tutorialCoach').classList.add('show');this.decorate();NormalGameUI.presentTutorial(this.current);},
+ showCurrentExplanation(){const s=this.current;if(!s)return;this.historyViewing=false;$('tutorialStep').textContent=`step${s.step}. ${s.title||''}`;$('tutorialText').textContent=s.text;$('tutorialBack').disabled=this.index===0;$('tutorialNext').style.display=s.action?'none':'inline-block';$('tutorialNext').textContent=s.finish?'タイトルへ戻る':'次へ';this.decorate();NormalGameUI.presentTutorial(s);},
+ backExplanation(){if(!this.active||this.index<=0||this.historyViewing)return;const prev=this.steps[this.index-1];if(!prev)return;this.historyViewing=true;$('tutorialStep').textContent=`step${prev.step}. ${prev.title||''}`;$('tutorialText').textContent=prev.text;$('tutorialBack').disabled=true;$('tutorialNext').style.display='inline-block';$('tutorialNext').textContent='現在の説明へ';this.decorate();NormalGameUI.presentTutorial(prev);},
  next(){if(!this.active)return;if(this.historyViewing){this.showCurrentExplanation();return}if(this.current.finish){this.finish();return}if(this.current.action){this.blockedMessage();return}this.advance()},
  advance(){if(this.index+1<this.steps.length){this.index++;this.show()}},
  blockedMessage(){msg(this.current?.action?'今は案内で光っている対象を操作してください。':'説明を読んで「次へ」を押してください。')},
  allows(kind,value){if(!this.active)return true;const a=this.current?.action;return !!a&&a.kind===kind&&a.value===value&&S.side==='p'},
- decorate(){if(!this.active)return;this.clearGlow();const s=this.current;if(!s)return;let selectors=NormalGameUI.tutorialSelectors([...(s.glow||[])]);const a=s.action;if(a?.kind==='card'){const i=S.hand.indexOf(a.value);selectors.push(`#hand .card:nth-child(${i+1})`)}if(a?.kind==='cell')selectors.push(`#board .cell:nth-child(${a.value+1})`);if(a?.kind==='king')selectors.push('#enemyPedestal');if(a?.kind==='end')selectors.push('#endTurn');if(a?.kind==='use')selectors.push('#infoContent .useCardButton');
-  selectors=selectors.flatMap(selector=>{const m=selector.match(/^#board \.cell:nth-child\((\d+)\) \.(pieceHudStats|actionDot)$/);return m?[selector,`#pieceOverlay [data-cell="${Number(m[1])-1}"] .${m[2]==='actionDot'?'overlayDot':'overlayStatsLayer'}`]:[selector]});
+ decorate(){if(!this.active)return;this.clearGlow();const s=this.historyViewing?this.steps[this.index-1]:this.current;if(!s)return;let selectors=NormalGameUI.tutorialSelectors([...(s.glow||[])]);const a=s.action;if(a?.kind==='card'){const i=S.hand.indexOf(a.value);selectors.push(`#hand .card:nth-child(${i+1})`)}if(a?.kind==='cell')selectors.push(`#board .cell[data-cell="${a.value}"]`);if(a?.kind==='king')selectors.push('#enemyPedestal');if(a?.kind==='end')selectors.push('#endTurn');if(a?.kind==='use')selectors.push('#infoContent .useCardButton');
+  selectors=selectors.flatMap(selector=>{const m=selector.match(/^#board \.cell\[data-cell="(\d+)"\] \.(pieceHudStats|actionDot)$/);return m?[selector,`#pieceOverlay [data-cell="${Number(m[1])}"] .${m[2]==='actionDot'?'overlayDot':'overlayStatsLayer'}`]:[selector]});
   for(const selector of selectors)document.querySelectorAll(selector).forEach(e=>{e.classList.add('tutorialGlow');if(!e.matches('.cell,.rangePair,.infoEffect,.actionDot,.overlayDot,.overlayStatsLayer'))e.classList.add('tutorialZoom')});
   if(s.color)document.querySelectorAll('#board .cell').forEach(e=>{if(s.color==='move'){e.classList.remove('attackTarget');if(e.classList.contains('bothTarget')){e.classList.remove('bothTarget');e.classList.add('moveTarget')}}if(s.color==='attack'){e.classList.remove('moveTarget');if(e.classList.contains('bothTarget')){e.classList.remove('bothTarget');e.classList.add('attackTarget')}}});
-  $('undoOne').disabled=true;
+  $('undoOne').disabled=true;NormalGameUI.refreshTutorialGeometry();
  },
  finish(){this.epoch++;this.active=false;this.clearGlow();document.body.classList.remove('tutorial-mode');$('tutorialCoach').classList.remove('show');sessionStorage.removeItem('cardTacticsStartInGame');location.reload()},
  async runCPU(){
@@ -3119,18 +3140,18 @@ function tutorialSteps(){
  step=5;cell('A01_SELECT',18,'次はクリーチャーで攻撃してみよう。歩兵をタップしてね。');
  cell('A01_MOVE',13,'さっきやったように歩兵を1歩進めてみよう。');
  cell('A02_ATTACK',8,'相手の歩兵が攻撃範囲に入った。相手の歩兵をタップしてみよう。');
- add('A02_RESULT','これで攻撃完了。自分のATKと同じだけ相手のHPを減らせるよ。相手の歩兵はHP3になった。',{glow:['#board .cell:nth-child(14) .pieceHudStats','#board .cell:nth-child(9) .pieceHudStats']});
+ add('A02_RESULT','これで攻撃完了。自分のATKと同じだけ相手のHPを減らせるよ。相手の歩兵はHP3になった。',{glow:['#board .cell[data-cell="13"] .pieceHudStats','#board .cell[data-cell="8"] .pieceHudStats']});
  add('A03','クリーチャーは基本的に、1ターンに「移動1回・攻撃1回」できるよ。');
  add('B01_MANA','もう一度、召喚と移動のおさらい。',{glow:['.kingZone.player .manaStat']});
  add('B01_RECOVER','今は2マナある。マナは、ターンが進むごとに最大値が1増えて、ターン開始時に全回復するよ。');
  card('B02_CARD','銀級兵','この2マナで手札の銀級兵を召喚してみよう。');cell('B02_SUMMON',22,'光っているマスに銀級兵を召喚しよう。');
- add('B03','移動や攻撃をしたかは、この🔵と🔴で分かるよ。行動すると対応する丸が消える。',{glow:['#board .cell:nth-child(23) .actionDot']});
+ add('B03','移動や攻撃をしたかは、この🔵と🔴で分かるよ。行動すると対応する丸が消える。',{glow:['#board .cell[data-cell="22"] .actionDot']});
  cell('B04_SELECT',22,'銀級兵をタップして移動させよう。');cell('B04_MOVE',17,'光っているマスへ移動しよう。');
  add('B04_RESULT','銀級兵はまだ1回攻撃できる。でも今は攻撃範囲内に敵がいないから、今回は攻撃できない。');
  add('B05_INFO','移動範囲や攻撃範囲は、各クリーチャーの情報欄でも確認できるよ。',{glow:['#infoContent .rangePair']});
  add('B05_ORDER','移動・攻撃・カードの使用は好きな順番でOK。攻撃してから移動することもできるよ。');end('B06');
  step=6;add('CPU','相手の歩兵が反撃し、踊り子を召喚するよ。',{action:{kind:'cpu'}});
- add('01','それじゃあ相手の歩兵を倒してみよう。あなたの歩兵のATKは3、相手の残りHPは3。',{glow:['#board .cell:nth-child(14) .pieceHudStats','#board .cell:nth-child(9) .pieceHudStats']});
+ add('01','それじゃあ相手の歩兵を倒してみよう。あなたの歩兵のATKは3、相手の残りHPは3。',{glow:['#board .cell[data-cell="13"] .pieceHudStats','#board .cell[data-cell="8"] .pieceHudStats']});
  cell('01_SELECT',13,'あなたの歩兵をタップしよう。');cell('01_ATTACK',8,'相手の歩兵を攻撃しよう。');
  add('01_RESULT','HPが0になると、クリーチャーは破壊されて盤面からいなくなる。');
  cell('02_PAWN',8,'相手の王に近づこう。歩兵を光っているマスへ進めよう。');
@@ -3162,9 +3183,9 @@ function tutorialSteps(){
  step=11;cell('01_SELECT',3,'さぁ、いよいよ最後だ。歩兵をタップし、相手の王を倒して勝利を勝ち取ろう！');
  add('01_ATTACK','歩兵で相手の王を攻撃しよう。',{action:{kind:'king',value:'c'}});
  add('02_INTRO','王への攻撃には、少し特殊なルールがあるよ。');
- add('02_CENTER','正面にしか攻撃できないクリーチャーは、中央3列から王を狙える。',{glow:['#board .cell:nth-child(2)','#board .cell:nth-child(3)','#board .cell:nth-child(4)']});
- add('02_EDGE','両端からは、正面攻撃では王に届かないから注意して。',{glow:['#board .cell:nth-child(1)','#board .cell:nth-child(5)']});
- add('03_ALL','でも、斜めに攻撃できるクリーチャーなら両端含むどこからでも攻撃が届くよ。',{glow:['#board .cell:nth-child(1)','#board .cell:nth-child(2)','#board .cell:nth-child(3)','#board .cell:nth-child(4)','#board .cell:nth-child(5)']});
+ add('02_CENTER','歩兵のように正面しか攻撃できないクリーチャーは、中央3列から王を狙える。',{glow:['#board .cell[data-cell="1"]','#board .cell[data-cell="2"]','#board .cell[data-cell="3"]']});
+ add('02_EDGE','両端からは、正面攻撃では王に届かないから注意して。',{glow:['#board .cell[data-cell="0"]','#board .cell[data-cell="4"]']});
+ add('03_ALL','でも、斜めに攻撃できるクリーチャーなら両端含むどこからでも攻撃が届くよ。',{glow:['#board .cell[data-cell="0"]','#board .cell[data-cell="1"]','#board .cell[data-cell="2"]','#board .cell[data-cell="3"]','#board .cell[data-cell="4"]']});
  cell('03_SELECT',14,'チャリオットで見てみよう。チャリオットをタップして。');
  cell('03_MOVE',4,'光ってるマスに進めてみよう。');
  add('03_EDGE','チャリオットは斜め攻撃ができるから、端からでも王に攻撃が届く！',{glow:['#enemyPedestal']});
@@ -3178,6 +3199,7 @@ function tutorialSteps(){
 
  return out;
 }
+
 
 function startTutorial(){TutorialController.start()}
 function startGameScreen(){CardTacticsBGM.setActive(!S.gameOver);
@@ -4414,7 +4436,7 @@ if(typeof MutationObserver!=="undefined"){
  if(infoScrollTarget)new MutationObserver(queueScrollHints).observe(infoScrollTarget,{childList:true,subtree:true,characterData:true});
  if(handScrollTarget)new MutationObserver(queueScrollHints).observe(handScrollTarget,{childList:true,subtree:true});
 }
-function syncInfoPanelHeight(){
+function syncInfoPanelHeight(){if(document.body.classList.contains("layout-landscape"))return;
  const column=document.querySelector('.boardColumn'),panel=document.getElementById('infoPanel');
  if(column&&panel){const height=column.getBoundingClientRect().height;if(height>0)panel.style.setProperty('--panel-height',`${height}px`);}
 }
