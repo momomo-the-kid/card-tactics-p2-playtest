@@ -796,10 +796,14 @@ body.layout-landscape .enemyManaDock{order:0;margin-left:auto;flex-shrink:0}
 body.layout-landscape .enemyManaDock::before{content:"相手"}
 body.layout-landscape .manaDock::before,body.layout-landscape .enemyManaDock::before{font-size:12px;font-weight:700}
 body.layout-landscape .enemyManaDock .manaStat,body.layout-landscape .manaDock .manaStat{font-size:15px;white-space:nowrap}
-body.layout-landscape .layoutLog{grid-row:4;grid-column:1/-1;justify-self:end;align-self:center;margin-right:100px;z-index:960}
+.layoutLog{position:relative;flex:0 0 auto;margin:0;order:98}
+.logPanel{position:fixed;z-index:1100;width:min(360px,calc(100vw - 16px));max-height:190px;overflow:hidden;background:#20252c;border:1px solid #536071;border-radius:8px;padding:6px;box-sizing:border-box}
+.layoutLog:not([open]) .logPanel{display:none}
+.logPanel #log{box-sizing:border-box;height:auto!important;max-height:min(160px,32dvh,calc(var(--log-space,190px) - 14px));min-height:0!important;overflow:auto;overscroll-behavior:contain;margin:0}
+body.layout-landscape .layoutLog{margin-left:auto;z-index:1100}
+body.layout-landscape .controls #endTurn{margin-left:0}
 body.layout-landscape .layoutLog summary{padding:7px 6px;font-size:11px;min-height:32px}
-body.layout-landscape .layoutLog[open]{position:fixed;right:10px;top:80px;bottom:auto;margin:0;width:min(360px,45vw);max-height:45dvh;overflow:auto;background:#20252c;border:1px solid #536071;border-radius:8px}
-body.layout-landscape #log{height:100px;min-height:0;margin:0}
+body.layout-landscape.projected-board .royalPedestal .crownModel{bottom:11px!important;width:40px!important;height:24px!important}
 body.layout-landscape #onlineHeader{margin:0;font-size:11px}.online-playing.layout-landscape #onlineHeader{display:none}
 body.layout-landscape.online-playing #connectionPanel{margin:0;font-size:10px}
 body.layout-landscape.online-playing #connectionPanel>summary{padding:2px 8px}

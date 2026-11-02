@@ -9,6 +9,15 @@
 let presentationView='current',layoutFrame=0,previousLandscape=null;
 const landscapeQuery=matchMedia('(orientation: landscape) and (min-width: 640px)');
 function fixedProject(x,y,size,yaw){const a=yaw*Math.PI/180,t=55*Math.PI/180,u=(x*Math.cos(a)-y*Math.sin(a))*size,v=(x*Math.sin(a)+y*Math.cos(a))*size,w=1-v*Math.sin(t)/1000;return {x:u/w,y:v*Math.cos(t)/w};}
+// Central-column ray meets the outer edge; the complete 64x36 royal target
+// stays outside its supporting half-plane. This is presentation geometry only.
+function royalAnchor(name,size,yaw){
+ const y=name==='enemy'?-.5:.5,edge=fixedProject(0,y,size,yaw),a=fixedProject(-.1,y,size,yaw),b=fixedProject(.1,y,size,yaw),outside=fixedProject(0,y*1.2,size,yaw);
+ let nx=-(b.y-a.y),ny=b.x-a.x;const len=Math.hypot(nx,ny);nx/=len;ny/=len;
+ const dx=outside.x-edge.x,dy=outside.y-edge.y;if(nx*dx+ny*dy<0){nx=-nx;ny=-ny;}
+ const distance=(32*Math.abs(nx)+18*Math.abs(ny)+3)/(nx*dx+ny*dy);
+ return {x:edge.x+dx*distance,y:edge.y+dy*distance};
+}
 function projectCells(cells,wrap){
  const active=document.body.classList.contains('projected-board'),grid=wrap.querySelector('.boardGrid');
  if(!active){for(const c of cells){for(const key of ['position','left','top','width','height','clip-path'])c.style.removeProperty(key);delete c.dataset.logicalSize;}return;}
@@ -22,8 +31,7 @@ function projectCells(cells,wrap){
   for(const [j,name]of ['nw','ne','se','sw'].entries())point(c,name,q[j],x,y);
   point(c,'foot',at((col+.5)/5,(row+.5)/5),x,y);point(c,'left',at(col/5,(row+.5)/5),x,y);point(c,'right',at((col+1)/5,(row+.5)/5),x,y);
  });
- const corners=[at(0,0),at(1,0),at(1,1),at(0,1)],left=Math.min(...corners.map(p=>p.x)),right=Math.max(...corners.map(p=>p.x));
- for(const [name,x,y]of [['enemy',left-42,Math.min(...corners.map(p=>p.y))+54],['player',right+42,Math.max(...corners.map(p=>p.y))-16]]){const e=wrap.querySelector('.royalFoot.'+name),old=at(.5,name==='enemy'?-.24:1.24);e.style.left=(landscapeQuery.matches?x:old.x)+'px';e.style.top=(landscapeQuery.matches?y:old.y)+'px';}
+ for(const name of ['enemy','player']){const e=wrap.querySelector('.royalFoot.'+name),q=landscapeQuery.matches?royalAnchor(name,size,yaw):fixedProject(0,name==='enemy'?-.74:.74,size,yaw);e.style.left=(q.x+ox)+'px';e.style.top=(q.y+oy)+'px';}
  grid.setAttribute('viewBox','0 0 '+wrap.clientWidth+' '+wrap.clientHeight);grid.replaceChildren();
  const line=(axis,a,b)=>{const e=document.createElementNS('http://www.w3.org/2000/svg','path');e.dataset.gridAxis=axis;e.setAttribute('d','M'+a.x+' '+a.y+'L'+b.x+' '+b.y);grid.append(e);};
  for(let i=0;i<=5;i++){line('column',at(i/5,0),at(i/5,1));line('row',at(0,i/5),at(1,i/5));}
@@ -38,7 +46,7 @@ function refreshCellRings(cells,wrap,grid){grid.querySelectorAll('polygon,text')
 }
 function syncLayout(){
  const landscape=landscapeQuery.matches;
- if(previousLandscape!==landscape){const log=document.querySelector('.layoutLog');if(log&&previousLogExplanation)log.open=true;else if(log&&previousLandscape===null)log.open=!landscape;previousLandscape=landscape;}
+ previousLandscape=landscape;
  const projected=landscape||presentationView==='left';
  document.body.classList.toggle('layout-landscape',landscape);
  document.body.classList.toggle('view-left',presentationView==='left');
@@ -55,7 +63,7 @@ function syncLayout(){
  if(projected){
   // Fit both views to one shared envelope, including off-board royal bases/crowns.
   const portraitEnvelope=size=>{const pts=[];for(const yaw of [0,-28])for(const [x,y,king]of [[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5],[0,-.74,true],[0,.74,true]]){const p=fixedProject(x,y,size,yaw);pts.push([p.x-(king?40:0),p.y-(king?54:0)],[p.x+(king?40:0),p.y+(king?18:0)]);}return {x1:Math.min(...pts.map(p=>p[0])),x2:Math.max(...pts.map(p=>p[0])),y1:Math.min(...pts.map(p=>p[1])),y2:Math.max(...pts.map(p=>p[1]))};};
-  const envelope=size=>{if(!landscapeQuery.matches)return portraitEnvelope(size);const pts=[];for(const yaw of [0,-28]){const q=[[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]].map(([x,y])=>fixedProject(x,y,size,yaw));const x1=Math.min(...q.map(p=>p.x)),x2=Math.max(...q.map(p=>p.x)),y1=Math.min(...q.map(p=>p.y)),y2=Math.max(...q.map(p=>p.y));pts.push([x1-80,y1],[x2+80,y2]);}return {x1:Math.min(...pts.map(p=>p[0])),x2:Math.max(...pts.map(p=>p[0])),y1:Math.min(...pts.map(p=>p[1])),y2:Math.max(...pts.map(p=>p[1]))};};
+  const envelope=size=>{if(!landscapeQuery.matches)return portraitEnvelope(size);const pts=[];for(const yaw of [0,-28]){for(const [x,y]of [[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]]){const p=fixedProject(x,y,size,yaw);pts.push([p.x,p.y]);}for(const name of ['enemy','player']){const p=royalAnchor(name,size,yaw);pts.push([p.x-32,p.y-18],[p.x+32,p.y+18]);}}return {x1:Math.min(...pts.map(p=>p[0])),x2:Math.max(...pts.map(p=>p[0])),y1:Math.min(...pts.map(p=>p[1])),y2:Math.max(...pts.map(p=>p[1]))};};
   let lo=70,hi=800;for(let i=0;i<16;i++){const size=(lo+hi)/2,b=envelope(size);if(b.x2-b.x1<=wrap.clientWidth-8&&b.y2-b.y1<=wrap.clientHeight-8)lo=size;else hi=size;}
   const size=lo,b=envelope(size);wrap.style.setProperty('--logical-board',size+'px');wrap.style.setProperty('--plane-offset-x',(-(b.x1+b.x2)/2)+'px');wrap.style.setProperty('--plane-offset-y',(-(b.y1+b.y2)/2)+'px');
  }
@@ -74,10 +82,13 @@ landscapeQuery.addEventListener('change',queuePresentation);
 window.visualViewport?.addEventListener('resize',queuePresentation);
 function bindPresentation(){
  document.querySelectorAll('[data-scroll-hand]').forEach(b=>b.addEventListener('click',()=>{$('hand').scrollBy({left:Number(b.dataset.scrollHand)*Math.max(100,$('hand').clientWidth*.7),behavior:'instant'});}));
- const log=document.querySelector('.layoutLog');if(log)log.open=!landscapeQuery.matches;
+ const log=document.querySelector('.layoutLog');if(log){log.open=false;log.addEventListener('toggle',()=>{positionBattleLog();queueTutorialPresentation();});}
  const wrap=$('board')?.closest('.boardWrap');if(wrap&&typeof ResizeObserver!=='undefined')new ResizeObserver(queuePresentation).observe(wrap);
  syncLayout();
 }
+function startPlayPresentation(){const log=document.querySelector('.layoutLog');if(log)log.open=false;previousLogExplanation=false;tutorialExplanation=null;}
+function positionBattleLog(){const log=document.querySelector('.layoutLog');if(!log?.open)return;const panel=log.querySelector('.logPanel'),summary=log.querySelector('summary'),r=summary.getBoundingClientRect();if(!panel)return;const anchorTop=landscapeQuery.matches?r.top:log.closest('.controls').getBoundingClientRect().top,width=Math.min(360,innerWidth-16);panel.style.width=width+'px';panel.style.left=Math.max(8,Math.min(r.right-width,innerWidth-width-8))+'px';const space=Math.max(64,Math.min(190,anchorTop-16));panel.style.maxHeight=space+'px';panel.style.setProperty('--log-space',space+'px');panel.style.top=Math.max(8,anchorTop-panel.offsetHeight-6)+'px';}
+window.addEventListener('resize',positionBattleLog);window.visualViewport?.addEventListener('resize',positionBattleLog);window.addEventListener('scroll',positionBattleLog,{passive:true});
 function tutorialSelectors(selectors){return selectors.map(selector=>{
  if(selector==='.kingZone.player .manaStat'&&landscapeQuery.matches)return '.manaDock .manaStat';
  return selector;
@@ -95,7 +106,7 @@ function presentTutorial(explanation){
  if(log!==previousLogExplanation&&details)details.open=log;previousLogExplanation=log;
  queueTutorialPresentation();
 }
-function queueTutorialPresentation(){if(tutorialPresentationFrame)return;tutorialPresentationFrame=requestAnimationFrame(()=>{tutorialPresentationFrame=0;positionTutorialExplanation();refreshTutorialGeometry();});}
+function queueTutorialPresentation(){if(tutorialPresentationFrame)return;tutorialPresentationFrame=requestAnimationFrame(()=>{tutorialPresentationFrame=0;positionBattleLog();positionTutorialExplanation();refreshTutorialGeometry();});}
 function positionTutorialExplanation(){
  const coach=$('tutorialCoach');if(!coach||!document.body.classList.contains('tutorial-mode'))return;
  const step=tutorialExplanation;if(!step)return;
@@ -105,8 +116,9 @@ function positionTutorialExplanation(){
  // Scroll only the internal detail scroller, never the page or the board.
  if(infoTarget&&content?.contains(infoTarget)){const a=infoTarget.getBoundingClientRect(),b=content.getBoundingClientRect();if(a.top<b.top||a.bottom>b.bottom)content.scrollTop+=a.top-b.top-4;}
  coach.classList.toggle('tutorialBesideInfo',!!infoTarget||logTarget);
- if(landscapeQuery.matches){const host=(infoTarget||logTarget)?document.querySelector('.boardColumn'):panel,r=host.getBoundingClientRect();coach.style.left=Math.max(4,r.left+6)+'px';coach.style.width=Math.max(195,Math.min(infoTarget||logTarget?350:r.width-12,r.width-12))+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';coach.style.top=Math.max(4,r.bottom-coach.offsetHeight-6)+'px';}
- else{for(const k of ['left','top','width','max-height','bottom','right'])coach.style.removeProperty(k);}
+ if(landscapeQuery.matches){const host=(infoTarget||logTarget)?document.querySelector('.boardColumn'):panel,r=host.getBoundingClientRect();coach.style.left=Math.max(4,r.left+6)+'px';coach.style.width=Math.max(logTarget?160:195,Math.min(infoTarget||logTarget?350:r.width-12,logTarget?Math.max(160,document.querySelector('.logPanel').getBoundingClientRect().left-r.left-18):r.width-12))+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';coach.style.top=Math.max(4,r.bottom-coach.offsetHeight-6)+'px';}
+ else if(logTarget){coach.style.transform='none';const r=document.querySelector('.logPanel').getBoundingClientRect();coach.style.width=Math.min(350,innerWidth-16)+'px';coach.style.left='8px';coach.style.right='auto';coach.style.bottom='auto';coach.style.maxHeight=Math.max(64,r.top-16)+'px';coach.style.overflowY='auto';coach.style.top=Math.max(8,r.top-coach.offsetHeight-8)+'px';}
+ else{for(const k of ['left','top','width','max-height','bottom','right','overflow-y','transform'])coach.style.removeProperty(k);}
 }
 window.addEventListener('resize',queueTutorialPresentation);window.visualViewport?.addEventListener('resize',queueTutorialPresentation);window.addEventListener('scroll',queueTutorialPresentation,{passive:true});
 function pieceNameParts(name){
@@ -126,8 +138,8 @@ function positionRoyalPedestals(){
  if(document.body.classList.contains('projected-board')){
   for(const [id,kind]of [['enemyPedestal','enemy'],['playerPedestal','player']]){
    const el=$(id),anchor=wrap.querySelector('.royalFoot.'+kind);if(!el||!anchor)continue;
-   const point=screenPoint(anchor,wrap),width=Math.max(64,Math.min(landscapeQuery.matches?72:120,parseFloat(wrap.style.getPropertyValue('--logical-board'))*.30));
-   el.style.left=point.x+'px';el.style.top=point.y+'px';el.style.width=width+'px';el.style.height='32px';el.style.zIndex=String(100+Math.round(point.y));
+   const point=screenPoint(anchor,wrap),width=landscapeQuery.matches?64:Math.max(64,Math.min(120,parseFloat(wrap.style.getPropertyValue('--logical-board'))*.30));
+   el.style.left=point.x+'px';el.style.top=point.y+'px';el.style.width=width+'px';el.style.height=(landscapeQuery.matches?36:32)+'px';el.style.zIndex=String(100+Math.round(point.y));
   }return;
  }
  const wr=wrap.getBoundingClientRect();
@@ -328,5 +340,5 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;},renderPieces,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;},renderPieces,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();
