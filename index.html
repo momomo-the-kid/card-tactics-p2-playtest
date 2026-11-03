@@ -884,12 +884,14 @@ body.tutorial-mode #settingsButton{opacity:1}
 body.tutorial-mode #settingsOverlay .settingsGroup:not(:has([data-setting="view"])){display:none}
 
 /* Screen-facing public combat information; no hit targets or board geometry. */
-.overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:40px;--hud-top:-38px;--hud-foot:19px;transform:translate(-50%,-50%);pointer-events:none}
+.overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-top:-38px;--hud-foot:19px;transform:translate(-50%,-50%);pointer-events:none}
 .overlayPiece.combatHUD.cpu{--hud-owner:#ff666c}
 .overlayPiece.combatHUD .overlayNameLayer{top:calc(50% + var(--hud-top) - 14px);width:var(--hud-w);max-width:var(--hud-w);height:13px;min-height:0;padding:0 2px;display:block;overflow:hidden;text-overflow:ellipsis;background:#111821e8;border-radius:3px;color:white!important;-webkit-text-fill-color:white!important;-webkit-text-stroke:0!important;text-shadow:none!important;font:600 11px/13px system-ui;white-space:nowrap}
-.creatureHealth{position:absolute;left:50%;top:calc(50% + var(--hud-top));transform:translateX(-50%);width:var(--hud-hp);height:20px;z-index:9;display:flex;flex-direction:column;align-items:stretch;color:#fff;background:#0a1019f5;border:1px solid var(--hud-owner);border-radius:4px;box-sizing:border-box;overflow:hidden}
-.hpNumber{display:block;text-align:center;color:#fff;font:700 13px/14px system-ui;font-variant-numeric:tabular-nums;white-space:nowrap}
-.hpTrack{display:block;height:4px;flex:none;background:#171e29;overflow:hidden;width:100%}
+.creatureHealth{position:absolute;left:50%;top:calc(50% + var(--hud-top));transform:translateX(-50%);width:var(--hud-hp);height:20px;z-index:9;display:flex;flex-direction:row;align-items:center;gap:0;color:#fff;background:transparent;border:0 solid var(--hud-owner);border-radius:0;box-sizing:border-box;overflow:visible}
+/* Fixed digit slot and connected track: only the inner fill changes with HP. */
+.hpNumber{display:flex;align-items:center;justify-content:center;flex:0 0 22px;height:20px;box-sizing:border-box;border:1px solid var(--hud-owner);border-radius:3px 0 0 3px;background:#0a1019f5;color:#fff;font:700 13px/18px system-ui;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:center;gap:0}
+.hpNumber b{margin:0;font:inherit}
+.hpTrack{display:block;height:10px;flex:1 1 0;min-width:0;width:auto;box-sizing:border-box;border:1px solid #718096;border-left:0;border-radius:0 2px 2px 0;background:#171e29;overflow:hidden}
 .hpFill{display:block;height:100%;background:var(--hud-owner)}
 .overlayPiece.combatHUD .overlayStatsLayer.combatFeet{position:absolute;left:50%;top:calc(50% + var(--hud-foot));transform:translateX(-50%);width:var(--hud-w);min-width:0;max-width:none;height:20px;padding:0;display:flex;align-items:center;justify-content:space-between;gap:5px;background:none;border:0;box-shadow:none;border-radius:0;font:700 12px/1 system-ui;z-index:10}
 .creatureATK{display:flex;align-items:center;justify-content:center;gap:1px;min-width:25px;height:20px;padding:0 2px;background:#19170ef5;border:1px solid #d7b566;border-radius:4px;color:#ffe8a0;box-sizing:border-box}
@@ -905,11 +907,11 @@ body.tutorial-mode #settingsOverlay .settingsGroup:not(:has([data-setting="view"
 .spentSlash{display:none;position:absolute;left:1px;top:8px;width:17px;height:2px;background:#d5d8dc;transform:rotate(-45deg);box-shadow:0 1px #141820}
 .spent .spentSlash{display:block}
 .actionCount{position:absolute;right:-3px;bottom:-3px;min-width:10px;font:700 9px/11px system-ui;background:#101722;color:#fff;border-radius:3px;text-align:center}
-.overlayPiece.compactHUD{--hud-w:48px;--hud-hp:24px;--hud-top:-15px;--hud-foot:10px}
+.overlayPiece.compactHUD{--hud-w:48px;--hud-hp:38px;--hud-top:-15px;--hud-foot:10px}
 .overlayPiece.combatHUD.compactHUD .overlayNameLayer{top:calc(50% - 25px);height:9px;font-size:9px;line-height:9px;max-width:38px}
-.compactHUD .creatureHealth{height:14px;border-radius:3px}
-.compactHUD .hpNumber{font-size:10px;line-height:10px}
-.compactHUD .hpTrack{height:2px}
+.compactHUD .creatureHealth{height:14px}
+.compactHUD .hpNumber{flex-basis:16px;height:14px;font-size:10px;line-height:12px}
+.compactHUD .hpTrack{height:8px}
 .overlayPiece.combatHUD.compactHUD .combatFeet{height:14px;gap:2px}
 .compactHUD .creatureATK{min-width:17px;height:14px;padding:0 1px;font-size:10px;gap:0}
 .compactHUD .creatureATK svg{width:9px;height:11px}
@@ -918,13 +920,14 @@ body.tutorial-mode #settingsOverlay .settingsGroup:not(:has([data-setting="view"
 .compactHUD .actionBadge svg{width:12px;height:12px}
 .compactHUD .spentSlash{top:5px;width:11px;height:1px}
 .compactHUD .actionCount{font-size:8px;line-height:9px;min-width:8px;right:-2px;bottom:-3px}
-.royalHP{--hud-owner:#439aff;border-color:var(--hud-owner);display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;background:#0a1019f5}
+.royalHP{--hud-owner:#439aff;border:0;display:flex;flex-direction:row;align-items:center;gap:0;overflow:visible;box-sizing:border-box;background:transparent;border-radius:0}
 .royalHP.enemy{--hud-owner:#ff666c}
-.royalHP .kingStat.hpNumber{flex:1;width:100%;font-size:13px!important;line-height:18px}
-.royalHP .hpTrack{height:3px}
-body:not(.layout-landscape) .royalHP{border:1px solid var(--hud-owner);background:#0a1019f5}
-body:not(.layout-landscape) .royalHP .kingStat.hpNumber{font-size:10px!important;line-height:12px}
-body:not(.layout-landscape) .royalHP .hpTrack{height:2px}
+.royalHP .kingStat.hpNumber{flex:0 0 18px;width:18px;height:20px;padding:0!important;font-size:12px!important;line-height:18px;gap:0}
+.royalHP .hpTrack{height:10px}
+/* 32px fits the existing right half of the 64px portrait pedestal. */
+body:not(.layout-landscape) .royalHP{width:32px;border:0;background:transparent}
+body:not(.layout-landscape) .royalHP .kingStat.hpNumber{flex-basis:16px;width:16px;height:16px;font-size:10px!important;line-height:14px}
+body:not(.layout-landscape) .royalHP .hpTrack{height:8px}
 body.creature-names-off .overlayPiece.combatHUD .overlayNameLayer{display:none}
 </style><style>dialog.surrenderConfirm{max-width:min(90vw,420px);border:2px solid #bfa76a;border-radius:14px;padding:24px;background:#182432;color:#fff;box-shadow:0 12px 50px #0009}dialog.surrenderConfirm::backdrop{background:#0009}.surrenderActions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}#surrenderClose{position:absolute;right:8px;top:6px;background:transparent}#surrenderContinue:focus-visible,#surrenderConfirm:focus-visible{outline:3px solid #ffe095;outline-offset:3px}#surrenderGame[hidden]{display:none!important}</style><style>.resultActions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}.resultActions button[hidden]{display:none!important}</style>
 <meta name="apple-mobile-web-app-capable" content="yes">
