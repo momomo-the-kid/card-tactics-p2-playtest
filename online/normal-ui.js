@@ -235,6 +235,36 @@ function bindCreatureAsset(img,pieceEl,type){
   }
   img.remove();
 }
+// These records describe public state; legal options still come exclusively from Core.
+function creatureDisplay({piece,definition,power,pattern,rights,limit,used=piece.attacksUsed??(piece.a?limit:0)}){
+ const patterns={move:pattern(piece,'move'),attack:pattern(piece,'attack')};
+ const remaining=Math.max(0,limit-used);
+ const reason=(piece.actionRestrictions||[]).some(e=>e.kind==='move-attack-prohibited')?'行動制約（移動・攻撃禁止）':'現在の行動制約';
+ const action=kind=>{
+  const range=patterns[kind];
+  if(!range.length)return {kind,state:'none',label:kind==='attack'?'通常攻撃なし':'移動範囲なし'};
+  if(kind==='attack'&&limit<=0)return {kind,state:'blocked',label:'攻撃権なし'};
+  if(kind==='move'?piece.m:remaining===0)return {kind,state:'spent',label:(kind==='move'?'移動':'攻撃')+' 済'};
+  if(!rights[kind])return {kind,state:'blocked',label:(kind==='move'?'移動':'攻撃')+' 不可：'+reason};
+  return {kind,state:'ready',label:kind==='move'?'移動 可':limit>1?'攻撃 残り'+remaining+'回':'攻撃 可'};
+ };
+ return {hp:piece.hp,maxHp:definition.hp,atk:power,patterns,move:action('move'),attack:{...action('attack'),remaining,limit}};
+}
+const ACTION_SVG={
+ move:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8v8l5 3 2 1v5H3v-6l3-3Z"/><path class="iconCut" d="M4 16h6m-1-9h4m-4 3h4"/></svg>',
+ attack:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 2 2 2-12 13-3-3Z"/><path class="iconCut" d="m4 12 8 8M3 21l5-5"/></svg>'
+};
+function actionBadge(action){return `<span class="actionBadge ${action.kind} ${action.state}" data-action-state="${action.state}" aria-label="${escape(action.label)}" title="${escape(action.label)}">${ACTION_SVG[action.kind]}<i class="spentSlash"></i>${action.kind==='attack'&&action.limit>1&&action.state!=='none'?`<b class="actionCount">${action.remaining}</b>`:''}</span>`;}
+function healthHTML(hp){return `<span class="hpNumber">${escape(hp)}</span><span class="hpTrack"><span class="hpFill"></span></span>`;}
+function updateRoyalHealth(){
+ for(const kind of ['player','enemy']){const hud=document.querySelector('.royalHP.'+kind),stat=hud?.querySelector('.kingStat'),value=stat?.querySelector('b');if(!value)continue;
+  // Preserve the original live HP node/update path and the existing king HP ceiling (20).
+  for(const node of [...stat.childNodes])if(node!==value)node.remove();
+  const hp=Number(value.textContent);stat.classList.add('hpNumber');
+  let track=hud.querySelector('.hpTrack');if(!track){track=document.createElement('span');track.className='hpTrack';track.innerHTML='<span class="hpFill"></span>';hud.append(track);}
+  track.firstChild.style.width=Math.max(0,Math.min(100,hp/20*100))+'%';hud.dataset.hp=hp;hud.dataset.maxHp=20;hud.setAttribute('aria-label',(kind==='player'?'自分':'相手')+'の王 HP '+hp+' / 20');
+ }
+}
 function renderPieces(model){
  current=model;syncLayout();
  const overlay=$("pieceOverlay"), board=$("board");
@@ -242,7 +272,7 @@ function renderPieces(model){
  overlay.innerHTML="";
  prepareCells(board.querySelectorAll(".cell"));
  projectCells(board.querySelectorAll(".cell"),board.closest(".boardWrap"));
- positionRoyalPedestals();
+ positionRoyalPedestals();updateRoyalHealth();
  const wrapRect=overlay.getBoundingClientRect();
  const cells=board.querySelectorAll(".cell");
  cells.forEach((cell,k)=>{
@@ -259,10 +289,12 @@ function renderPieces(model){
   let width=Math.max(44,r.width*.92),height=Math.max(44,r.height*.98);
   if(projected){const a=screenPoint(cell.querySelector('[data-plane-point="left"]'),overlay),b=screenPoint(cell.querySelector('[data-plane-point="right"]'),overlay);width=Math.max(34,Math.min(82,Math.hypot(b.x-a.x,b.y-a.y)*.86));height=width;v.style.zIndex=String(100+Math.round(y));v.dataset.footX=x;v.dataset.footY=y;}
   v.style.setProperty('--piece-w',width+'px');v.style.setProperty('--piece-h',height+'px');
-  const [lead,rest]=pieceNameParts(p.type);
-  const esc=t=>String(t).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
-   if(enchantVisual)v.style.setProperty("--creature-aura",enchantVisual.colors[0]||"#b985ff");
-  v.innerHTML=`${model.rights(p).attack?'<span class="overlayDot attack"></span>':''}${model.rights(p).move?'<span class="overlayDot move"></span>':''}<div class="overlayNameLayer"><span class="overlayNameLead">${esc(lead)}</span><span class="overlayNameRest">${esc(rest)}</span></div>${enchantVisual?`<div class="creatureEnchantVisual"></div>`:""}<div class="overlayOrb"></div><img class="overlayCreatureAsset" alt="" aria-hidden="true"><div class="overlayStatsLayer"><span class="statIcon">❤️</span>${p.hp}<span class="statGap"></span><span class="statIcon">⚔️</span>${model.power(index,p)}</div>`;
+  const display=model.describe(p,index);
+  v.classList.add('combatHUD');if(r.height<52)v.classList.add('compactHUD');
+  v.dataset.hp=display.hp;v.dataset.maxHp=display.maxHp;v.dataset.atk=display.atk;
+  if(enchantVisual)v.style.setProperty("--creature-aura",enchantVisual.colors[0]||"#b985ff");
+  v.innerHTML=`<div class="overlayNameLayer" title="${escape(p.type)}">${escape(p.type)}</div>${enchantVisual?'<div class="creatureEnchantVisual"></div>':''}<div class="overlayOrb"></div><img class="overlayCreatureAsset" alt="" aria-hidden="true"><div class="creatureHealth" aria-label="HP ${display.hp} / ${display.maxHp}">${healthHTML(display.hp,display.maxHp)}</div><div class="overlayStatsLayer combatFeet"><span class="creatureATK" aria-label="攻撃力 ${display.atk}">${ACTION_SVG.attack}<b>${escape(display.atk)}</b></span><span class="actionBadges">${actionBadge(display.move)}${actionBadge(display.attack)}</span></div>`;
+  v.querySelector('.hpFill').style.width=(display.maxHp>0?Math.max(0,Math.min(100,display.hp/display.maxHp*100)):0)+'%';
   if(projected&&cell.classList.contains('cellEnchanted')){const badge=document.createElement('span');badge.className='planeCellStatus';badge.textContent=cell.classList.contains('ownMine')?'✹':'🔮';v.append(badge);}
   overlay.appendChild(v);
   const ring=v.querySelector('.creatureEnchantVisual');
@@ -388,13 +420,13 @@ function bindHandScroll(){
 const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const infoLine=x=>`<div class="infoLine">${escape(x)}</div>`;
  function attackStatus(piece,limit){const remaining=Math.max(0,limit-(piece.attacksUsed??(piece.a?limit:0)));return limit>1?(remaining?`攻撃 残${remaining}`:'攻撃 済'):(remaining?'攻撃 可':'攻撃 済');}
- function creatureInfoHTML({piece:p,viewer,definition:d,power:current,limit,range,abilityHTML='',description='',berserkDescription='基本攻撃力2倍、移動・攻撃は前方1マスのみ。',cellEffects=[]}){
-  return `<div class="infoName creatureInfoName">${escape(p.type)}</div><div class="creatureBasics">`+infoLine(`${p.side===viewer?'自軍':'敵軍'} / コスト ${d.cost}`)+infoLine(`HP ${p.hp} / ${d.hp}　ATK ${current.total}（基本 ${current.base}${current.dancer?` / 踊り子 +${current.dancer}`:''}${current.pack?` / 味方 +${current.pack}`:''}）`)+infoLine(`🔵 移動 ${p.m?'済':'可'} / 🔴 ${attackStatus(p,limit)}`)+range+'</div>'+abilityHTML+(d.abilities?.length?`<div class="infoEffect">${escape(description)}</div>`:'')+(p.berserk>0?`<div class="infoEffect">バーサーク：残り${p.berserk}ターン<br>${escape(berserkDescription)}</div>`:'')+(current.battle?`<div class="infoEffect">決戦：${current.battleTurns.map(t=>t+'T').join('・')} / ATK +${current.battle}</div>`:'')+cellEffects.map(e=>`<div class="infoEffect">このマス：${escape(e.cardId)} 残り${e.remainingTurns}ターン<br>${escape(e.description||'')}</div>`).join('');
+ function creatureInfoHTML({piece:p,viewer,definition:d,power:current,display,range,abilityHTML='',description='',berserkDescription='基本攻撃力2倍、移動・攻撃は前方1マスのみ。',cellEffects=[]}){
+  return `<div class="infoName creatureInfoName">${escape(p.type)}</div><div class="creatureBasics">`+infoLine(`${p.side===viewer?'自軍':'敵軍'} / コスト ${d.cost}`)+infoLine(`HP ${p.hp} / ${d.hp}　ATK ${current.total}（基本 ${current.base}${current.dancer?` / 踊り子 +${current.dancer}`:''}${current.pack?` / 味方 +${current.pack}`:''}）`)+infoLine(`${display.move.label} / ${display.attack.label}`)+range+'</div>'+abilityHTML+(d.abilities?.length?`<div class="infoEffect">${escape(description)}</div>`:'')+(p.berserk>0?`<div class="infoEffect">バーサーク：残り${p.berserk}ターン<br>${escape(berserkDescription)}</div>`:'')+(current.battle?`<div class="infoEffect">決戦：${current.battleTurns.map(t=>t+'T').join('・')} / ATK +${current.battle}</div>`:'')+cellEffects.map(e=>`<div class="infoEffect">このマス：${escape(e.cardId)} 残り${e.remainingTurns}ターン<br>${escape(e.description||'')}</div>`).join('');
  }
  function graveyardHTML(cards,label){const counts=new Map();for(const c of cards)counts.set(c.cardId,(counts.get(c.cardId)||0)+1);return `<div class="infoName">${escape(label)}の墓地 🪦${cards.length}</div>`+(cards.length?[...counts].map(([id,n])=>infoLine(`${id} ×${n}`)).join(''):infoLine('墓地は空です。'))+infoLine('カードは元の持ち主の墓地に入ります。');}
  function globalEffectsHTML(cards){return `<div class="infoName">全体エンチャント 🔮${cards.length}</div>`+(cards.length?cards.map(c=>`<button type="button" class="globalEnchantButton" data-effect-detail="${escape(c.instanceId)}">《${escape(c.cardId)}》${c.remainingTurns!=null?`　残り${c.remainingTurns}ターン`:''}</button>`).join(''):infoLine('効果中の全体エンチャントはありません。'));}
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;},renderPieces,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();

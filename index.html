@@ -882,6 +882,50 @@ body.layout-landscape .royalGrave{position:absolute;width:34px;height:32px;z-ind
 body.layout-landscape .royalGrave .graveButton{box-sizing:border-box;width:34px;height:32px;padding:4px 1px;font-size:12px;min-width:34px;touch-action:manipulation}
 body.tutorial-mode #settingsButton{opacity:1}
 body.tutorial-mode #settingsOverlay .settingsGroup:not(:has([data-setting="view"])){display:none}
+
+/* Screen-facing public combat information; no hit targets or board geometry. */
+.overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:40px;--hud-top:-38px;--hud-foot:19px;transform:translate(-50%,-50%);pointer-events:none}
+.overlayPiece.combatHUD.cpu{--hud-owner:#ff666c}
+.overlayPiece.combatHUD .overlayNameLayer{top:calc(50% + var(--hud-top) - 14px);width:var(--hud-w);max-width:var(--hud-w);height:13px;min-height:0;padding:0 2px;display:block;overflow:hidden;text-overflow:ellipsis;background:#111821e8;border-radius:3px;color:white!important;-webkit-text-fill-color:white!important;-webkit-text-stroke:0!important;text-shadow:none!important;font:600 11px/13px system-ui;white-space:nowrap}
+.creatureHealth{position:absolute;left:50%;top:calc(50% + var(--hud-top));transform:translateX(-50%);width:var(--hud-hp);height:20px;z-index:9;display:flex;flex-direction:column;align-items:stretch;color:#fff;background:#0a1019f5;border:1px solid var(--hud-owner);border-radius:4px;box-sizing:border-box;overflow:hidden}
+.hpNumber{display:block;text-align:center;color:#fff;font:700 13px/14px system-ui;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hpTrack{display:block;height:4px;flex:none;background:#171e29;overflow:hidden;width:100%}
+.hpFill{display:block;height:100%;background:var(--hud-owner)}
+.overlayPiece.combatHUD .overlayStatsLayer.combatFeet{position:absolute;left:50%;top:calc(50% + var(--hud-foot));transform:translateX(-50%);width:var(--hud-w);min-width:0;max-width:none;height:20px;padding:0;display:flex;align-items:center;justify-content:space-between;gap:5px;background:none;border:0;box-shadow:none;border-radius:0;font:700 12px/1 system-ui;z-index:10}
+.creatureATK{display:flex;align-items:center;justify-content:center;gap:1px;min-width:25px;height:20px;padding:0 2px;background:#19170ef5;border:1px solid #d7b566;border-radius:4px;color:#ffe8a0;box-sizing:border-box}
+.creatureATK svg,.actionBadge svg{width:16px;height:16px;fill:currentColor;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.iconCut{fill:none;stroke:#101722;stroke-width:2}
+.actionBadges{display:flex;gap:3px;align-items:center;height:20px}
+.actionBadge{position:relative;display:flex;align-items:center;justify-content:center;width:20px;height:20px;box-sizing:border-box;border:1px solid #c5d6e5;border-radius:4px;background:#182637fa;color:#effaff}
+.actionBadge.move.ready{color:#9ed5ff;border-color:#84caff}
+.actionBadge.attack.ready{color:#ffb6ba;border-color:#ff979e}
+.actionBadge.spent{color:#999fa8;border-color:#727984;background:#20242bfa}
+.actionBadge.blocked{color:#b3a58c;border:1px dashed #b3a58c;background:#232019fa}
+.actionBadge.none{visibility:hidden}
+.spentSlash{display:none;position:absolute;left:1px;top:8px;width:17px;height:2px;background:#d5d8dc;transform:rotate(-45deg);box-shadow:0 1px #141820}
+.spent .spentSlash{display:block}
+.actionCount{position:absolute;right:-3px;bottom:-3px;min-width:10px;font:700 9px/11px system-ui;background:#101722;color:#fff;border-radius:3px;text-align:center}
+.overlayPiece.compactHUD{--hud-w:48px;--hud-hp:24px;--hud-top:-15px;--hud-foot:10px}
+.overlayPiece.combatHUD.compactHUD .overlayNameLayer{top:calc(50% - 25px);height:9px;font-size:9px;line-height:9px;max-width:38px}
+.compactHUD .creatureHealth{height:14px;border-radius:3px}
+.compactHUD .hpNumber{font-size:10px;line-height:10px}
+.compactHUD .hpTrack{height:2px}
+.overlayPiece.combatHUD.compactHUD .combatFeet{height:14px;gap:2px}
+.compactHUD .creatureATK{min-width:17px;height:14px;padding:0 1px;font-size:10px;gap:0}
+.compactHUD .creatureATK svg{width:9px;height:11px}
+.compactHUD .actionBadges{height:14px;gap:2px}
+.compactHUD .actionBadge{width:14px;height:14px;border-radius:3px}
+.compactHUD .actionBadge svg{width:12px;height:12px}
+.compactHUD .spentSlash{top:5px;width:11px;height:1px}
+.compactHUD .actionCount{font-size:8px;line-height:9px;min-width:8px;right:-2px;bottom:-3px}
+.royalHP{--hud-owner:#439aff;border-color:var(--hud-owner);display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;background:#0a1019f5}
+.royalHP.enemy{--hud-owner:#ff666c}
+.royalHP .kingStat.hpNumber{flex:1;width:100%;font-size:13px!important;line-height:18px}
+.royalHP .hpTrack{height:3px}
+body:not(.layout-landscape) .royalHP{border:1px solid var(--hud-owner);background:#0a1019f5}
+body:not(.layout-landscape) .royalHP .kingStat.hpNumber{font-size:10px!important;line-height:12px}
+body:not(.layout-landscape) .royalHP .hpTrack{height:2px}
+body.creature-names-off .overlayPiece.combatHUD .overlayNameLayer{display:none}
 </style><style>dialog.surrenderConfirm{max-width:min(90vw,420px);border:2px solid #bfa76a;border-radius:14px;padding:24px;background:#182432;color:#fff;box-shadow:0 12px 50px #0009}dialog.surrenderConfirm::backdrop{background:#0009}.surrenderActions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}#surrenderClose{position:absolute;right:8px;top:6px;background:transparent}#surrenderContinue:focus-visible,#surrenderConfirm:focus-visible{outline:3px solid #ffe095;outline-offset:3px}#surrenderGame[hidden]{display:none!important}</style><style>.resultActions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}.resultActions button[hidden]{display:none!important}</style>
 </head><body>
 <div id="titleScreen">
@@ -1216,6 +1260,36 @@ function bindCreatureAsset(img,pieceEl,type){
   }
   img.remove();
 }
+// These records describe public state; legal options still come exclusively from Core.
+function creatureDisplay({piece,definition,power,pattern,rights,limit,used=piece.attacksUsed??(piece.a?limit:0)}){
+ const patterns={move:pattern(piece,'move'),attack:pattern(piece,'attack')};
+ const remaining=Math.max(0,limit-used);
+ const reason=(piece.actionRestrictions||[]).some(e=>e.kind==='move-attack-prohibited')?'行動制約（移動・攻撃禁止）':'現在の行動制約';
+ const action=kind=>{
+  const range=patterns[kind];
+  if(!range.length)return {kind,state:'none',label:kind==='attack'?'通常攻撃なし':'移動範囲なし'};
+  if(kind==='attack'&&limit<=0)return {kind,state:'blocked',label:'攻撃権なし'};
+  if(kind==='move'?piece.m:remaining===0)return {kind,state:'spent',label:(kind==='move'?'移動':'攻撃')+' 済'};
+  if(!rights[kind])return {kind,state:'blocked',label:(kind==='move'?'移動':'攻撃')+' 不可：'+reason};
+  return {kind,state:'ready',label:kind==='move'?'移動 可':limit>1?'攻撃 残り'+remaining+'回':'攻撃 可'};
+ };
+ return {hp:piece.hp,maxHp:definition.hp,atk:power,patterns,move:action('move'),attack:{...action('attack'),remaining,limit}};
+}
+const ACTION_SVG={
+ move:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8v8l5 3 2 1v5H3v-6l3-3Z"/><path class="iconCut" d="M4 16h6m-1-9h4m-4 3h4"/></svg>',
+ attack:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m20 2 2 2-12 13-3-3Z"/><path class="iconCut" d="m4 12 8 8M3 21l5-5"/></svg>'
+};
+function actionBadge(action){return `<span class="actionBadge ${action.kind} ${action.state}" data-action-state="${action.state}" aria-label="${escape(action.label)}" title="${escape(action.label)}">${ACTION_SVG[action.kind]}<i class="spentSlash"></i>${action.kind==='attack'&&action.limit>1&&action.state!=='none'?`<b class="actionCount">${action.remaining}</b>`:''}</span>`;}
+function healthHTML(hp){return `<span class="hpNumber">${escape(hp)}</span><span class="hpTrack"><span class="hpFill"></span></span>`;}
+function updateRoyalHealth(){
+ for(const kind of ['player','enemy']){const hud=document.querySelector('.royalHP.'+kind),stat=hud?.querySelector('.kingStat'),value=stat?.querySelector('b');if(!value)continue;
+  // Preserve the original live HP node/update path and the existing king HP ceiling (20).
+  for(const node of [...stat.childNodes])if(node!==value)node.remove();
+  const hp=Number(value.textContent);stat.classList.add('hpNumber');
+  let track=hud.querySelector('.hpTrack');if(!track){track=document.createElement('span');track.className='hpTrack';track.innerHTML='<span class="hpFill"></span>';hud.append(track);}
+  track.firstChild.style.width=Math.max(0,Math.min(100,hp/20*100))+'%';hud.dataset.hp=hp;hud.dataset.maxHp=20;hud.setAttribute('aria-label',(kind==='player'?'自分':'相手')+'の王 HP '+hp+' / 20');
+ }
+}
 function renderPieces(model){
  current=model;syncLayout();
  const overlay=$("pieceOverlay"), board=$("board");
@@ -1223,7 +1297,7 @@ function renderPieces(model){
  overlay.innerHTML="";
  prepareCells(board.querySelectorAll(".cell"));
  projectCells(board.querySelectorAll(".cell"),board.closest(".boardWrap"));
- positionRoyalPedestals();
+ positionRoyalPedestals();updateRoyalHealth();
  const wrapRect=overlay.getBoundingClientRect();
  const cells=board.querySelectorAll(".cell");
  cells.forEach((cell,k)=>{
@@ -1240,10 +1314,12 @@ function renderPieces(model){
   let width=Math.max(44,r.width*.92),height=Math.max(44,r.height*.98);
   if(projected){const a=screenPoint(cell.querySelector('[data-plane-point="left"]'),overlay),b=screenPoint(cell.querySelector('[data-plane-point="right"]'),overlay);width=Math.max(34,Math.min(82,Math.hypot(b.x-a.x,b.y-a.y)*.86));height=width;v.style.zIndex=String(100+Math.round(y));v.dataset.footX=x;v.dataset.footY=y;}
   v.style.setProperty('--piece-w',width+'px');v.style.setProperty('--piece-h',height+'px');
-  const [lead,rest]=pieceNameParts(p.type);
-  const esc=t=>String(t).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
-   if(enchantVisual)v.style.setProperty("--creature-aura",enchantVisual.colors[0]||"#b985ff");
-  v.innerHTML=`${model.rights(p).attack?'<span class="overlayDot attack"></span>':''}${model.rights(p).move?'<span class="overlayDot move"></span>':''}<div class="overlayNameLayer"><span class="overlayNameLead">${esc(lead)}</span><span class="overlayNameRest">${esc(rest)}</span></div>${enchantVisual?`<div class="creatureEnchantVisual"></div>`:""}<div class="overlayOrb"></div><img class="overlayCreatureAsset" alt="" aria-hidden="true"><div class="overlayStatsLayer"><span class="statIcon">❤️</span>${p.hp}<span class="statGap"></span><span class="statIcon">⚔️</span>${model.power(index,p)}</div>`;
+  const display=model.describe(p,index);
+  v.classList.add('combatHUD');if(r.height<52)v.classList.add('compactHUD');
+  v.dataset.hp=display.hp;v.dataset.maxHp=display.maxHp;v.dataset.atk=display.atk;
+  if(enchantVisual)v.style.setProperty("--creature-aura",enchantVisual.colors[0]||"#b985ff");
+  v.innerHTML=`<div class="overlayNameLayer" title="${escape(p.type)}">${escape(p.type)}</div>${enchantVisual?'<div class="creatureEnchantVisual"></div>':''}<div class="overlayOrb"></div><img class="overlayCreatureAsset" alt="" aria-hidden="true"><div class="creatureHealth" aria-label="HP ${display.hp} / ${display.maxHp}">${healthHTML(display.hp,display.maxHp)}</div><div class="overlayStatsLayer combatFeet"><span class="creatureATK" aria-label="攻撃力 ${display.atk}">${ACTION_SVG.attack}<b>${escape(display.atk)}</b></span><span class="actionBadges">${actionBadge(display.move)}${actionBadge(display.attack)}</span></div>`;
+  v.querySelector('.hpFill').style.width=(display.maxHp>0?Math.max(0,Math.min(100,display.hp/display.maxHp*100)):0)+'%';
   if(projected&&cell.classList.contains('cellEnchanted')){const badge=document.createElement('span');badge.className='planeCellStatus';badge.textContent=cell.classList.contains('ownMine')?'✹':'🔮';v.append(badge);}
   overlay.appendChild(v);
   const ring=v.querySelector('.creatureEnchantVisual');
@@ -1369,15 +1445,15 @@ function bindHandScroll(){
 const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const infoLine=x=>`<div class="infoLine">${escape(x)}</div>`;
  function attackStatus(piece,limit){const remaining=Math.max(0,limit-(piece.attacksUsed??(piece.a?limit:0)));return limit>1?(remaining?`攻撃 残${remaining}`:'攻撃 済'):(remaining?'攻撃 可':'攻撃 済');}
- function creatureInfoHTML({piece:p,viewer,definition:d,power:current,limit,range,abilityHTML='',description='',berserkDescription='基本攻撃力2倍、移動・攻撃は前方1マスのみ。',cellEffects=[]}){
-  return `<div class="infoName creatureInfoName">${escape(p.type)}</div><div class="creatureBasics">`+infoLine(`${p.side===viewer?'自軍':'敵軍'} / コスト ${d.cost}`)+infoLine(`HP ${p.hp} / ${d.hp}　ATK ${current.total}（基本 ${current.base}${current.dancer?` / 踊り子 +${current.dancer}`:''}${current.pack?` / 味方 +${current.pack}`:''}）`)+infoLine(`🔵 移動 ${p.m?'済':'可'} / 🔴 ${attackStatus(p,limit)}`)+range+'</div>'+abilityHTML+(d.abilities?.length?`<div class="infoEffect">${escape(description)}</div>`:'')+(p.berserk>0?`<div class="infoEffect">バーサーク：残り${p.berserk}ターン<br>${escape(berserkDescription)}</div>`:'')+(current.battle?`<div class="infoEffect">決戦：${current.battleTurns.map(t=>t+'T').join('・')} / ATK +${current.battle}</div>`:'')+cellEffects.map(e=>`<div class="infoEffect">このマス：${escape(e.cardId)} 残り${e.remainingTurns}ターン<br>${escape(e.description||'')}</div>`).join('');
+ function creatureInfoHTML({piece:p,viewer,definition:d,power:current,display,range,abilityHTML='',description='',berserkDescription='基本攻撃力2倍、移動・攻撃は前方1マスのみ。',cellEffects=[]}){
+  return `<div class="infoName creatureInfoName">${escape(p.type)}</div><div class="creatureBasics">`+infoLine(`${p.side===viewer?'自軍':'敵軍'} / コスト ${d.cost}`)+infoLine(`HP ${p.hp} / ${d.hp}　ATK ${current.total}（基本 ${current.base}${current.dancer?` / 踊り子 +${current.dancer}`:''}${current.pack?` / 味方 +${current.pack}`:''}）`)+infoLine(`${display.move.label} / ${display.attack.label}`)+range+'</div>'+abilityHTML+(d.abilities?.length?`<div class="infoEffect">${escape(description)}</div>`:'')+(p.berserk>0?`<div class="infoEffect">バーサーク：残り${p.berserk}ターン<br>${escape(berserkDescription)}</div>`:'')+(current.battle?`<div class="infoEffect">決戦：${current.battleTurns.map(t=>t+'T').join('・')} / ATK +${current.battle}</div>`:'')+cellEffects.map(e=>`<div class="infoEffect">このマス：${escape(e.cardId)} 残り${e.remainingTurns}ターン<br>${escape(e.description||'')}</div>`).join('');
  }
  function graveyardHTML(cards,label){const counts=new Map();for(const c of cards)counts.set(c.cardId,(counts.get(c.cardId)||0)+1);return `<div class="infoName">${escape(label)}の墓地 🪦${cards.length}</div>`+(cards.length?[...counts].map(([id,n])=>infoLine(`${id} ×${n}`)).join(''):infoLine('墓地は空です。'))+infoLine('カードは元の持ち主の墓地に入ります。');}
  function globalEffectsHTML(cards){return `<div class="infoName">全体エンチャント 🔮${cards.length}</div>`+(cards.length?cards.map(c=>`<button type="button" class="globalEnchantButton" data-effect-detail="${escape(c.instanceId)}">《${escape(c.cardId)}》${c.remainingTurns!=null?`　残り${c.remainingTurns}ターン`:''}</button>`).join(''):infoLine('効果中の全体エンチャントはありません。'));}
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;},renderPieces,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();
 </script><script>
 (function(){const modules={"./effective-rules.js":function(module,exports,require){
@@ -3184,8 +3260,8 @@ const TutorialController={
  blockedMessage(){msg(this.current?.action?'今は案内で光っている対象を操作してください。':'説明を読んで「次へ」を押してください。')},
  allows(kind,value){if(!this.active)return true;const a=this.current?.action;return !!a&&a.kind===kind&&a.value===value&&S.side==='p'},
  decorate(){if(!this.active)return;this.clearGlow();const s=this.historyViewing?this.steps[this.index-1]:this.current;if(!s)return;let selectors=NormalGameUI.tutorialSelectors([...(s.glow||[])]);const a=s.action;if(a?.kind==='card'){const i=S.hand.indexOf(a.value);selectors.push(`#hand .card:nth-child(${i+1})`)}if(a?.kind==='cell')selectors.push(`#board .cell[data-cell="${a.value}"]`);if(a?.kind==='king')selectors.push('#enemyPedestal');if(a?.kind==='end')selectors.push('#endTurn');if(a?.kind==='use')selectors.push('#infoContent .useCardButton');
-  selectors=selectors.flatMap(selector=>{const m=selector.match(/^#board \.cell\[data-cell="(\d+)"\] \.(pieceHudStats|actionDot)$/);return m?[selector,`#pieceOverlay [data-cell="${Number(m[1])}"] .${m[2]==='actionDot'?'overlayDot':'overlayStatsLayer'}`]:[selector]});
-  for(const selector of selectors)document.querySelectorAll(selector).forEach(e=>{e.classList.add('tutorialGlow');if(!e.matches('.cell,.rangePair,.infoEffect,.actionDot,.overlayDot,.overlayStatsLayer'))e.classList.add('tutorialZoom')});
+  selectors=selectors.flatMap(selector=>{const m=selector.match(/^#board \.cell\[data-cell="(\d+)"\] \.(pieceHudStats|actionDot)$/);if(!m)return [selector];const root=`#pieceOverlay [data-cell="${Number(m[1])}"]`;return m[2]==='actionDot'?[`${root} .actionBadge:not(.none)`]:[`${root} .creatureHealth`,`${root} .creatureATK`];});
+  for(const selector of selectors)document.querySelectorAll(selector).forEach(e=>{e.classList.add('tutorialGlow');if(!e.matches('.cell,.rangePair,.infoEffect,.actionDot,.actionBadge,.creatureHealth,.creatureATK,.overlayStatsLayer'))e.classList.add('tutorialZoom')});
   if(s.color)document.querySelectorAll('#board .cell').forEach(e=>{if(s.color==='move'){e.classList.remove('attackTarget');if(e.classList.contains('bothTarget')){e.classList.remove('bothTarget');e.classList.add('moveTarget')}}if(s.color==='attack'){e.classList.remove('moveTarget');if(e.classList.contains('bothTarget')){e.classList.remove('bothTarget');e.classList.add('attackTarget')}}});
   $('undoOne').disabled=true;NormalGameUI.refreshTutorialGeometry();
  },
@@ -3245,7 +3321,7 @@ function tutorialSteps(){
  add('B01_MANA','もう一度、召喚と移動のおさらい。',{glow:['.kingZone.player .manaStat']});
  add('B01_RECOVER','今は2マナある。マナは、ターンが進むごとに最大値が1増えて、ターン開始時に全回復するよ。');
  card('B02_CARD','銀級兵','この2マナで手札の銀級兵を召喚してみよう。');cell('B02_SUMMON',22,'光っているマスに銀級兵を召喚しよう。');
- add('B03','移動や攻撃をしたかは、この🔵と🔴で分かるよ。行動すると対応する丸が消える。',{glow:['#board .cell[data-cell="22"] .actionDot']});
+ add('B03','足元の靴は移動権、剣は攻撃権。明るい表示は未使用、使うと灰色＋斜線になるよ。範囲がない行動のバッジは表示されず、行動制約では非活性になる。攻撃力は左の剣の数字だよ。',{glow:['#board .cell[data-cell="22"] .actionDot']});
  cell('B04_SELECT',22,'銀級兵をタップして移動させよう。');cell('B04_MOVE',17,'光っているマスへ移動しよう。');
  add('B04_RESULT','銀級兵はまだ1回攻撃できる。でも今は攻撃範囲内に敵がいないから、今回は攻撃できない。');
  add('B05_INFO','移動範囲や攻撃範囲は、各クリーチャーの情報欄でも確認できるよ。',{glow:['#infoContent .rangePair']});
@@ -3670,7 +3746,7 @@ function creatureAttackStatus(p){
  if(attackLimit(p)>1)return remain>0?`攻撃 残${remain}`:"攻撃 済";
  return remain>0?"攻撃 可":"攻撃 済";
 }
-function creatureInfo(p,k,esc,line,abilityControls=""){return NormalGameUI.creatureInfoHTML({piece:p,viewer:'p',definition:T[p.type],power:GameCore.powerBreakdown(p),limit:attackLimit(p),range:rangePair(p),abilityHTML:abilityControls,description:CARD_TEXT[p.type],berserkDescription:CARD_TEXT.バーサーク,cellEffects:publicCellEnchantments(k,'p').map(e=>({...e,description:CARD_TEXT[e.cardId]}))});}
+function creatureInfo(p,k,esc,line,abilityControls=""){return NormalGameUI.creatureInfoHTML({piece:p,viewer:'p',definition:T[p.type],power:GameCore.powerBreakdown(p),display:cpuCreatureDisplay(p),range:NormalGameUI.rangePair(p,(piece,kind)=>cpuCreatureDisplay(piece).patterns[kind]),abilityHTML:abilityControls,description:CARD_TEXT[p.type],berserkDescription:CARD_TEXT.バーサーク,cellEffects:publicCellEnchantments(k,'p').map(e=>({...e,description:CARD_TEXT[e.cardId]}))});}
 function inspectedCreatureType(){
  if(S.card!==null){const t=S.hand[S.card];if(t&&T[t])return t;}
  if(S.piece!==null&&S.board[S.piece])return S.board[S.piece].type;
@@ -3768,7 +3844,8 @@ function bindCreatureAsset(img,pieceEl,type){
   }
   img.remove();
 }
-function renderPieceOverlay(){NormalGameUI.renderPieces({board:S.board,viewer:'p',enchantVisual:creatureEnchantVisual,rights:p=>GameCore.combatRights(p),power:(k,p)=>power(p),redrawInfo:renderInfo,afterRender(){TutorialController.decorate();restoreCreatureHitFx();}});}
+function cpuCreatureDisplay(p){return NormalGameUI.creatureDisplay({piece:p,definition:T[p.type],power:power(p),pattern,rights:GameCore.combatRights(p),limit:attackLimit(p),used:attacksUsed(p)});}
+function renderPieceOverlay(){NormalGameUI.renderPieces({board:S.board,viewer:'p',enchantVisual:creatureEnchantVisual,describe:cpuCreatureDisplay,redrawInfo:renderInfo,afterRender(){TutorialController.decorate();restoreCreatureHitFx();}});}
 for(const [side,id] of [['enemy','enemyPedestal'],['player','playerPedestal']]){
  const old=document.querySelector('.kingZone.'+side+' .king');
  if(old)new MutationObserver(()=>$(id)?.classList.toggle('hitFlash',old.classList.contains('hitFlash'))).observe(old,{attributes:true,attributeFilter:['class']});
