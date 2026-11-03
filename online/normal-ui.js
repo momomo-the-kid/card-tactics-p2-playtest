@@ -331,7 +331,8 @@ function bindHandScroll(){
   for(const direction of [-1,1]){
    const on=rect.width>0&&overflow&&(direction<0?hand.scrollLeft>3:hand.scrollLeft+hand.clientWidth<hand.scrollWidth-3);
    for(const el of arrows(direction)){
-    el.hidden=!on;el.disabled=!on;el.classList.toggle('show',on);
+    const visible=on&&!(el.classList.contains('scrollHint')&&landscapeQuery.matches);
+    el.hidden=!visible;el.disabled=!visible;el.classList.toggle('show',visible);
     if(el.classList.contains('scrollHint')){el.style.left=(direction<0?rect.left+3:rect.right-18)+'px';el.style.top=(rect.top+rect.height/2-10)+'px';}
    }
   }
