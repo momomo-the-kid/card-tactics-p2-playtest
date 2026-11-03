@@ -126,7 +126,12 @@ function bindPresentation(){
  syncLayout();
 }
 function startPlayPresentation(){const log=document.querySelector('.layoutLog');if(log)log.open=false;previousLogExplanation=false;tutorialExplanation=null;}
-function positionBattleLog(){const log=document.querySelector('.layoutLog');if(!log?.open)return;const panel=log.querySelector('.logPanel'),summary=log.querySelector('summary'),r=summary.getBoundingClientRect();if(!panel)return;const anchorTop=landscapeQuery.matches?r.top:log.closest('.controls').getBoundingClientRect().top,width=Math.min(360,innerWidth-16);panel.style.width=width+'px';panel.style.left=Math.max(8,Math.min(r.right-width,innerWidth-width-8))+'px';const space=Math.max(64,Math.min(190,anchorTop-16));panel.style.maxHeight=space+'px';panel.style.setProperty('--log-space',space+'px');panel.style.top=Math.max(8,anchorTop-panel.offsetHeight-6)+'px';}
+function positionBattleLog(){
+ const log=document.querySelector('.layoutLog'),panel=log?.querySelector('.logPanel');if(!panel)return;
+ // Portrait is ordinary document flow. Never retain popup geometry, even closed.
+ if(!landscapeQuery.matches||!log.open){for(const k of ['width','left','top','max-height','--log-space'])panel.style.removeProperty(k);return;}
+ const r=log.querySelector('summary').getBoundingClientRect(),width=Math.min(360,innerWidth-16);panel.style.width=width+'px';panel.style.left=Math.max(8,Math.min(r.right-width,innerWidth-width-8))+'px';const space=Math.max(64,Math.min(190,r.top-16));panel.style.maxHeight=space+'px';panel.style.setProperty('--log-space',space+'px');panel.style.top=Math.max(8,r.top-panel.offsetHeight-6)+'px';
+}
 window.addEventListener('resize',positionBattleLog);window.visualViewport?.addEventListener('resize',positionBattleLog);window.addEventListener('scroll',positionBattleLog,{passive:true});
 function tutorialSelectors(selectors){return selectors.map(selector=>{
  if(selector==='.kingZone.enemy .kingStat:not(.manaStat)')return '.royalHP.enemy';
@@ -138,7 +143,7 @@ function tutorialSelectors(selectors){return selectors.map(selector=>{
  if(selector==='.status .statusButton'&&landscapeQuery.matches)return '.battleInfoDock .statusButton';
  return selector;
 });}
-let tutorialExplanation=null,tutorialPresentationFrame=0,previousLogExplanation=false;
+let tutorialExplanation=null,tutorialPresentationFrame=0,previousLogExplanation=false,tutorialLogScrollPending=false;
 function refreshTutorialGeometry(){
  const board=$('board'),wrap=board?.closest('.boardWrap');if(!wrap)return;
  let svg=wrap.querySelector('.tutorialGrid');if(!svg){svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('tutorialGrid');svg.setAttribute('aria-hidden','true');wrap.append(svg);}
@@ -148,12 +153,12 @@ function refreshTutorialGeometry(){
 function presentTutorial(explanation){
  tutorialExplanation=explanation;
  const log=explanation?.glow?.includes('#log')||false,details=$('log')?.closest('details');
- if(log!==previousLogExplanation&&details)details.open=log;previousLogExplanation=log;
+ if(log!==previousLogExplanation&&details){details.open=log;if(log)tutorialLogScrollPending=true;}previousLogExplanation=log;
  queueTutorialPresentation();
 }
 function queueTutorialPresentation(){if(tutorialPresentationFrame)return;tutorialPresentationFrame=requestAnimationFrame(()=>{tutorialPresentationFrame=0;positionBattleLog();positionTutorialExplanation();refreshTutorialGeometry();});}
 function positionTutorialExplanation(){
- const coach=$('tutorialCoach');if(!coach||!document.body.classList.contains('tutorial-mode'))return;
+ const coach=$('tutorialCoach');if(!coach)return;if(!document.body.classList.contains('tutorial-mode')){restoreLayoutNode(coach);coach.classList.remove('tutorialAtLog');return;}
  const step=tutorialExplanation;if(!step)return;
  const panel=$('infoPanel'),content=$('infoContent');let selectors=tutorialSelectors(step.glow||[]);
  if(step.action?.kind==='use')selectors=[...selectors,'#infoContent .useCardButton'];
@@ -161,8 +166,16 @@ function positionTutorialExplanation(){
  // Scroll only the internal detail scroller, never the page or the board.
  if(infoTarget&&content?.contains(infoTarget)){const a=infoTarget.getBoundingClientRect(),b=content.getBoundingClientRect();if(a.top<b.top||a.bottom>b.bottom)content.scrollTop+=a.top-b.top-4;}
  coach.classList.toggle('tutorialBesideInfo',!!infoTarget||logTarget);
+ const flowLog=logTarget&&!landscapeQuery.matches;
+ if(flowLog){
+  const details=$('log').closest('details');if(!coach.classList.contains('tutorialAtLog'))tutorialLogScrollPending=true;
+  moveLayoutNode(coach,details);details.querySelector('.logPanel').before(coach);coach.classList.add('tutorialAtLog');
+  for(const k of ['left','top','width','max-height','bottom','right','overflow-y','transform'])coach.style.removeProperty(k);
+  if(tutorialLogScrollPending){tutorialLogScrollPending=false;details.scrollIntoView({block:'start',behavior:'instant'});}return;
+ }
+ restoreLayoutNode(coach);coach.classList.remove('tutorialAtLog');
  if(landscapeQuery.matches){const host=(infoTarget||logTarget)?document.querySelector('.boardColumn'):panel,r=host.getBoundingClientRect();coach.style.left=Math.max(4,r.left+6)+'px';coach.style.width=Math.max(logTarget?160:195,Math.min(infoTarget||logTarget?350:r.width-12,logTarget?Math.max(160,document.querySelector('.logPanel').getBoundingClientRect().left-r.left-18):r.width-12))+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';coach.style.top=Math.max(4,r.bottom-coach.offsetHeight-6)+'px';}
- else if(logTarget){coach.style.transform='none';const r=document.querySelector('.logPanel').getBoundingClientRect();coach.style.width=Math.min(350,innerWidth-16)+'px';coach.style.left='8px';coach.style.right='auto';coach.style.bottom='auto';coach.style.maxHeight=Math.max(64,r.top-16)+'px';coach.style.overflowY='auto';coach.style.top=Math.max(8,r.top-coach.offsetHeight-8)+'px';}
+
  else{for(const k of ['left','top','width','max-height','bottom','right','overflow-y','transform'])coach.style.removeProperty(k);}
 }
 window.addEventListener('resize',queueTutorialPresentation);window.visualViewport?.addEventListener('resize',queueTutorialPresentation);window.addEventListener('scroll',queueTutorialPresentation,{passive:true});
@@ -275,6 +288,9 @@ function renderPieces(model){
  positionRoyalPedestals();updateRoyalHealth();
  const wrapRect=overlay.getBoundingClientRect();
  const cells=board.querySelectorAll(".cell");
+ const cellRects=[...cells].map(c=>c.getBoundingClientRect());
+ const pitch=Math.min(Math.max(...cellRects.map(r=>r.right))-Math.min(...cellRects.map(r=>r.left)),Math.max(...cellRects.map(r=>r.bottom))-Math.min(...cellRects.map(r=>r.top)))/5;
+ const compactHUD=pitch<64;overlay.dataset.hudSize=compactHUD?'compact':'regular';
  cells.forEach((cell,k)=>{
   const index=Number(cell.dataset.cell??k),p=model.board[index];if(!p)return;
   const r=cell.getBoundingClientRect();
@@ -290,10 +306,10 @@ function renderPieces(model){
   if(projected){const a=screenPoint(cell.querySelector('[data-plane-point="left"]'),overlay),b=screenPoint(cell.querySelector('[data-plane-point="right"]'),overlay);width=Math.max(34,Math.min(82,Math.hypot(b.x-a.x,b.y-a.y)*.86));height=width;v.style.zIndex=String(100+Math.round(y));v.dataset.footX=x;v.dataset.footY=y;}
   v.style.setProperty('--piece-w',width+'px');v.style.setProperty('--piece-h',height+'px');
   const display=model.describe(p,index);
-  v.classList.add('combatHUD');if(r.height<52)v.classList.add('compactHUD');
+  v.classList.add('combatHUD');if(compactHUD)v.classList.add('compactHUD');
   v.dataset.hp=display.hp;v.dataset.maxHp=display.maxHp;v.dataset.atk=display.atk;
   if(enchantVisual)v.style.setProperty("--creature-aura",enchantVisual.colors[0]||"#b985ff");
-  v.innerHTML=`<div class="overlayNameLayer" title="${escape(p.type)}">${escape(p.type)}</div>${enchantVisual?'<div class="creatureEnchantVisual"></div>':''}<div class="overlayOrb"></div><img class="overlayCreatureAsset" alt="" aria-hidden="true"><div class="creatureHealth" aria-label="HP ${display.hp} / ${display.maxHp}">${healthHTML(display.hp,display.maxHp)}</div><div class="overlayStatsLayer combatFeet"><span class="creatureATK" aria-label="攻撃力 ${display.atk}">${ACTION_SVG.attack}<b>${escape(display.atk)}</b></span><span class="actionBadges">${actionBadge(display.move)}${actionBadge(display.attack)}</span></div>`;
+  v.innerHTML=`<div class="overlayNameLayer" title="${escape(p.type)}">${escape(p.type)}</div>${enchantVisual?'<div class="creatureEnchantVisual"></div>':''}<div class="overlayOrb"></div><img class="overlayCreatureAsset" alt="" aria-hidden="true"><div class="combatStack"><div class="overlayStatsLayer combatFeet"><span class="creatureATK" aria-label="攻撃力 ${display.atk}">${ACTION_SVG.attack}<b>${escape(display.atk)}</b></span><span class="actionBadges">${actionBadge(display.move)}${actionBadge(display.attack)}</span></div><div class="creatureHealth" aria-label="HP ${display.hp} / ${display.maxHp}">${healthHTML(display.hp,display.maxHp)}</div></div>`;
   v.querySelector('.hpFill').style.width=(display.maxHp>0?Math.max(0,Math.min(100,display.hp/display.maxHp*100)):0)+'%';
   if(projected&&cell.classList.contains('cellEnchanted')){const badge=document.createElement('span');badge.className='planeCellStatus';badge.textContent=cell.classList.contains('ownMine')?'✹':'🔮';v.append(badge);}
   overlay.appendChild(v);

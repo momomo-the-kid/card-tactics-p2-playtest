@@ -804,6 +804,12 @@ body.layout-landscape .enemyManaDock{order:0;margin-left:auto;flex-shrink:0}
 body.layout-landscape .enemyManaDock::before{content:"相手"}
 body.layout-landscape .manaDock::before,body.layout-landscape .enemyManaDock::before{font-size:12px;font-weight:700}
 body.layout-landscape .enemyManaDock .manaStat,body.layout-landscape .manaDock .manaStat{font-size:15px;white-space:nowrap}
+/* Portrait log consumes its own row after the action buttons. */
+body:not(.layout-landscape) .controls{flex-wrap:wrap;align-items:flex-start}
+body:not(.layout-landscape) .layoutLog{flex:1 0 100%;width:100%;min-width:0}
+body:not(.layout-landscape) .logPanel{position:static;width:100%;max-height:none;margin-top:4px}
+body:not(.layout-landscape) .logPanel #log{max-height:min(240px,40dvh)}
+body:not(.layout-landscape) #tutorialCoach.tutorialAtLog{position:static;display:block;transform:none;box-sizing:border-box;width:100%;max-width:none;margin:4px 0;padding:10px;z-index:auto}
 .layoutLog{position:relative;flex:0 0 auto;margin:0;order:98}
 .logPanel{position:fixed;z-index:1100;width:min(360px,calc(100vw - 16px));max-height:190px;overflow:hidden;background:#20252c;border:1px solid #536071;border-radius:8px;padding:6px;box-sizing:border-box}
 .layoutLog:not([open]) .logPanel{display:none}
@@ -884,16 +890,19 @@ body.tutorial-mode #settingsButton{opacity:1}
 body.tutorial-mode #settingsOverlay .settingsGroup:not(:has([data-setting="view"])){display:none}
 
 /* Screen-facing public combat information; no hit targets or board geometry. */
-.overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-top:-38px;--hud-foot:19px;transform:translate(-50%,-50%);pointer-events:none}
+.overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-name:-52px;--hud-foot:0px;transform:translate(-50%,-50%);pointer-events:none}
+/* Match the overlay centre to its foot marker; do not inherit the older -76% projected shift. */
+body.projected-board .overlayPiece.combatHUD{transform:translate(-50%,-50%)}
 .overlayPiece.combatHUD.cpu{--hud-owner:#ff666c}
-.overlayPiece.combatHUD .overlayNameLayer{top:calc(50% + var(--hud-top) - 14px);width:var(--hud-w);max-width:var(--hud-w);height:13px;min-height:0;padding:0 2px;display:block;overflow:hidden;text-overflow:ellipsis;background:#111821e8;border-radius:3px;color:white!important;-webkit-text-fill-color:white!important;-webkit-text-stroke:0!important;text-shadow:none!important;font:600 11px/13px system-ui;white-space:nowrap}
-.creatureHealth{position:absolute;left:50%;top:calc(50% + var(--hud-top));transform:translateX(-50%);width:var(--hud-hp);height:20px;z-index:9;display:flex;flex-direction:row;align-items:center;gap:0;color:#fff;background:transparent;border:0 solid var(--hud-owner);border-radius:0;box-sizing:border-box;overflow:visible}
+.overlayPiece.combatHUD .overlayNameLayer{top:calc(50% + var(--hud-name));width:var(--hud-w);max-width:var(--hud-w);height:13px;min-height:0;padding:0 2px;display:block;overflow:hidden;text-overflow:ellipsis;background:#111821e8;border-radius:3px;color:white!important;-webkit-text-fill-color:white!important;-webkit-text-stroke:0!important;text-shadow:none!important;font:600 11px/13px system-ui;white-space:nowrap}
+.creatureHealth{position:relative;width:var(--hud-hp);height:20px;z-index:9;display:flex;flex-direction:row;align-items:center;gap:0;color:#fff;background:transparent;border:0 solid var(--hud-owner);border-radius:0;box-sizing:border-box;overflow:visible}
 /* Fixed digit slot and connected track: only the inner fill changes with HP. */
 .hpNumber{display:flex;align-items:center;justify-content:center;flex:0 0 22px;height:20px;box-sizing:border-box;border:1px solid var(--hud-owner);border-radius:3px 0 0 3px;background:#0a1019f5;color:#fff;font:700 13px/18px system-ui;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:center;gap:0}
 .hpNumber b{margin:0;font:inherit}
 .hpTrack{display:block;height:10px;flex:1 1 0;min-width:0;width:auto;box-sizing:border-box;border:1px solid #718096;border-left:0;border-radius:0 2px 2px 0;background:#171e29;overflow:hidden}
 .hpFill{display:block;height:100%;background:var(--hud-owner)}
-.overlayPiece.combatHUD .overlayStatsLayer.combatFeet{position:absolute;left:50%;top:calc(50% + var(--hud-foot));transform:translateX(-50%);width:var(--hud-w);min-width:0;max-width:none;height:20px;padding:0;display:flex;align-items:center;justify-content:space-between;gap:5px;background:none;border:0;box-shadow:none;border-radius:0;font:700 12px/1 system-ui;z-index:10}
+.combatStack{position:absolute;left:50%;top:calc(50% + var(--hud-foot));transform:translateX(-50%);width:var(--hud-w);display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;z-index:10}
+.overlayPiece.combatHUD .overlayStatsLayer.combatFeet{position:relative;left:auto;top:auto;transform:none;width:var(--hud-w);min-width:0;max-width:none;height:20px;padding:0;display:flex;align-items:center;justify-content:space-between;gap:5px;background:none;border:0;box-shadow:none;border-radius:0;font:700 12px/1 system-ui;z-index:10}
 .creatureATK{display:flex;align-items:center;justify-content:center;gap:1px;min-width:25px;height:20px;padding:0 2px;background:#19170ef5;border:1px solid #d7b566;border-radius:4px;color:#ffe8a0;box-sizing:border-box}
 .creatureATK svg,.actionBadge svg{width:16px;height:16px;fill:currentColor;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .iconCut{fill:none;stroke:#101722;stroke-width:2}
@@ -907,8 +916,9 @@ body.tutorial-mode #settingsOverlay .settingsGroup:not(:has([data-setting="view"
 .spentSlash{display:none;position:absolute;left:1px;top:8px;width:17px;height:2px;background:#d5d8dc;transform:rotate(-45deg);box-shadow:0 1px #141820}
 .spent .spentSlash{display:block}
 .actionCount{position:absolute;right:-3px;bottom:-3px;min-width:10px;font:700 9px/11px system-ui;background:#101722;color:#fff;border-radius:3px;text-align:center}
-.overlayPiece.compactHUD{--hud-w:48px;--hud-hp:38px;--hud-top:-15px;--hud-foot:10px}
+.overlayPiece.compactHUD{--hud-w:48px;--hud-hp:38px;--hud-name:-25px;--hud-foot:-5px}
 .overlayPiece.combatHUD.compactHUD .overlayNameLayer{top:calc(50% - 25px);height:9px;font-size:9px;line-height:9px;max-width:38px}
+.compactHUD .combatStack{gap:1px}
 .compactHUD .creatureHealth{height:14px}
 .compactHUD .hpNumber{flex-basis:16px;height:14px;font-size:10px;line-height:12px}
 .compactHUD .hpTrack{height:8px}
@@ -1158,7 +1168,12 @@ function bindPresentation(){
  syncLayout();
 }
 function startPlayPresentation(){const log=document.querySelector('.layoutLog');if(log)log.open=false;previousLogExplanation=false;tutorialExplanation=null;}
-function positionBattleLog(){const log=document.querySelector('.layoutLog');if(!log?.open)return;const panel=log.querySelector('.logPanel'),summary=log.querySelector('summary'),r=summary.getBoundingClientRect();if(!panel)return;const anchorTop=landscapeQuery.matches?r.top:log.closest('.controls').getBoundingClientRect().top,width=Math.min(360,innerWidth-16);panel.style.width=width+'px';panel.style.left=Math.max(8,Math.min(r.right-width,innerWidth-width-8))+'px';const space=Math.max(64,Math.min(190,anchorTop-16));panel.style.maxHeight=space+'px';panel.style.setProperty('--log-space',space+'px');panel.style.top=Math.max(8,anchorTop-panel.offsetHeight-6)+'px';}
+function positionBattleLog(){
+ const log=document.querySelector('.layoutLog'),panel=log?.querySelector('.logPanel');if(!panel)return;
+ // Portrait is ordinary document flow. Never retain popup geometry, even closed.
+ if(!landscapeQuery.matches||!log.open){for(const k of ['width','left','top','max-height','--log-space'])panel.style.removeProperty(k);return;}
+ const r=log.querySelector('summary').getBoundingClientRect(),width=Math.min(360,innerWidth-16);panel.style.width=width+'px';panel.style.left=Math.max(8,Math.min(r.right-width,innerWidth-width-8))+'px';const space=Math.max(64,Math.min(190,r.top-16));panel.style.maxHeight=space+'px';panel.style.setProperty('--log-space',space+'px');panel.style.top=Math.max(8,r.top-panel.offsetHeight-6)+'px';
+}
 window.addEventListener('resize',positionBattleLog);window.visualViewport?.addEventListener('resize',positionBattleLog);window.addEventListener('scroll',positionBattleLog,{passive:true});
 function tutorialSelectors(selectors){return selectors.map(selector=>{
  if(selector==='.kingZone.enemy .kingStat:not(.manaStat)')return '.royalHP.enemy';
@@ -1170,7 +1185,7 @@ function tutorialSelectors(selectors){return selectors.map(selector=>{
  if(selector==='.status .statusButton'&&landscapeQuery.matches)return '.battleInfoDock .statusButton';
  return selector;
 });}
-let tutorialExplanation=null,tutorialPresentationFrame=0,previousLogExplanation=false;
+let tutorialExplanation=null,tutorialPresentationFrame=0,previousLogExplanation=false,tutorialLogScrollPending=false;
 function refreshTutorialGeometry(){
  const board=$('board'),wrap=board?.closest('.boardWrap');if(!wrap)return;
  let svg=wrap.querySelector('.tutorialGrid');if(!svg){svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('tutorialGrid');svg.setAttribute('aria-hidden','true');wrap.append(svg);}
@@ -1180,12 +1195,12 @@ function refreshTutorialGeometry(){
 function presentTutorial(explanation){
  tutorialExplanation=explanation;
  const log=explanation?.glow?.includes('#log')||false,details=$('log')?.closest('details');
- if(log!==previousLogExplanation&&details)details.open=log;previousLogExplanation=log;
+ if(log!==previousLogExplanation&&details){details.open=log;if(log)tutorialLogScrollPending=true;}previousLogExplanation=log;
  queueTutorialPresentation();
 }
 function queueTutorialPresentation(){if(tutorialPresentationFrame)return;tutorialPresentationFrame=requestAnimationFrame(()=>{tutorialPresentationFrame=0;positionBattleLog();positionTutorialExplanation();refreshTutorialGeometry();});}
 function positionTutorialExplanation(){
- const coach=$('tutorialCoach');if(!coach||!document.body.classList.contains('tutorial-mode'))return;
+ const coach=$('tutorialCoach');if(!coach)return;if(!document.body.classList.contains('tutorial-mode')){restoreLayoutNode(coach);coach.classList.remove('tutorialAtLog');return;}
  const step=tutorialExplanation;if(!step)return;
  const panel=$('infoPanel'),content=$('infoContent');let selectors=tutorialSelectors(step.glow||[]);
  if(step.action?.kind==='use')selectors=[...selectors,'#infoContent .useCardButton'];
@@ -1193,8 +1208,16 @@ function positionTutorialExplanation(){
  // Scroll only the internal detail scroller, never the page or the board.
  if(infoTarget&&content?.contains(infoTarget)){const a=infoTarget.getBoundingClientRect(),b=content.getBoundingClientRect();if(a.top<b.top||a.bottom>b.bottom)content.scrollTop+=a.top-b.top-4;}
  coach.classList.toggle('tutorialBesideInfo',!!infoTarget||logTarget);
+ const flowLog=logTarget&&!landscapeQuery.matches;
+ if(flowLog){
+  const details=$('log').closest('details');if(!coach.classList.contains('tutorialAtLog'))tutorialLogScrollPending=true;
+  moveLayoutNode(coach,details);details.querySelector('.logPanel').before(coach);coach.classList.add('tutorialAtLog');
+  for(const k of ['left','top','width','max-height','bottom','right','overflow-y','transform'])coach.style.removeProperty(k);
+  if(tutorialLogScrollPending){tutorialLogScrollPending=false;details.scrollIntoView({block:'start',behavior:'instant'});}return;
+ }
+ restoreLayoutNode(coach);coach.classList.remove('tutorialAtLog');
  if(landscapeQuery.matches){const host=(infoTarget||logTarget)?document.querySelector('.boardColumn'):panel,r=host.getBoundingClientRect();coach.style.left=Math.max(4,r.left+6)+'px';coach.style.width=Math.max(logTarget?160:195,Math.min(infoTarget||logTarget?350:r.width-12,logTarget?Math.max(160,document.querySelector('.logPanel').getBoundingClientRect().left-r.left-18):r.width-12))+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';coach.style.top=Math.max(4,r.bottom-coach.offsetHeight-6)+'px';}
- else if(logTarget){coach.style.transform='none';const r=document.querySelector('.logPanel').getBoundingClientRect();coach.style.width=Math.min(350,innerWidth-16)+'px';coach.style.left='8px';coach.style.right='auto';coach.style.bottom='auto';coach.style.maxHeight=Math.max(64,r.top-16)+'px';coach.style.overflowY='auto';coach.style.top=Math.max(8,r.top-coach.offsetHeight-8)+'px';}
+
  else{for(const k of ['left','top','width','max-height','bottom','right','overflow-y','transform'])coach.style.removeProperty(k);}
 }
 window.addEventListener('resize',queueTutorialPresentation);window.visualViewport?.addEventListener('resize',queueTutorialPresentation);window.addEventListener('scroll',queueTutorialPresentation,{passive:true});
@@ -1307,6 +1330,9 @@ function renderPieces(model){
  positionRoyalPedestals();updateRoyalHealth();
  const wrapRect=overlay.getBoundingClientRect();
  const cells=board.querySelectorAll(".cell");
+ const cellRects=[...cells].map(c=>c.getBoundingClientRect());
+ const pitch=Math.min(Math.max(...cellRects.map(r=>r.right))-Math.min(...cellRects.map(r=>r.left)),Math.max(...cellRects.map(r=>r.bottom))-Math.min(...cellRects.map(r=>r.top)))/5;
+ const compactHUD=pitch<64;overlay.dataset.hudSize=compactHUD?'compact':'regular';
  cells.forEach((cell,k)=>{
   const index=Number(cell.dataset.cell??k),p=model.board[index];if(!p)return;
   const r=cell.getBoundingClientRect();
@@ -1322,10 +1348,10 @@ function renderPieces(model){
   if(projected){const a=screenPoint(cell.querySelector('[data-plane-point="left"]'),overlay),b=screenPoint(cell.querySelector('[data-plane-point="right"]'),overlay);width=Math.max(34,Math.min(82,Math.hypot(b.x-a.x,b.y-a.y)*.86));height=width;v.style.zIndex=String(100+Math.round(y));v.dataset.footX=x;v.dataset.footY=y;}
   v.style.setProperty('--piece-w',width+'px');v.style.setProperty('--piece-h',height+'px');
   const display=model.describe(p,index);
-  v.classList.add('combatHUD');if(r.height<52)v.classList.add('compactHUD');
+  v.classList.add('combatHUD');if(compactHUD)v.classList.add('compactHUD');
   v.dataset.hp=display.hp;v.dataset.maxHp=display.maxHp;v.dataset.atk=display.atk;
   if(enchantVisual)v.style.setProperty("--creature-aura",enchantVisual.colors[0]||"#b985ff");
-  v.innerHTML=`<div class="overlayNameLayer" title="${escape(p.type)}">${escape(p.type)}</div>${enchantVisual?'<div class="creatureEnchantVisual"></div>':''}<div class="overlayOrb"></div><img class="overlayCreatureAsset" alt="" aria-hidden="true"><div class="creatureHealth" aria-label="HP ${display.hp} / ${display.maxHp}">${healthHTML(display.hp,display.maxHp)}</div><div class="overlayStatsLayer combatFeet"><span class="creatureATK" aria-label="攻撃力 ${display.atk}">${ACTION_SVG.attack}<b>${escape(display.atk)}</b></span><span class="actionBadges">${actionBadge(display.move)}${actionBadge(display.attack)}</span></div>`;
+  v.innerHTML=`<div class="overlayNameLayer" title="${escape(p.type)}">${escape(p.type)}</div>${enchantVisual?'<div class="creatureEnchantVisual"></div>':''}<div class="overlayOrb"></div><img class="overlayCreatureAsset" alt="" aria-hidden="true"><div class="combatStack"><div class="overlayStatsLayer combatFeet"><span class="creatureATK" aria-label="攻撃力 ${display.atk}">${ACTION_SVG.attack}<b>${escape(display.atk)}</b></span><span class="actionBadges">${actionBadge(display.move)}${actionBadge(display.attack)}</span></div><div class="creatureHealth" aria-label="HP ${display.hp} / ${display.maxHp}">${healthHTML(display.hp,display.maxHp)}</div></div>`;
   v.querySelector('.hpFill').style.width=(display.maxHp>0?Math.max(0,Math.min(100,display.hp/display.maxHp*100)):0)+'%';
   if(projected&&cell.classList.contains('cellEnchanted')){const badge=document.createElement('span');badge.className='planeCellStatus';badge.textContent=cell.classList.contains('ownMine')?'✹':'🔮';v.append(badge);}
   overlay.appendChild(v);
@@ -3267,7 +3293,7 @@ const TutorialController={
  blockedMessage(){msg(this.current?.action?'今は案内で光っている対象を操作してください。':'説明を読んで「次へ」を押してください。')},
  allows(kind,value){if(!this.active)return true;const a=this.current?.action;return !!a&&a.kind===kind&&a.value===value&&S.side==='p'},
  decorate(){if(!this.active)return;this.clearGlow();const s=this.historyViewing?this.steps[this.index-1]:this.current;if(!s)return;let selectors=NormalGameUI.tutorialSelectors([...(s.glow||[])]);const a=s.action;if(a?.kind==='card'){const i=S.hand.indexOf(a.value);selectors.push(`#hand .card:nth-child(${i+1})`)}if(a?.kind==='cell')selectors.push(`#board .cell[data-cell="${a.value}"]`);if(a?.kind==='king')selectors.push('#enemyPedestal');if(a?.kind==='end')selectors.push('#endTurn');if(a?.kind==='use')selectors.push('#infoContent .useCardButton');
-  selectors=selectors.flatMap(selector=>{const m=selector.match(/^#board \.cell\[data-cell="(\d+)"\] \.(pieceHudStats|actionDot)$/);if(!m)return [selector];const root=`#pieceOverlay [data-cell="${Number(m[1])}"]`;return m[2]==='actionDot'?[`${root} .actionBadge:not(.none)`]:[`${root} .creatureHealth`,`${root} .creatureATK`];});
+  selectors=selectors.flatMap(selector=>{const m=selector.match(/^#board \.cell\[data-cell="(\d+)"\] \.(pieceHudStats|actionDot)$/);if(!m)return [selector];const root=`#pieceOverlay [data-cell="${Number(m[1])}"]`;return m[2]==='actionDot'?[`${root} .actionBadge:not(.none)`,`${root} .creatureATK`]:[`${root} .creatureHealth`,`${root} .creatureATK`];});
   for(const selector of selectors)document.querySelectorAll(selector).forEach(e=>{e.classList.add('tutorialGlow');if(!e.matches('.cell,.rangePair,.infoEffect,.actionDot,.actionBadge,.creatureHealth,.creatureATK,.overlayStatsLayer'))e.classList.add('tutorialZoom')});
   if(s.color)document.querySelectorAll('#board .cell').forEach(e=>{if(s.color==='move'){e.classList.remove('attackTarget');if(e.classList.contains('bothTarget')){e.classList.remove('bothTarget');e.classList.add('moveTarget')}}if(s.color==='attack'){e.classList.remove('moveTarget');if(e.classList.contains('bothTarget')){e.classList.remove('bothTarget');e.classList.add('attackTarget')}}});
   $('undoOne').disabled=true;NormalGameUI.refreshTutorialGeometry();
@@ -3328,7 +3354,7 @@ function tutorialSteps(){
  add('B01_MANA','もう一度、召喚と移動のおさらい。',{glow:['.kingZone.player .manaStat']});
  add('B01_RECOVER','今は2マナある。マナは、ターンが進むごとに最大値が1増えて、ターン開始時に全回復するよ。');
  card('B02_CARD','銀級兵','この2マナで手札の銀級兵を召喚してみよう。');cell('B02_SUMMON',22,'光っているマスに銀級兵を召喚しよう。');
- add('B03','足元の靴は移動権、剣は攻撃権。明るい表示は未使用、使うと灰色＋斜線になるよ。範囲がない行動のバッジは表示されず、行動制約では非活性になる。攻撃力は左の剣の数字だよ。',{glow:['#board .cell[data-cell="22"] .actionDot']});
+ add('B03','靴は移動権、剣は攻撃権。明るい表示は未使用、使うと灰色＋斜線になるよ。攻撃力は左の剣の数字だよ。',{glow:['#board .cell[data-cell="22"] .actionDot']});
  cell('B04_SELECT',22,'銀級兵をタップして移動させよう。');cell('B04_MOVE',17,'光っているマスへ移動しよう。');
  add('B04_RESULT','銀級兵はまだ1回攻撃できる。でも今は攻撃範囲内に敵がいないから、今回は攻撃できない。');
  add('B05_INFO','移動範囲や攻撃範囲は、各クリーチャーの情報欄でも確認できるよ。',{glow:['#infoContent .rangePair']});

@@ -796,6 +796,12 @@ body.layout-landscape .enemyManaDock{order:0;margin-left:auto;flex-shrink:0}
 body.layout-landscape .enemyManaDock::before{content:"相手"}
 body.layout-landscape .manaDock::before,body.layout-landscape .enemyManaDock::before{font-size:12px;font-weight:700}
 body.layout-landscape .enemyManaDock .manaStat,body.layout-landscape .manaDock .manaStat{font-size:15px;white-space:nowrap}
+/* Portrait log consumes its own row after the action buttons. */
+body:not(.layout-landscape) .controls{flex-wrap:wrap;align-items:flex-start}
+body:not(.layout-landscape) .layoutLog{flex:1 0 100%;width:100%;min-width:0}
+body:not(.layout-landscape) .logPanel{position:static;width:100%;max-height:none;margin-top:4px}
+body:not(.layout-landscape) .logPanel #log{max-height:min(240px,40dvh)}
+body:not(.layout-landscape) #tutorialCoach.tutorialAtLog{position:static;display:block;transform:none;box-sizing:border-box;width:100%;max-width:none;margin:4px 0;padding:10px;z-index:auto}
 .layoutLog{position:relative;flex:0 0 auto;margin:0;order:98}
 .logPanel{position:fixed;z-index:1100;width:min(360px,calc(100vw - 16px));max-height:190px;overflow:hidden;background:#20252c;border:1px solid #536071;border-radius:8px;padding:6px;box-sizing:border-box}
 .layoutLog:not([open]) .logPanel{display:none}
@@ -876,16 +882,19 @@ body.tutorial-mode #settingsButton{opacity:1}
 body.tutorial-mode #settingsOverlay .settingsGroup:not(:has([data-setting="view"])){display:none}
 
 /* Screen-facing public combat information; no hit targets or board geometry. */
-.overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-top:-38px;--hud-foot:19px;transform:translate(-50%,-50%);pointer-events:none}
+.overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-name:-52px;--hud-foot:0px;transform:translate(-50%,-50%);pointer-events:none}
+/* Match the overlay centre to its foot marker; do not inherit the older -76% projected shift. */
+body.projected-board .overlayPiece.combatHUD{transform:translate(-50%,-50%)}
 .overlayPiece.combatHUD.cpu{--hud-owner:#ff666c}
-.overlayPiece.combatHUD .overlayNameLayer{top:calc(50% + var(--hud-top) - 14px);width:var(--hud-w);max-width:var(--hud-w);height:13px;min-height:0;padding:0 2px;display:block;overflow:hidden;text-overflow:ellipsis;background:#111821e8;border-radius:3px;color:white!important;-webkit-text-fill-color:white!important;-webkit-text-stroke:0!important;text-shadow:none!important;font:600 11px/13px system-ui;white-space:nowrap}
-.creatureHealth{position:absolute;left:50%;top:calc(50% + var(--hud-top));transform:translateX(-50%);width:var(--hud-hp);height:20px;z-index:9;display:flex;flex-direction:row;align-items:center;gap:0;color:#fff;background:transparent;border:0 solid var(--hud-owner);border-radius:0;box-sizing:border-box;overflow:visible}
+.overlayPiece.combatHUD .overlayNameLayer{top:calc(50% + var(--hud-name));width:var(--hud-w);max-width:var(--hud-w);height:13px;min-height:0;padding:0 2px;display:block;overflow:hidden;text-overflow:ellipsis;background:#111821e8;border-radius:3px;color:white!important;-webkit-text-fill-color:white!important;-webkit-text-stroke:0!important;text-shadow:none!important;font:600 11px/13px system-ui;white-space:nowrap}
+.creatureHealth{position:relative;width:var(--hud-hp);height:20px;z-index:9;display:flex;flex-direction:row;align-items:center;gap:0;color:#fff;background:transparent;border:0 solid var(--hud-owner);border-radius:0;box-sizing:border-box;overflow:visible}
 /* Fixed digit slot and connected track: only the inner fill changes with HP. */
 .hpNumber{display:flex;align-items:center;justify-content:center;flex:0 0 22px;height:20px;box-sizing:border-box;border:1px solid var(--hud-owner);border-radius:3px 0 0 3px;background:#0a1019f5;color:#fff;font:700 13px/18px system-ui;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:center;gap:0}
 .hpNumber b{margin:0;font:inherit}
 .hpTrack{display:block;height:10px;flex:1 1 0;min-width:0;width:auto;box-sizing:border-box;border:1px solid #718096;border-left:0;border-radius:0 2px 2px 0;background:#171e29;overflow:hidden}
 .hpFill{display:block;height:100%;background:var(--hud-owner)}
-.overlayPiece.combatHUD .overlayStatsLayer.combatFeet{position:absolute;left:50%;top:calc(50% + var(--hud-foot));transform:translateX(-50%);width:var(--hud-w);min-width:0;max-width:none;height:20px;padding:0;display:flex;align-items:center;justify-content:space-between;gap:5px;background:none;border:0;box-shadow:none;border-radius:0;font:700 12px/1 system-ui;z-index:10}
+.combatStack{position:absolute;left:50%;top:calc(50% + var(--hud-foot));transform:translateX(-50%);width:var(--hud-w);display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;z-index:10}
+.overlayPiece.combatHUD .overlayStatsLayer.combatFeet{position:relative;left:auto;top:auto;transform:none;width:var(--hud-w);min-width:0;max-width:none;height:20px;padding:0;display:flex;align-items:center;justify-content:space-between;gap:5px;background:none;border:0;box-shadow:none;border-radius:0;font:700 12px/1 system-ui;z-index:10}
 .creatureATK{display:flex;align-items:center;justify-content:center;gap:1px;min-width:25px;height:20px;padding:0 2px;background:#19170ef5;border:1px solid #d7b566;border-radius:4px;color:#ffe8a0;box-sizing:border-box}
 .creatureATK svg,.actionBadge svg{width:16px;height:16px;fill:currentColor;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .iconCut{fill:none;stroke:#101722;stroke-width:2}
@@ -899,8 +908,9 @@ body.tutorial-mode #settingsOverlay .settingsGroup:not(:has([data-setting="view"
 .spentSlash{display:none;position:absolute;left:1px;top:8px;width:17px;height:2px;background:#d5d8dc;transform:rotate(-45deg);box-shadow:0 1px #141820}
 .spent .spentSlash{display:block}
 .actionCount{position:absolute;right:-3px;bottom:-3px;min-width:10px;font:700 9px/11px system-ui;background:#101722;color:#fff;border-radius:3px;text-align:center}
-.overlayPiece.compactHUD{--hud-w:48px;--hud-hp:38px;--hud-top:-15px;--hud-foot:10px}
+.overlayPiece.compactHUD{--hud-w:48px;--hud-hp:38px;--hud-name:-25px;--hud-foot:-5px}
 .overlayPiece.combatHUD.compactHUD .overlayNameLayer{top:calc(50% - 25px);height:9px;font-size:9px;line-height:9px;max-width:38px}
+.compactHUD .combatStack{gap:1px}
 .compactHUD .creatureHealth{height:14px}
 .compactHUD .hpNumber{flex-basis:16px;height:14px;font-size:10px;line-height:12px}
 .compactHUD .hpTrack{height:8px}
