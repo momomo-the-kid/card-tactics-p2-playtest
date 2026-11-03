@@ -856,6 +856,9 @@ body:not(.layout-landscape) #app .royalPedestal .crownModel{left:25%!important;w
 body:not(.layout-landscape) .royalHP{width:28px;height:18px;border:0;background:transparent}
 body:not(.layout-landscape) .royalHP .kingStat{font-size:10px!important}
 
+/* Absolute arrows reserve their existing gutters even when unavailable. */
+.handScroller button[hidden],.scrollHint.hand[hidden]{display:none!important}
+
 /* Only online chrome: the normal CPU stylesheet supplies the board, overlays,
    kings, hand, detail and ranges verbatim. No in-cell visibility overrides. */
 [hidden]{display:none!important}

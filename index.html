@@ -863,6 +863,9 @@ body #app .royalPedestal .kingLabel{font-size:10px;margin-bottom:2px;line-height
 body:not(.layout-landscape) #app .royalPedestal .crownModel{left:25%!important;width:24px!important;height:20px!important;bottom:14px!important}
 body:not(.layout-landscape) .royalHP{width:28px;height:18px;border:0;background:transparent}
 body:not(.layout-landscape) .royalHP .kingStat{font-size:10px!important}
+
+/* Absolute arrows reserve their existing gutters even when unavailable. */
+.handScroller button[hidden],.scrollHint.hand[hidden]{display:none!important}
 </style><style>dialog.surrenderConfirm{max-width:min(90vw,420px);border:2px solid #bfa76a;border-radius:14px;padding:24px;background:#182432;color:#fff;box-shadow:0 12px 50px #0009}dialog.surrenderConfirm::backdrop{background:#0009}.surrenderActions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}#surrenderClose{position:absolute;right:8px;top:6px;background:transparent}#surrenderContinue:focus-visible,#surrenderConfirm:focus-visible{outline:3px solid #ffe095;outline-offset:3px}#surrenderGame[hidden]{display:none!important}</style><style>.resultActions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}.resultActions button[hidden]{display:none!important}</style>
 </head><body>
 <div id="titleScreen">
@@ -1025,9 +1028,13 @@ function syncLayout(){
  if(message&&panel&&area){if(landscape)panel.insertBefore(message,$('infoContent'));else app.insertBefore(message,area);}
  if(projected){
   // Fit both views to one shared envelope, including off-board royal bases/crowns.
-  const envelope=size=>{const pts=[];for(const yaw of [0,-45]){for(const [x,y]of [[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]]){const p=fixedProject(x,y,size,yaw);pts.push([p.x,p.y]);}for(const name of ['enemy','player']){const p=royalAnchor(name,size,yaw);pts.push([p.x-(landscapeQuery.matches&&hpOnLeft(name)?80:32),p.y-18],[p.x+(landscapeQuery.matches&&!hpOnLeft(name)?80:32),p.y+18]);}}return {x1:Math.min(...pts.map(p=>p[0])),x2:Math.max(...pts.map(p=>p[0])),y1:Math.min(...pts.map(p=>p[1])),y2:Math.max(...pts.map(p=>p[1]))};};
+  const envelope=(size,yaws=[0,-45])=>{const pts=[];for(const yaw of yaws){for(const [x,y]of [[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]]){const p=fixedProject(x,y,size,yaw);pts.push([p.x,p.y]);}for(const name of ['enemy','player']){const p=royalAnchor(name,size,yaw);pts.push([p.x-(landscapeQuery.matches&&hpOnLeft(name)?80:32),p.y-18],[p.x+(landscapeQuery.matches&&!hpOnLeft(name)?80:32),p.y+18]);}}return {x1:Math.min(...pts.map(p=>p[0])),x2:Math.max(...pts.map(p=>p[0])),y1:Math.min(...pts.map(p=>p[1])),y2:Math.max(...pts.map(p=>p[1]))};};
   let lo=70,hi=800;for(let i=0;i<16;i++){const size=(lo+hi)/2,b=envelope(size);if(b.x2-b.x1<=wrap.clientWidth-8&&b.y2-b.y1<=wrap.clientHeight-8)lo=size;else hi=size;}
-  const size=lo,b=envelope(size);wrap.style.setProperty('--logical-board',size+'px');wrap.style.setProperty('--plane-offset-x',(-(b.x1+b.x2)/2)+'px');wrap.style.setProperty('--plane-offset-y',(-(b.y1+b.y2)/2)+'px');
+  const size=lo,b=envelope(size);let offsetY=-(b.y1+b.y2)/2;
+  // Preserve portrait B's scale while keeping its off-board king below the
+  // existing opponent status row. Only consume unused space inside the wrap.
+  if(!landscape&&wrap.clientHeight){const wr=wrap.getBoundingClientRect(),status=[...column.querySelectorAll('.kingZone.enemy .manaStat,.kingZone.enemy .graveButton')].map(e=>e.getBoundingClientRect()).filter(r=>r.width&&r.height),top=Math.max(0,...status.map(r=>r.bottom-wr.top+4)),active=envelope(size,[-45]),shift=Math.max(0,top-(wrap.clientHeight/2+offsetY+active.y1)),room=Math.max(0,wrap.clientHeight/2-4-offsetY-active.y2);offsetY+=Math.min(shift,room);}
+  wrap.style.setProperty('--logical-board',size+'px');wrap.style.setProperty('--plane-offset-x',(-(b.x1+b.x2)/2)+'px');wrap.style.setProperty('--plane-offset-y',offsetY+'px');
  }
 }
 function screenPoint(element,relative){const r=element.getBoundingClientRect(),o=relative.getBoundingClientRect();return {x:r.left-o.left,y:r.top-o.top};}
@@ -1043,7 +1050,7 @@ window.addEventListener('orientationchange',queuePresentation);
 landscapeQuery.addEventListener('change',queuePresentation);
 window.visualViewport?.addEventListener('resize',queuePresentation);
 function bindPresentation(){
- document.querySelectorAll('[data-scroll-hand]').forEach(b=>b.addEventListener('click',()=>{$('hand').scrollBy({left:Number(b.dataset.scrollHand)*Math.max(100,$('hand').clientWidth*.7),behavior:'instant'});}));
+ bindHandScroll();
  const log=document.querySelector('.layoutLog');if(log){log.open=false;log.addEventListener('toggle',()=>{positionBattleLog();queueTutorialPresentation();});}
  const wrap=$('board')?.closest('.boardWrap');if(wrap&&typeof ResizeObserver!=='undefined')new ResizeObserver(queuePresentation).observe(wrap);
  syncLayout();
@@ -1098,7 +1105,7 @@ function pieceLabel(name){
 }
 function positionRoyalPedestals(){
  const wrap=$('board')?.closest('.boardWrap'), cells=$('board')?.querySelectorAll('.cell');
- if(!wrap||!cells||cells.length!==25)return;
+ if(!wrap||!cells||cells.length!==25||!wrap.clientWidth||!wrap.clientHeight)return;
  for(const [kind,id]of [['enemy','enemyPedestal'],['player','playerPedestal']]){let hud=wrap.querySelector('.royalHP.'+kind);if(!hud){hud=document.createElement('span');hud.className='royalHP '+kind;hud.setAttribute('aria-label',kind==='enemy'?'相手の王HP':'自分の王HP');wrap.append(hud);}const stat=document.querySelector('.kingZone.'+kind+' .kingStat:not(.manaStat)');if(stat){stat.firstChild.textContent='❤️';hud.append(stat);}}
  if(document.body.classList.contains('projected-board')){
   for(const [id,kind]of [['enemyPedestal','enemy'],['playerPedestal','player']]){
@@ -1108,15 +1115,15 @@ function positionRoyalPedestals(){
   }positionRoyalHP(wrap);return;
  }
  const wr=wrap.getBoundingClientRect();
- const specs=[['enemyPedestal',0,1,2,3,-1],['playerPedestal',20,21,22,23,1]];
- for(const [id,rowStart,colStart,colMid,colEnd,dir] of specs){
+ // Portrait A keeps the existing CSS perspective. Use the real non-zero
+ // central cell border boxes, not zero-area descendants inside preserve-3d.
+ // In this direction the near/far edges are horizontal in screen space.
+ for(const [id,index,dir] of [['enemyPedestal',2,-1],['playerPedestal',22,1]]){
   const pedestal=$(id);if(!pedestal)continue;
-  const first=cells[colStart].getBoundingClientRect(),last=cells[colEnd].getBoundingClientRect();
-  const row=cells[rowStart].getBoundingClientRect();
-  const width=64,height=36,x=(cells[colMid].querySelector('[data-plane-point="foot"]').getBoundingClientRect().left-wr.left);
-  const edge=dir<0?cells[colMid].querySelector('[data-plane-point="nw"]').getBoundingClientRect().top:cells[colMid].querySelector('[data-plane-point="sw"]').getBoundingClientRect().top;
-  const y=edge-wr.top+dir*28;
-  pedestal.style.left=x+'px';pedestal.style.top=y+'px';pedestal.style.width=width+'px';pedestal.style.height=height+'px';
+  const cell=cells[index].getBoundingClientRect();if(!cell.width||!cell.height)return;
+  const x=(cell.left+cell.right)/2-wr.left,edge=dir<0?cell.top:cell.bottom;
+  pedestal.style.left=x+'px';pedestal.style.top=(edge-wr.top+dir*28)+'px';
+  pedestal.style.width='64px';pedestal.style.height='36px';
  }positionRoyalHP(wrap);
 }
 function positionRoyalHP(wrap){for(const [kind,id]of [['enemy','enemyPedestal'],['player','playerPedestal']]){const hud=wrap.querySelector('.royalHP.'+kind),b=$(id).getBoundingClientRect(),w=wrap.getBoundingClientRect();hud.style.left=(!landscapeQuery.matches?b.left-w.left+32:hpOnLeft(kind)?b.left-w.left-48:b.right-w.left+4)+'px';hud.style.top=(b.top-w.top+(!landscapeQuery.matches?4:(b.height-24)/2))+'px';}}
@@ -1156,7 +1163,7 @@ function bindCreatureAsset(img,pieceEl,type){
 function renderPieces(model){
  current=model;syncLayout();
  const overlay=$("pieceOverlay"), board=$("board");
- if(!overlay||!board)return;
+ if(!overlay||!board||!board.getClientRects().length||!board.clientWidth||!board.clientHeight)return;
  overlay.innerHTML="";
  prepareCells(board.querySelectorAll(".cell"));
  projectCells(board.querySelectorAll(".cell"),board.closest(".boardWrap"));
@@ -1279,14 +1286,29 @@ function renderTurn({activeSide,viewer,paused=false,ended=false}){
  const own=activeSide===viewer;e.textContent=own?'あなたのターン中':'相手ターン中';
  e.classList.toggle('ownTurn',own);e.classList.toggle('enemyTurn',!own);
 }
+let handScrollUpdate=null;
 function bindHandScroll(){
- const hand=$('hand'),left=$('handScrollLeft'),right=$('handScrollRight');if(!hand||!left||!right)return ()=>{};
- const update=()=>{left.disabled=hand.scrollLeft<=3;right.disabled=hand.scrollLeft+hand.clientWidth>=hand.scrollWidth-3;};
- const scroll=direction=>{hand.scrollBy({left:direction*Math.max(100,hand.clientWidth*.75),behavior:'instant'});update();};
- left.onclick=()=>scroll(-1);right.onclick=()=>scroll(1);hand.addEventListener('scroll',update,{passive:true});
- window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(hand);
- return update;
+ if(handScrollUpdate)return handScrollUpdate;
+ const hand=$('hand');if(!hand)return ()=>{};
+ const arrows=direction=>[...document.querySelectorAll(direction<0?'#handScrollLeft,[data-scroll-hand="-1"]':'#handScrollRight,[data-scroll-hand="1"]')];
+ const update=()=>{
+  const rect=hand.getBoundingClientRect(),overflow=hand.scrollWidth>hand.clientWidth+3;
+  for(const direction of [-1,1]){
+   const on=rect.width>0&&overflow&&(direction<0?hand.scrollLeft>3:hand.scrollLeft+hand.clientWidth<hand.scrollWidth-3);
+   for(const el of arrows(direction)){
+    el.hidden=!on;el.disabled=!on;el.classList.toggle('show',on);
+    if(el.classList.contains('scrollHint')){el.style.left=(direction<0?rect.left+3:rect.right-18)+'px';el.style.top=(rect.top+rect.height/2-10)+'px';}
+   }
+  }
+ };
+ for(const direction of [-1,1])for(const el of arrows(direction))if(el.tagName==='BUTTON')el.onclick=()=>{hand.scrollBy({left:direction*Math.max(100,hand.clientWidth*.75),behavior:'instant'});update();};
+ hand.addEventListener('scroll',update,{passive:true});
+ window.addEventListener('resize',update);window.addEventListener('orientationchange',update);
+ if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(hand);
+ if(typeof MutationObserver!=='undefined')new MutationObserver(update).observe(hand,{childList:true,subtree:true,characterData:true});
+ handScrollUpdate=update;update();return update;
 }
+
 const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const infoLine=x=>`<div class="infoLine">${escape(x)}</div>`;
  function attackStatus(piece,limit){const remaining=Math.max(0,limit-(piece.attacksUsed??(piece.a?limit:0)));return limit>1?(remaining?`攻撃 残${remaining}`:'攻撃 済'):(remaining?'攻撃 可':'攻撃 済');}
@@ -3227,14 +3249,9 @@ function startGameScreen(){NormalGameUI.startPlayPresentation();CardTacticsBGM.s
   sessionStorage.removeItem("cardTacticsStartInGame");
   document.getElementById("titleScreen").style.display="none";
   document.getElementById("app").classList.remove("gameScreenHidden");
-  /* The board was hidden during the initial render, so geometry-based overlays
-     (king pedestals / creature overlays) must be laid out again after it becomes visible. */
-  requestAnimationFrame(()=>{
-    requestAnimationFrame(()=>{
-      if(typeof renderPieceOverlay==="function")renderPieceOverlay();
-      if(typeof syncInfoPanelHeight==="function")syncInfoPanelHeight();
-    });
-  });
+  renderPieceOverlay();
+  syncInfoPanelHeight();
+  NormalGameUI.bindHandScroll()();
 }
 function returnToTitle(){if(TutorialController.active){TutorialController.finish();return;}
   /* Returning to title ends the current match and restores a fresh game state. */
@@ -4441,13 +4458,7 @@ function updateScrollHints(){
   iu.style.left=(r.left+r.width/2-8)+"px";iu.style.top=(r.top+4)+"px";
   id.style.left=(r.left+r.width/2-8)+"px";id.style.top=(r.bottom-20)+"px";
  }
- if(hand&&hl&&hr){
-  const r=hand.getBoundingClientRect(), can=hand.scrollWidth>hand.clientWidth+eps;
-  hl.classList.toggle("show",can&&hand.scrollLeft>eps);
-  hr.classList.toggle("show",can&&hand.scrollLeft+hand.clientWidth<hand.scrollWidth-eps);
-  hl.style.left=(r.left+3)+"px";hl.style.top=(r.top+r.height/2-10)+"px";
-  hr.style.left=(r.right-18)+"px";hr.style.top=(r.top+r.height/2-10)+"px";
- }
+ NormalGameUI.bindHandScroll()();
 }
 function queueScrollHints(){requestAnimationFrame(updateScrollHints)}
 const infoScrollTarget=$("infoContent"),handScrollTarget=$("hand");
