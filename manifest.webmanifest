@@ -1,0 +1,11 @@
+{
+  "id": "./",
+  "name": "CARD × TACTICS",
+  "short_name": "CARD×TACTICS",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#15181d",
+  "theme_color": "#15181d"
+}
