@@ -894,34 +894,35 @@ body.projected-board .overlayPiece.combatHUD{transform:translate(-50%,-50%)}
 .hpTrack{display:block;height:10px;flex:1 1 0;min-width:0;width:auto;box-sizing:border-box;border:1px solid #718096;border-left:0;border-radius:0 2px 2px 0;background:#171e29;overflow:hidden}
 .hpFill{display:block;height:100%;background:var(--hud-owner)}
 .combatStack{position:absolute;left:50%;top:calc(50% + var(--hud-foot));transform:translateX(-50%);width:var(--hud-w);display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none;z-index:10}
-.overlayPiece.combatHUD .overlayStatsLayer.combatFeet{position:relative;left:auto;top:auto;transform:none;width:var(--hud-w);min-width:0;max-width:none;height:20px;padding:0;display:flex;align-items:center;justify-content:space-between;gap:5px;background:none;border:0;box-shadow:none;border-radius:0;font:700 12px/1 system-ui;z-index:10}
-.creatureATK{display:flex;align-items:center;justify-content:center;gap:1px;min-width:25px;height:20px;padding:0 2px;background:#19170ef5;border:1px solid #d7b566;border-radius:4px;color:#ffe8a0;box-sizing:border-box}
-.creatureATK svg,.actionBadge svg{width:16px;height:16px;fill:currentColor;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.overlayPiece.combatHUD .overlayStatsLayer.combatFeet{position:relative;left:auto;top:auto;transform:none;width:44px;min-width:0;max-width:none;height:14px;padding:0;display:flex;align-items:center;justify-content:space-between;gap:4px;background:none;border:0;box-shadow:none;border-radius:0;font:700 9px/1 system-ui;z-index:10}
+.creatureATK{display:flex;align-items:center;justify-content:center;gap:1px;min-width:18px;height:14px;padding:0 1px;background:#19170ef5;border:1px solid #d7b566;border-radius:3px;color:#ffe8a0;box-sizing:border-box}
+.creatureATK svg,.actionBadge svg{width:10px;height:10px;fill:currentColor;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.actionBadge svg{width:7px;height:7px}
 .iconCut{fill:none;stroke:#101722;stroke-width:2}
-.actionBadges{display:flex;gap:3px;align-items:center;height:20px}
-.actionBadge{position:relative;display:flex;align-items:center;justify-content:center;width:20px;height:20px;box-sizing:border-box;border:1px solid #c5d6e5;border-radius:4px;background:#182637fa;color:#effaff}
+.actionBadges{display:flex;gap:2px;align-items:center;height:10px}
+.actionBadge{position:relative;display:flex;align-items:center;justify-content:center;width:10px;height:10px;box-sizing:border-box;border:1px solid #c5d6e5;border-radius:2px;background:#182637fa;color:#effaff}
 .actionBadge.move.ready{color:#9ed5ff;border-color:#84caff}
 .actionBadge.attack.ready{color:#ffb6ba;border-color:#ff979e}
 .actionBadge.spent{color:#999fa8;border-color:#727984;background:#20242bfa}
 .actionBadge.blocked{color:#b3a58c;border:1px dashed #b3a58c;background:#232019fa}
 .actionBadge.none{visibility:hidden}
-.spentSlash{display:none;position:absolute;left:1px;top:8px;width:17px;height:2px;background:#d5d8dc;transform:rotate(-45deg);box-shadow:0 1px #141820}
+.spentSlash{display:none;position:absolute;left:0;top:4px;width:8px;height:1px;background:#d5d8dc;transform:rotate(-45deg);box-shadow:0 1px #141820}
 .spent .spentSlash{display:block}
-.actionCount{position:absolute;right:-3px;bottom:-3px;min-width:10px;font:700 9px/11px system-ui;background:#101722;color:#fff;border-radius:3px;text-align:center}
+.actionCount{position:absolute;right:0;bottom:0;min-width:7px;font:700 8px/8px system-ui;background:#101722;color:#fff;border-radius:3px;text-align:center}
 .overlayPiece.compactHUD{--hud-w:48px;--hud-hp:38px;--hud-name:-25px;--hud-foot:-5px}
 .overlayPiece.combatHUD.compactHUD .overlayNameLayer{top:calc(50% - 25px);height:9px;font-size:9px;line-height:9px;max-width:38px}
 .compactHUD .combatStack{gap:1px}
 .compactHUD .creatureHealth{height:14px}
 .compactHUD .hpNumber{flex-basis:16px;height:14px;font-size:10px;line-height:12px}
 .compactHUD .hpTrack{height:8px}
-.overlayPiece.combatHUD.compactHUD .combatFeet{height:14px;gap:2px}
-.compactHUD .creatureATK{min-width:17px;height:14px;padding:0 1px;font-size:10px;gap:0}
-.compactHUD .creatureATK svg{width:9px;height:11px}
-.compactHUD .actionBadges{height:14px;gap:2px}
-.compactHUD .actionBadge{width:14px;height:14px;border-radius:3px}
-.compactHUD .actionBadge svg{width:12px;height:12px}
-.compactHUD .spentSlash{top:5px;width:11px;height:1px}
-.compactHUD .actionCount{font-size:8px;line-height:9px;min-width:8px;right:-2px;bottom:-3px}
+.overlayPiece.combatHUD.compactHUD .combatFeet{width:40px;height:11px;gap:3px}
+.compactHUD .creatureATK{min-width:15px;height:11px;padding:0 1px;font-size:8px;gap:0}
+.compactHUD .creatureATK svg{width:6px;height:7px}
+.compactHUD .actionBadges{height:10px;gap:2px}
+.compactHUD .actionBadge{width:10px;height:10px;border-radius:2px}
+.compactHUD .actionBadge svg{width:7px;height:7px}
+.compactHUD .spentSlash{top:4px;width:8px;height:1px}
+.compactHUD .actionCount{font-size:8px;line-height:8px;min-width:7px;right:0;bottom:0}
 .royalHP{--hud-owner:#439aff;border:0;display:flex;flex-direction:row;align-items:center;gap:0;overflow:visible;box-sizing:border-box;background:transparent;border-radius:0}
 .royalHP.enemy{--hud-owner:#ff666c}
 .royalHP .kingStat.hpNumber{flex:0 0 18px;width:18px;height:20px;padding:0!important;font-size:12px!important;line-height:18px;gap:0}
@@ -931,6 +932,11 @@ body:not(.layout-landscape) .royalHP{width:32px;border:0;background:transparent}
 body:not(.layout-landscape) .royalHP .kingStat.hpNumber{flex-basis:16px;width:16px;height:16px;font-size:10px!important;line-height:14px}
 body:not(.layout-landscape) .royalHP .hpTrack{height:8px}
 body.creature-names-off .overlayPiece.combatHUD .overlayNameLayer{display:none}
+
+/* B only: enlarge artwork/fallback around their existing bottom edge.
+   The piece, foot marker, name and combatStack are not transformed. */
+body.view-left .overlayPiece.combatHUD .overlayCreatureAsset,
+body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%) scale(1.5);transform-origin:50% 100%}
 
 /* Only online chrome: the normal CPU stylesheet supplies the board, overlays,
    kings, hand, detail and ranges verbatim. No in-cell visibility overrides. */
