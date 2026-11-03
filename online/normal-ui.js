@@ -6,7 +6,7 @@
  const redraw=()=>{if(current){renderPieces(current);current.redrawInfo?.();}};
 // One fixed projection draws and clips the same 25 native cell elements.
 // Screen-space artwork follows their foot markers; there is no point-to-cell converter.
-let presentationView='current',layoutFrame=0,previousLandscape=null;
+let presentationView='current',layoutFrame=0;
 const landscapeQuery=matchMedia('(orientation: landscape) and (min-width: 640px)');
 function fixedProject(x,y,size,yaw){const a=yaw*Math.PI/180,t=55*Math.PI/180,u=(x*Math.cos(a)-y*Math.sin(a))*size,v=(x*Math.sin(a)+y*Math.cos(a))*size,w=1-v*Math.sin(t)/1000;return {x:u/w,y:v*Math.cos(t)/w};}
 // Central-column ray meets the outer edge; the complete 64x36 royal target
@@ -16,8 +16,50 @@ function royalAnchor(name,size,yaw){
  const y=name==='enemy'?-.5:.5,edge=fixedProject(0,y,size,yaw),a=fixedProject(-.1,y,size,yaw),b=fixedProject(.1,y,size,yaw),outside=fixedProject(0,y*1.2,size,yaw);
  let nx=-(b.y-a.y),ny=b.x-a.x;const len=Math.hypot(nx,ny);nx/=len;ny/=len;
  const dx=outside.x-edge.x,dy=outside.y-edge.y;if(nx*dx+ny*dy<0){nx=-nx;ny=-ny;}
- const distance=(Math.max(...(!landscapeQuery.matches?[[-32,-18],[32,-18],[32,18],[-32,18]]:hpOnLeft(name)?[[-80,-18],[32,-18],[32,18],[-80,18]]:[[-32,-18],[80,-18],[80,18],[-32,18]]).map(([x,y])=>-nx*x-ny*y))+3)/(nx*dx+ny*dy);
+ const [x1,y1,x2,y2]=royalBounds(name),distance=(Math.max(...[[x1,y1],[x2,y1],[x2,y2],[x1,y2]].map(([x,y])=>-nx*x-ny*y))+3)/(nx*dx+ny*dy);
  return {x:edge.x+dx*distance,y:edge.y+dy*distance};
+}
+function royalBounds(name){return !landscapeQuery.matches?[-32,-18,32,18]:name==='enemy'?[-118,-18,32,18]:[-32,-18,118,18];}
+const layoutHomes=new WeakMap();
+function moveLayoutNode(node,parent){if(!node||!parent)return;if(!layoutHomes.has(node)){const home=document.createComment('presentation home');node.before(home);layoutHomes.set(node,home);}if(node.parentNode!==parent)parent.append(node);}
+function restoreLayoutNode(node){const home=node&&layoutHomes.get(node);if(home?.parentNode&&node.previousSibling!==home)home.after(node);}
+function arrangeLandscapeInfo(landscape,app,column,wrap){
+ let dock=column.querySelector('.battleInfoDock');if(!dock){dock=document.createElement('div');dock.className='battleInfoDock';column.append(dock);}
+ const turn=$('turnIndicator'),enemyDock=app.querySelector('.enemyManaDock'),effects=app.querySelector('.status .statusButton')||dock.querySelector('.statusButton');
+ for(const node of [turn,enemyDock,effects]){if(landscape)moveLayoutNode(node,dock);else restoreLayoutNode(node);}
+ for(const kind of ['enemy','player']){let group=wrap.querySelector('.royalGrave.'+kind);if(!group){group=document.createElement('span');group.className='royalGrave '+kind;group.setAttribute('aria-label',kind==='enemy'?'相手の墓地':'自分の墓地');wrap.append(group);}const button=column.querySelector('.kingZone.'+kind+' .graveButton')||group.querySelector('.graveButton');if(landscape)moveLayoutNode(button,group);else restoreLayoutNode(button);}
+ return dock;
+}
+function restoreNativePlane(board,wrap){
+ // Release all presentation-owned projection state before any geometry reads.
+ for(const cell of board.querySelectorAll('.cell')){for(const key of ['position','left','top','width','height','clip-path'])cell.style.removeProperty(key);delete cell.dataset.logicalSize;}
+ for(const key of ['--logical-board','--plane-offset-x','--plane-offset-y'])wrap.style.removeProperty(key);
+ wrap.querySelector('.boardGrid')?.replaceChildren();
+ for(const foot of wrap.querySelectorAll('.royalFoot')){foot.style.removeProperty('left');foot.style.removeProperty('top');}
+}
+function projectionShapes(size,yaw){
+ const board=[[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]].map(([x,y])=>fixedProject(x,y,size,yaw));
+ const shapes=[board];for(const kind of ['enemy','player']){const p=royalAnchor(kind,size,yaw),[a,b,c,d]=royalBounds(kind);shapes.push([[a,b],[c,b],[c,d],[a,d]].map(([x,y])=>({x:p.x+x,y:p.y+y})));}return shapes;
+}
+function shapeBounds(shapes){const points=shapes.flat();return {x1:Math.min(...points.map(p=>p.x)),x2:Math.max(...points.map(p=>p.x)),y1:Math.min(...points.map(p=>p.y)),y2:Math.max(...points.map(p=>p.y))};}
+function intersectsRect(poly,r){
+ const box=[{x:r.x1,y:r.y1},{x:r.x2,y:r.y1},{x:r.x2,y:r.y2},{x:r.x1,y:r.y2}];
+ for(const axis of [{x:1,y:0},{x:0,y:1},...poly.map((p,i)=>{const q=poly[(i+1)%poly.length];return {x:p.y-q.y,y:q.x-p.x};})]){const a=poly.map(p=>p.x*axis.x+p.y*axis.y),b=box.map(p=>p.x*axis.x+p.y*axis.y);if(Math.max(...a)<=Math.min(...b)||Math.max(...b)<=Math.min(...a))return false;}return true;
+}
+function fitProjection(wrap,dock){
+ const landscape=landscapeQuery.matches,yaw=presentationView==='left'?-45:0,w=wrap.clientWidth,h=wrap.clientHeight;
+ if(!w||!h)return;
+ const wr=wrap.getBoundingClientRect(),dr=dock.getBoundingClientRect(),obstacle=landscape&&dr.width?{x1:dr.left-wr.left-8,y1:dr.top-wr.top-8,x2:dr.right-wr.left+8,y2:dr.bottom-wr.top+8}:null;
+ const place=size=>{const shapes=projectionShapes(size,yaw),b=shapeBounds(shapes),x1=4-b.x1,x2=w-4-b.x2,y1=4-b.y1,y2=h-4-b.y2;if(x2<x1||y2<y1)return null;
+  const cx=(w-b.x1-b.x2)/2,cy=(h-b.y1-b.y2)/2,positions=[];
+  // A small screen-space fit search, not a camera control or input converter.
+  for(const fx of [.5,0,.25,.75,1])for(const fy of [.5,0,.25,.75,1]){const x=x1+(x2-x1)*fx,y=y1+(y2-y1)*fy;if(obstacle&&shapes.some(poly=>intersectsRect(poly.map(p=>({x:p.x+x,y:p.y+y})),obstacle)))continue;positions.push({x,y,score:(x-cx)**2+(y-cy)**2});}
+  positions.sort((a,b)=>a.score-b.score);return positions[0]||null;
+ };
+ // Portrait B retains v6's shared A/B scale and existing status clearance.
+ if(!landscape){const envelope=size=>shapeBounds([0,-45].flatMap(a=>projectionShapes(size,a)));let lo=70,hi=800;for(let i=0;i<16;i++){const n=(lo+hi)/2,b=envelope(n);if(b.x2-b.x1<=w-8&&b.y2-b.y1<=h-8)lo=n;else hi=n;}const b=envelope(lo),active=shapeBounds(projectionShapes(lo,yaw));let y=(h-b.y1-b.y2)/2;const status=[...document.querySelectorAll('.kingZone.enemy .manaStat,.kingZone.enemy .graveButton')].map(e=>e.getBoundingClientRect()).filter(r=>r.width&&r.height),top=Math.max(0,...status.map(r=>r.bottom-wr.top+4));y+=Math.min(Math.max(0,top-y-active.y1),Math.max(0,h-4-y-active.y2));wrap.style.setProperty('--logical-board',lo+'px');wrap.style.setProperty('--plane-offset-x',(-(b.x1+b.x2)/2)+'px');wrap.style.setProperty('--plane-offset-y',(y-h/2)+'px');return;}
+ let lo=30,hi=1000,best=place(lo);for(let i=0;i<17;i++){const n=(lo+hi)/2,p=place(n);if(p){lo=n;best=p;}else hi=n;}
+ if(!best)return;wrap.style.setProperty('--logical-board',lo+'px');wrap.style.setProperty('--plane-offset-x',(best.x-w/2)+'px');wrap.style.setProperty('--plane-offset-y',(best.y-h/2)+'px');
 }
 function projectCells(cells,wrap){
  const active=document.body.classList.contains('projected-board'),grid=wrap.querySelector('.boardGrid');
@@ -47,13 +89,15 @@ function refreshCellRings(cells,wrap,grid){grid.querySelectorAll('polygon,text')
 }
 function syncLayout(){
  const landscape=landscapeQuery.matches;
- previousLandscape=landscape;
  const projected=landscape||presentationView==='left';
  document.body.classList.toggle('layout-landscape',landscape);
  document.body.classList.toggle('view-left',presentationView==='left');
  document.body.classList.toggle('projected-board',projected);
  const app=$('app'),column=document.querySelector('.boardColumn'),wrap=$('board')?.closest('.boardWrap');
  if(!app||!wrap)return;
+ const board=$('board');if(!projected)restoreNativePlane(board,wrap);
+ wrap.dataset.renderMode=projected?'projected':'native';
+ const infoDock=arrangeLandscapeInfo(landscape,app,column,wrap);
  if(landscape){const viewport=visualViewport?.height||innerHeight,top=app.getBoundingClientRect().top+scrollY,safe=parseFloat(getComputedStyle(document.body).paddingBottom)||0;app.style.setProperty('--play-height',Math.max(340,Math.floor(viewport-top-safe-4))+'px');}else app.style.removeProperty('--play-height');
  const mana=column?.querySelector('.kingZone.player .manaStat')||app.querySelector('.manaDock .manaStat'),dock=app.querySelector('.manaDock'),zone=column?.querySelector('.kingZone.player');
  if(mana&&dock&&zone)(landscape?dock:zone).append(mana);
@@ -61,16 +105,7 @@ function syncLayout(){
  if(enemyMana&&enemyDock&&enemyZone)(landscape?enemyDock:enemyZone).append(enemyMana);
  const message=$('message'),panel=$('infoPanel'),area=app.querySelector('.playArea');
  if(message&&panel&&area){if(landscape)panel.insertBefore(message,$('infoContent'));else app.insertBefore(message,area);}
- if(projected){
-  // Fit both views to one shared envelope, including off-board royal bases/crowns.
-  const envelope=(size,yaws=[0,-45])=>{const pts=[];for(const yaw of yaws){for(const [x,y]of [[-.5,-.5],[.5,-.5],[.5,.5],[-.5,.5]]){const p=fixedProject(x,y,size,yaw);pts.push([p.x,p.y]);}for(const name of ['enemy','player']){const p=royalAnchor(name,size,yaw);pts.push([p.x-(landscapeQuery.matches&&hpOnLeft(name)?80:32),p.y-18],[p.x+(landscapeQuery.matches&&!hpOnLeft(name)?80:32),p.y+18]);}}return {x1:Math.min(...pts.map(p=>p[0])),x2:Math.max(...pts.map(p=>p[0])),y1:Math.min(...pts.map(p=>p[1])),y2:Math.max(...pts.map(p=>p[1]))};};
-  let lo=70,hi=800;for(let i=0;i<16;i++){const size=(lo+hi)/2,b=envelope(size);if(b.x2-b.x1<=wrap.clientWidth-8&&b.y2-b.y1<=wrap.clientHeight-8)lo=size;else hi=size;}
-  const size=lo,b=envelope(size);let offsetY=-(b.y1+b.y2)/2;
-  // Preserve portrait B's scale while keeping its off-board king below the
-  // existing opponent status row. Only consume unused space inside the wrap.
-  if(!landscape&&wrap.clientHeight){const wr=wrap.getBoundingClientRect(),status=[...column.querySelectorAll('.kingZone.enemy .manaStat,.kingZone.enemy .graveButton')].map(e=>e.getBoundingClientRect()).filter(r=>r.width&&r.height),top=Math.max(0,...status.map(r=>r.bottom-wr.top+4)),active=envelope(size,[-45]),shift=Math.max(0,top-(wrap.clientHeight/2+offsetY+active.y1)),room=Math.max(0,wrap.clientHeight/2-4-offsetY-active.y2);offsetY+=Math.min(shift,room);}
-  wrap.style.setProperty('--logical-board',size+'px');wrap.style.setProperty('--plane-offset-x',(-(b.x1+b.x2)/2)+'px');wrap.style.setProperty('--plane-offset-y',offsetY+'px');
- }
+ if(projected)fitProjection(wrap,infoDock);
 }
 function screenPoint(element,relative){const r=element.getBoundingClientRect(),o=relative.getBoundingClientRect();return {x:r.left-o.left,y:r.top-o.top};}
 function mark(cell,name,x,y){let e=cell.querySelector('[data-plane-point="'+name+'"]');if(!e){e=document.createElement('span');e.className='planePoint';e.dataset.planePoint=name;e.setAttribute('aria-hidden','true');cell.append(e);}e.style.left=x+'%';e.style.top=y+'%';return e;}
@@ -97,6 +132,10 @@ function tutorialSelectors(selectors){return selectors.map(selector=>{
  if(selector==='.kingZone.enemy .kingStat:not(.manaStat)')return '.royalHP.enemy';
  if(selector==='.kingZone.player .kingStat:not(.manaStat)')return '.royalHP.player';
  if(selector==='.kingZone.player .manaStat'&&landscapeQuery.matches)return '.manaDock .manaStat';
+ if(selector==='.kingZone.enemy .manaStat'&&landscapeQuery.matches)return '.battleInfoDock .manaStat';
+ if(selector==='.kingZone.enemy .graveButton'&&landscapeQuery.matches)return '.royalGrave.enemy .graveButton';
+ if(selector==='.kingZone.player .graveButton'&&landscapeQuery.matches)return '.royalGrave.player .graveButton';
+ if(selector==='.status .statusButton'&&landscapeQuery.matches)return '.battleInfoDock .statusButton';
  return selector;
 });}
 let tutorialExplanation=null,tutorialPresentationFrame=0,previousLogExplanation=false;
@@ -161,7 +200,8 @@ function positionRoyalPedestals(){
   pedestal.style.width='64px';pedestal.style.height='36px';
  }positionRoyalHP(wrap);
 }
-function positionRoyalHP(wrap){for(const [kind,id]of [['enemy','enemyPedestal'],['player','playerPedestal']]){const hud=wrap.querySelector('.royalHP.'+kind),b=$(id).getBoundingClientRect(),w=wrap.getBoundingClientRect();hud.style.left=(!landscapeQuery.matches?b.left-w.left+32:hpOnLeft(kind)?b.left-w.left-48:b.right-w.left+4)+'px';hud.style.top=(b.top-w.top+(!landscapeQuery.matches?4:(b.height-24)/2))+'px';}}
+function positionRoyalHP(wrap){for(const [kind,id]of [['enemy','enemyPedestal'],['player','playerPedestal']]){const hud=wrap.querySelector('.royalHP.'+kind),b=$(id).getBoundingClientRect(),w=wrap.getBoundingClientRect();hud.style.left=(!landscapeQuery.matches?b.left-w.left+32:hpOnLeft(kind)?b.left-w.left-48:b.right-w.left+4)+'px';hud.style.top=(b.top-w.top+(!landscapeQuery.matches?4:(b.height-24)/2))+'px';const grave=wrap.querySelector('.royalGrave.'+kind);if(landscapeQuery.matches&&grave){grave.style.left=(kind==='enemy'?b.left-w.left-86:b.right-w.left+52)+'px';grave.style.top=(b.top-w.top+2)+'px';}}}
+
 const CREATURE_ASSET_IDS={
  "歩兵":"infantry","銀級兵":"silver","金級兵":"gold","チャリオット":"chariot","アーチャー":"archer",
  "盗賊":"thief","サラマンダー":"salamander","踊り子":"dancer","戦狼":"war_wolf","ディアブロ":"diablo",

@@ -749,7 +749,7 @@ body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
 .overlayCreatureAsset{object-fit:contain;user-select:none;-webkit-user-drag:none}
 
 /* P3 comparison presentation: editable templates own structure; CSS owns viewport layout. */
-.boardPlane{display:contents}.boardGrid,.royalFoot{display:none}
+.boardPlane{display:block;position:absolute;inset:0;transform-style:flat}.boardGrid,.royalFoot{display:none}
 .planePoint{position:absolute;width:0;height:0;pointer-events:none}
 .manaDock:empty,.enemyManaDock:empty{display:none}
 .layoutHandScroll{display:none}
@@ -760,12 +760,12 @@ body.layout-landscape #app{box-sizing:border-box;max-width:1600px;width:100%;hei
 body.layout-landscape #app.gameScreenHidden{display:none!important}
 body.layout-landscape .gameTopBar,body.layout-landscape .appHeader{grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:space-between;margin:0;gap:6px;min-width:0}
 body.layout-landscape .status{grid-column:2;grid-row:1;font-size:10px;margin:0;padding:0;gap:3px;min-height:0;overflow:auto;flex-wrap:wrap;white-space:normal}
-body.layout-landscape .status .badge{padding:3px 5px}
+body.layout-landscape .status .badge{padding:1px 2px}
 body.layout-landscape #app button{touch-action:manipulation}
 body.layout-landscape .gameTopBar>button,body.layout-landscape .appHeader>button{font-size:12px;padding:6px 8px;min-height:32px}
 body.layout-landscape .playArea{grid-row:2;grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,28%);min-height:0;height:100%;align-items:stretch;gap:8px;margin:0}
 body.layout-landscape .boardColumn{position:relative;min-height:0;height:100%;gap:0;min-width:0}
-body.layout-landscape .boardWrap{position:absolute;top:34px;left:0;height:calc(100% - 34px);width:100%;aspect-ratio:auto;min-height:0;margin:0!important}
+body.layout-landscape .boardWrap{position:absolute;top:0;left:0;height:100%;width:100%;aspect-ratio:auto;min-height:0;margin:0!important}
 body.layout-landscape .turnIndicator{position:absolute;left:50%;top:0;transform:translateX(-50%);z-index:900;margin:0;font-size:13px;padding:7px 8px;white-space:nowrap}
 body.layout-landscape .kingZone.enemy,body.layout-landscape .kingZone.player{width:100px!important;height:32px!important;min-height:0;grid-template-columns:1fr auto!important;grid-template-rows:1fr!important;z-index:700!important;top:0!important;bottom:auto!important;pointer-events:none!important}
 body.layout-landscape .kingZone.enemy{left:0!important}
@@ -839,7 +839,7 @@ body.projected-board #board .cell.tutorialGlow{position:absolute!important}
 .tutorialGrid polygon{fill:none;stroke:#ffe277;stroke-width:3;vector-effect:non-scaling-stroke}
 /* A single fixed projection supplies both the 25 native clip polygons and grid.
    There are no 3D transformed input surfaces or coordinate-to-ID conversions. */
-body.projected-board .boardPlane{display:block;position:absolute;inset:0;width:100%;height:100%;transform:none}
+body.projected-board .boardPlane{display:block;position:absolute;inset:0;width:100%;height:100%;transform:none;perspective:none;transform-style:flat}
 body.projected-board .boardPlane>.board{display:block!important;position:absolute;inset:0;width:100%;height:100%;border:0!important;gap:0;transform:none!important;transform-style:flat!important;background:transparent!important;box-shadow:none!important;outline:none;overflow:visible}
 body.projected-board .board .cell{border:0!important;border-radius:0;padding:0;aspect-ratio:auto;transform:none!important;transform-style:flat!important}
 body.projected-board .boardGrid{display:block;position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
@@ -858,6 +858,22 @@ body:not(.layout-landscape) .royalHP .kingStat{font-size:10px!important}
 
 /* Absolute arrows reserve their existing gutters even when unavailable. */
 .handScroller button[hidden],.scrollHint.hand[hidden]{display:none!important}
+
+/* Stable native 3D plane: do not switch display:contents/containing blocks. */
+body:not(.projected-board) .boardWrap{perspective:none}
+body:not(.projected-board) .boardPlane{display:block;position:absolute;inset:0;transform:none;transform-style:flat;perspective:700px;perspective-origin:50% 100%}
+body:not(.projected-board) .boardPlane>.board{display:grid!important;position:relative;transform:rotateX(42deg)!important;transform-origin:50% 100%;transform-style:preserve-3d!important}
+@media(max-width:600px){body:not(.projected-board) .boardPlane{perspective:560px}body:not(.projected-board) .boardPlane>.board{transform:rotateX(40deg)!important}}
+.battleInfoDock{display:none}.royalGrave:empty{display:none}
+body.layout-landscape .battleInfoDock{display:grid;position:absolute;right:0;top:0;grid-template-columns:auto auto;gap:4px;z-index:900;align-items:start;justify-items:end}
+body.layout-landscape .battleInfoDock .turnIndicator{grid-column:2;grid-row:1;position:relative;left:auto;top:auto;transform:none;margin:0;min-height:32px;box-sizing:border-box}
+body.layout-landscape .battleInfoDock .statusButton{grid-column:1;grid-row:1;font-size:11px;min-height:32px;padding:7px 6px;white-space:nowrap}
+body.layout-landscape .battleInfoDock .enemyManaDock{grid-column:2;grid-row:2;margin:0;padding:5px 7px}
+body.layout-landscape .kingZone{display:none!important}
+body.layout-landscape .royalGrave{position:absolute;width:34px;height:32px;z-index:800}
+body.layout-landscape .royalGrave .graveButton{box-sizing:border-box;width:34px;height:32px;padding:4px 1px;font-size:12px;min-width:34px;touch-action:manipulation}
+body.tutorial-mode #settingsButton{opacity:1}
+body.tutorial-mode #settingsOverlay .settingsGroup:not(:has([data-setting="view"])){display:none}
 
 /* Only online chrome: the normal CPU stylesheet supplies the board, overlays,
    kings, hand, detail and ranges verbatim. No in-cell visibility overrides. */
