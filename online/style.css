@@ -801,7 +801,7 @@ body:not(.layout-landscape) .controls{flex-wrap:wrap;align-items:flex-start}
 body:not(.layout-landscape) .layoutLog{flex:1 0 100%;width:100%;min-width:0}
 body:not(.layout-landscape) .logPanel{position:static;width:100%;max-height:none;margin-top:4px}
 body:not(.layout-landscape) .logPanel #log{max-height:min(240px,40dvh)}
-body:not(.layout-landscape) #tutorialCoach.tutorialAtLog{position:static;display:block;transform:none;box-sizing:border-box;width:100%;max-width:none;margin:4px 0;padding:10px;z-index:auto}
+body:not(.layout-landscape) #tutorialCoach.tutorialAtLog{position:static;display:block;order:97;flex:1 0 100%;transform:none;box-sizing:border-box;width:100%;max-width:none;margin:4px 0;padding:10px;z-index:auto}
 .layoutLog{position:relative;flex:0 0 auto;margin:0;order:98}
 .logPanel{position:fixed;z-index:1100;width:min(360px,calc(100vw - 16px));max-height:190px;overflow:hidden;background:#20252c;border:1px solid #536071;border-radius:8px;padding:6px;box-sizing:border-box}
 .layoutLog:not([open]) .logPanel{display:none}

@@ -809,7 +809,7 @@ body:not(.layout-landscape) .controls{flex-wrap:wrap;align-items:flex-start}
 body:not(.layout-landscape) .layoutLog{flex:1 0 100%;width:100%;min-width:0}
 body:not(.layout-landscape) .logPanel{position:static;width:100%;max-height:none;margin-top:4px}
 body:not(.layout-landscape) .logPanel #log{max-height:min(240px,40dvh)}
-body:not(.layout-landscape) #tutorialCoach.tutorialAtLog{position:static;display:block;transform:none;box-sizing:border-box;width:100%;max-width:none;margin:4px 0;padding:10px;z-index:auto}
+body:not(.layout-landscape) #tutorialCoach.tutorialAtLog{position:static;display:block;order:97;flex:1 0 100%;transform:none;box-sizing:border-box;width:100%;max-width:none;margin:4px 0;padding:10px;z-index:auto}
 .layoutLog{position:relative;flex:0 0 auto;margin:0;order:98}
 .logPanel{position:fixed;z-index:1100;width:min(360px,calc(100vw - 16px));max-height:190px;overflow:hidden;background:#20252c;border:1px solid #536071;border-radius:8px;padding:6px;box-sizing:border-box}
 .layoutLog:not([open]) .logPanel{display:none}
@@ -1211,9 +1211,9 @@ function positionTutorialExplanation(){
  const flowLog=logTarget&&!landscapeQuery.matches;
  if(flowLog){
   const details=$('log').closest('details');if(!coach.classList.contains('tutorialAtLog'))tutorialLogScrollPending=true;
-  moveLayoutNode(coach,details);details.querySelector('.logPanel').before(coach);coach.classList.add('tutorialAtLog');
+  moveLayoutNode(coach,details.parentElement);details.before(coach);coach.classList.add('tutorialAtLog');
   for(const k of ['left','top','width','max-height','bottom','right','overflow-y','transform'])coach.style.removeProperty(k);
-  if(tutorialLogScrollPending){tutorialLogScrollPending=false;details.scrollIntoView({block:'start',behavior:'instant'});}return;
+  if(tutorialLogScrollPending){tutorialLogScrollPending=false;coach.scrollIntoView({block:'start',behavior:'instant'});}return;
  }
  restoreLayoutNode(coach);coach.classList.remove('tutorialAtLog');
  if(landscapeQuery.matches){const host=(infoTarget||logTarget)?document.querySelector('.boardColumn'):panel,r=host.getBoundingClientRect();coach.style.left=Math.max(4,r.left+6)+'px';coach.style.width=Math.max(logTarget?160:195,Math.min(infoTarget||logTarget?350:r.width-12,logTarget?Math.max(160,document.querySelector('.logPanel').getBoundingClientRect().left-r.left-18):r.width-12))+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';coach.style.top=Math.max(4,r.bottom-coach.offsetHeight-6)+'px';}

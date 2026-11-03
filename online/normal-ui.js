@@ -169,9 +169,9 @@ function positionTutorialExplanation(){
  const flowLog=logTarget&&!landscapeQuery.matches;
  if(flowLog){
   const details=$('log').closest('details');if(!coach.classList.contains('tutorialAtLog'))tutorialLogScrollPending=true;
-  moveLayoutNode(coach,details);details.querySelector('.logPanel').before(coach);coach.classList.add('tutorialAtLog');
+  moveLayoutNode(coach,details.parentElement);details.before(coach);coach.classList.add('tutorialAtLog');
   for(const k of ['left','top','width','max-height','bottom','right','overflow-y','transform'])coach.style.removeProperty(k);
-  if(tutorialLogScrollPending){tutorialLogScrollPending=false;details.scrollIntoView({block:'start',behavior:'instant'});}return;
+  if(tutorialLogScrollPending){tutorialLogScrollPending=false;coach.scrollIntoView({block:'start',behavior:'instant'});}return;
  }
  restoreLayoutNode(coach);coach.classList.remove('tutorialAtLog');
  if(landscapeQuery.matches){const host=(infoTarget||logTarget)?document.querySelector('.boardColumn'):panel,r=host.getBoundingClientRect();coach.style.left=Math.max(4,r.left+6)+'px';coach.style.width=Math.max(logTarget?160:195,Math.min(infoTarget||logTarget?350:r.width-12,logTarget?Math.max(160,document.querySelector('.logPanel').getBoundingClientRect().left-r.left-18):r.width-12))+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';coach.style.top=Math.max(4,r.bottom-coach.offsetHeight-6)+'px';}
