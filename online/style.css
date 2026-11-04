@@ -881,25 +881,45 @@ body.layout-landscape .royalGrave .graveButton{box-sizing:border-box;width:34px;
 body.tutorial-mode #settingsButton{opacity:1}
 body.tutorial-mode #settingsOverlay .settingsGroup:not(:has([data-setting="view"])){display:none}
 
-/* One live strip only in landscape B. A and portrait restore their original nodes. */
+/* One live strip for both landscape views. Portrait restores the original nodes. */
 .battleStrip{display:none}
-body.layout-landscape.view-left #app{min-height:260px;grid-template-rows:34px minmax(0,1fr) clamp(80px,14dvh,104px)}
-body.layout-landscape.view-left .controls{display:none}
-body.layout-landscape.view-left .battleStrip{grid-column:1/-1;grid-row:3;display:grid;grid-template-columns:124px minmax(0,1fr) clamp(168px,23vw,240px);gap:6px;min-width:0;min-height:0;position:relative;z-index:950;background:#15171b}
-body.layout-landscape.view-left .stripLeft{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;min-width:0}
-body.layout-landscape.view-left .stripLeft .layoutLog{order:0;margin:0}
-body.layout-landscape.view-left .stripLeft .manaDock{order:1;padding:5px 6px;min-height:36px;box-sizing:border-box}
-body.layout-landscape.view-left .battleStrip>.handScroller{grid-column:2;grid-row:1;padding:0 28px;height:100%;min-width:0}
-body.layout-landscape.view-left .stripRight{grid-column:3;grid-row:1;display:flex;flex-direction:column;justify-content:space-between;min-width:0;gap:4px}
-body.layout-landscape.view-left .stripButtons{display:flex;gap:4px;min-width:0}
-body.layout-landscape.view-left .stripButtons button{flex:1 1 0;min-width:0;min-height:36px;padding:5px 3px;font-size:12px;line-height:1.15}
-body.layout-landscape.view-left .stripEnd{display:flex;justify-content:flex-end}
-body.layout-landscape.view-left .stripEnd #endTurn{min-height:38px;padding:7px 14px;font-size:13px}
-body.layout-landscape.view-left .stripLeft .layoutLog summary{min-height:36px;padding:8px 6px}
+body.layout-landscape #app{min-height:260px;grid-template-rows:34px minmax(0,1fr) clamp(80px,14dvh,104px)}
+body.layout-landscape .controls{display:none}
+body.layout-landscape .battleStrip{grid-column:1/-1;grid-row:3;display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;gap:6px;min-width:0;min-height:0;position:relative;z-index:950;background:#15171b}
+body.layout-landscape .stripLeft{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;min-width:0}
+body.layout-landscape .stripLeft .layoutLog{order:0;margin:0}
+body.layout-landscape .stripLeft .manaDock{order:1;padding:5px 6px;min-height:36px;box-sizing:border-box}
+body.layout-landscape .battleStrip>.handScroller{grid-column:2;grid-row:1;padding:0 28px;height:100%;min-width:0}
+body.layout-landscape .stripRight{grid-column:3;grid-row:1;display:flex;flex-direction:column;justify-content:space-between;min-width:0;gap:4px}
+body.layout-landscape .stripButtons{display:flex;gap:4px;min-width:0}
+body.layout-landscape .stripButtons button{flex:0 0 auto;min-width:44px;min-height:36px;padding:5px 8px;font-size:12px;line-height:1.15}
+body.layout-landscape .stripEnd{display:flex;justify-content:flex-end}
+body.layout-landscape .stripEnd #endTurn{min-height:38px;padding:7px 14px;font-size:13px}
+body.layout-landscape .stripLeft .layoutLog summary{min-height:36px;padding:8px 6px}
 #selectionContext{font-size:11px;line-height:1.35;padding:4px 8px;border-bottom:1px solid #475363;flex:0 0 auto;max-height:48px;overflow:auto;background:#18212c}
 body.layout-landscape #message:empty{display:none}
 #message:not(:empty)::before{content:'通知：';font-weight:700}
 body.layout-landscape #message{border-top:1px solid #5d6270;max-height:48px;flex:0 0 auto}
+
+/* Compact, fixed-width current/max mana; the same live values in all views. */
+body #app .manaStat{box-sizing:border-box;display:inline-flex;align-items:center;gap:3px;width:92px;height:26px;min-height:26px;padding:3px 4px!important;border:1px solid #536071;border-radius:6px;background:#171e27;white-space:nowrap;font:700 12px/1.2 system-ui!important}
+body #app .manaOwner{font-size:10px;line-height:1.2}
+body #app .manaGlyph{font-size:11px;line-height:1;flex:0 0 auto}
+body #app .manaStat b{font:700 12px/1.2 ui-monospace,monospace;flex:0 0 5ch;text-align:right;font-variant-numeric:tabular-nums}
+body.layout-landscape .manaDock,body.layout-landscape .enemyManaDock{padding:0;min-height:0!important;border:0;background:none;margin:0;gap:0}
+body.layout-landscape .manaDock::before,body.layout-landscape .enemyManaDock::before{content:none}
+body.layout-landscape .stripLeft .manaDock{padding:0;min-height:0}
+.enemyInfoDock{display:none}
+body.layout-landscape .enemyInfoDock{display:block;position:absolute;left:0;top:0;z-index:900}
+body.layout-landscape .battleInfoDock{grid-template-columns:auto;gap:4px}
+body.layout-landscape .battleInfoDock .turnIndicator{grid-column:1;grid-row:1}
+body.layout-landscape .battleInfoDock .statusButton{grid-column:1;grid-row:2;justify-self:end}
+body.layout-landscape .stripRight{width:max-content}
+/* Portrait keeps its existing mana positions; reserve maximum digits compactly. */
+body:not(.layout-landscape) #app .manaStat{width:72px;height:14px;min-height:14px;padding:0 1px!important;gap:2px;font:700 11px/12px system-ui!important}
+body:not(.layout-landscape) #app .manaOwner{font-size:9px;line-height:10px}
+body:not(.layout-landscape) #app .manaGlyph{font-size:9px;line-height:10px}
+body:not(.layout-landscape) #app .manaStat b{font:700 11px/12px ui-monospace,monospace}
 
 /* Screen-facing public combat information; no hit targets or board geometry. */
 .overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-name:-52px;--hud-foot:0px;transform:translate(-50%,-50%);pointer-events:none}

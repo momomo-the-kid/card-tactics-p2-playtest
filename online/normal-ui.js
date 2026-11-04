@@ -25,9 +25,11 @@ const layoutHomes=new WeakMap();
 function moveLayoutNode(node,parent){if(!node||!parent)return;if(!layoutHomes.has(node)){const home=document.createComment('presentation home');node.before(home);layoutHomes.set(node,home);}if(node.parentNode!==parent)parent.append(node);}
 function restoreLayoutNode(node){const home=node&&layoutHomes.get(node);if(home?.parentNode&&node.previousSibling!==home)home.after(node);}
 function arrangeLandscapeInfo(landscape,app,column,wrap){
+ let leftDock=column.querySelector('.enemyInfoDock');if(!leftDock){leftDock=document.createElement('div');leftDock.className='enemyInfoDock';column.append(leftDock);}
  let dock=column.querySelector('.battleInfoDock');if(!dock){dock=document.createElement('div');dock.className='battleInfoDock';column.append(dock);}
  const turn=$('turnIndicator'),enemyDock=app.querySelector('.enemyManaDock'),effects=app.querySelector('.status .statusButton')||dock.querySelector('.statusButton');
- for(const node of [turn,enemyDock,effects]){if(landscape)moveLayoutNode(node,dock);else restoreLayoutNode(node);}
+ for(const node of [turn,effects]){if(landscape)moveLayoutNode(node,dock);else restoreLayoutNode(node);}
+ if(landscape)moveLayoutNode(enemyDock,leftDock);else restoreLayoutNode(enemyDock);
  for(const kind of ['enemy','player']){let group=wrap.querySelector('.royalGrave.'+kind);if(!group){group=document.createElement('span');group.className='royalGrave '+kind;group.setAttribute('aria-label',kind==='enemy'?'相手の墓地':'自分の墓地');wrap.append(group);}const button=column.querySelector('.kingZone.'+kind+' .graveButton')||group.querySelector('.graveButton');if(landscape)moveLayoutNode(button,group);else restoreLayoutNode(button);}
  return dock;
 }
@@ -36,7 +38,7 @@ function arrangeBattleStrip(active,app){
  const strip=app.querySelector('.battleStrip');if(!strip)return;
  const hand=app.querySelector('.handScroller'),scroll=$('hand')?.scrollLeft||0;
  const nodes=[[app.querySelector('.layoutLog'),strip.querySelector('.stripLeft')],[app.querySelector('.manaDock'),strip.querySelector('.stripLeft')],[hand,strip]];
- for(const id of ['undoOne','newGame','surrenderGame','onlineUndo','onlineSurrender'])nodes.push([$(id),strip.querySelector('.stripButtons')]);
+ for(const id of ['undoOne','surrenderGame','onlineUndo','onlineSurrender'])nodes.push([$(id),strip.querySelector('.stripButtons')]);
  nodes.push([$('endTurn'),strip.querySelector('.stripEnd')]);
  for(const [node,parent]of nodes)if(active)moveLayoutNode(node,parent);else restoreLayoutNode(node);
  if($('hand'))$('hand').scrollLeft=scroll;
@@ -64,17 +66,30 @@ function projectionShapes(size,yaw){
 }
 function shapeBounds(shapes){const points=shapes.flat();return {x1:Math.min(...points.map(p=>p.x)),x2:Math.max(...points.map(p=>p.x)),y1:Math.min(...points.map(p=>p.y)),y2:Math.max(...points.map(p=>p.y))};}
 function intersectsRect(poly,r){
+ if(poly.every(p=>p.x<=r.x1)||poly.every(p=>p.x>=r.x2)||poly.every(p=>p.y<=r.y1)||poly.every(p=>p.y>=r.y2))return false;
  const box=[{x:r.x1,y:r.y1},{x:r.x2,y:r.y1},{x:r.x2,y:r.y2},{x:r.x1,y:r.y2}];
  for(const axis of [{x:1,y:0},{x:0,y:1},...poly.map((p,i)=>{const q=poly[(i+1)%poly.length];return {x:p.y-q.y,y:q.x-p.x};})]){const a=poly.map(p=>p.x*axis.x+p.y*axis.y),b=box.map(p=>p.x*axis.x+p.y*axis.y);if(Math.max(...a)<=Math.min(...b)||Math.max(...b)<=Math.min(...a))return false;}return true;
+}
+function projectedPieceWidth(a,b){return Math.max(34,Math.min(82,Math.hypot(b.x-a.x,b.y-a.y)*.86));}
+function overlayProtection(size,yaw){
+ const board=projectionShapes(size,yaw)[0],bounds=shapeBounds([board]),compact=Math.min(bounds.x2-bounds.x1,bounds.y2-bounds.y1)/5<64;
+ const rect=(x1,y1,x2,y2)=>[{x:x1,y:y1},{x:x2,y:y1},{x:x2,y:y2},{x:x1,y:y2}],out=[];
+ for(let row=0;row<5;row++)for(let col=0;col<5;col++){
+  const y=(row+.5)/5-.5,foot=fixedProject((col+.5)/5-.5,y,size,yaw),width=projectedPieceWidth(fixedProject(col/5-.5,y,size,yaw),fixedProject((col+1)/5-.5,y,size,yaw)),scale=yaw?1.5:1;
+  const bottom=foot.y+width*.31,artHeight=width*.68*scale,artWidth=width*.88*scale;
+  out.push(rect(foot.x-artWidth/2,bottom-artHeight,foot.x+artWidth/2,bottom));
+  const nameWidth=compact?38:76,nameTop=foot.y+(compact?-25:-52);out.push(rect(foot.x-nameWidth/2,nameTop,foot.x+nameWidth/2,nameTop+(compact?9:13)));
+  const statWidth=compact?40:64;out.push(rect(foot.x-statWidth/2,foot.y+(compact?-5:0),foot.x+statWidth/2,foot.y+(compact?21:36)));
+ }return out;
 }
 function fitProjection(wrap,dock){
  const landscape=landscapeQuery.matches,yaw=presentationView==='left'?-45:0,w=wrap.clientWidth,h=wrap.clientHeight;
  if(!w||!h)return;
- const wr=wrap.getBoundingClientRect(),dr=dock.getBoundingClientRect(),obstacle=landscape&&dr.width?{x1:dr.left-wr.left-8,y1:dr.top-wr.top-8,x2:dr.right-wr.left+8,y2:dr.bottom-wr.top+8}:null;
- const place=size=>{const shapes=projectionShapes(size,yaw),b=shapeBounds(shapes),x1=4-b.x1,x2=w-4-b.x2,y1=4-b.y1,y2=h-4-b.y2;if(x2<x1||y2<y1)return null;
+ const wr=wrap.getBoundingClientRect(),obstacles=landscape?[dock,wrap.closest('.boardColumn').querySelector('.enemyInfoDock'),...document.querySelectorAll('.gameTopBar>button,.appHeader>button')].filter(Boolean).map(e=>e.getBoundingClientRect()).filter(r=>r.width&&r.height).map(r=>({x1:r.left-wr.left-4,y1:r.top-wr.top-4,x2:r.right-wr.left+4,y2:r.bottom-wr.top+4})):[];
+ const place=size=>{const shapes=projectionShapes(size,yaw),protection=[...shapes,...overlayProtection(size,yaw)],b=shapeBounds(shapes),x1=4-b.x1,x2=w-4-b.x2,y1=4-b.y1,y2=h-4-b.y2;if(x2<x1||y2<y1)return null;
   const cx=(w-b.x1-b.x2)/2,cy=(h-b.y1-b.y2)/2,positions=[];
   // A small screen-space fit search, not a camera control or input converter.
-  for(const fx of [.5,0,.25,.75,1])for(const fy of [.5,0,.25,.75,1]){const x=x1+(x2-x1)*fx,y=y1+(y2-y1)*fy;if(obstacle&&shapes.some(poly=>intersectsRect(poly.map(p=>({x:p.x+x,y:p.y+y})),obstacle)))continue;positions.push({x,y,score:(x-cx)**2+(y-cy)**2});}
+  for(const fx of [.5,0,.25,.75,1])for(const fy of [.5,0,.25,.75,1]){const x=x1+(x2-x1)*fx,y=y1+(y2-y1)*fy;if(obstacles.some(obstacle=>protection.some(poly=>intersectsRect(poly.map(p=>({x:p.x+x,y:p.y+y})),obstacle))))continue;positions.push({x,y,score:(x-cx)**2+(y-cy)**2});}
   positions.sort((a,b)=>a.score-b.score);return positions[0]||null;
  };
  // Portrait B retains v6's shared A/B scale and existing status clearance.
@@ -119,8 +134,8 @@ function syncLayout(){
  const board=$('board');if(!projected)restoreNativePlane(board,wrap);
  wrap.dataset.renderMode=projected?'projected':'native';
  const infoDock=arrangeLandscapeInfo(landscape,app,column,wrap);
- arrangeBattleStrip(landscape&&presentationView==='left',app);
- if(landscape){const viewport=visualViewport?.height||innerHeight,top=app.getBoundingClientRect().top+scrollY,safe=parseFloat(getComputedStyle(document.body).paddingBottom)||0;app.style.setProperty('--play-height',Math.max(presentationView==='left'?260:340,Math.floor(viewport-top-safe-4))+'px');}else app.style.removeProperty('--play-height');
+ arrangeBattleStrip(landscape,app);
+ if(landscape){const viewport=visualViewport?.height||innerHeight,top=app.getBoundingClientRect().top+scrollY,safe=parseFloat(getComputedStyle(document.body).paddingBottom)||0;app.style.setProperty('--play-height',Math.max(260,Math.floor(viewport-top-safe-4))+'px');}else app.style.removeProperty('--play-height');
  const mana=column?.querySelector('.kingZone.player .manaStat')||app.querySelector('.manaDock .manaStat'),dock=app.querySelector('.manaDock'),zone=column?.querySelector('.kingZone.player');
  if(mana&&dock&&zone)(landscape?dock:zone).append(mana);
  const enemyZone=column?.querySelector(".kingZone.enemy"),enemyDock=app.querySelector(".enemyManaDock"),enemyMana=enemyZone?.querySelector(".manaStat")||enemyDock?.querySelector(".manaStat");
@@ -152,14 +167,14 @@ function positionBattleLog(){
  const log=document.querySelector('.layoutLog'),panel=log?.querySelector('.logPanel');if(!panel)return;
  // Portrait is ordinary document flow. Never retain popup geometry, even closed.
  if(!landscapeQuery.matches||!log.open){for(const k of ['width','left','top','max-height','--log-space'])panel.style.removeProperty(k);return;}
- const r=log.querySelector('summary').getBoundingClientRect(),width=Math.min(360,innerWidth-16);panel.style.width=width+'px';panel.style.left=Math.max(8,Math.min(document.body.classList.contains('view-left')?r.left:r.right-width,innerWidth-width-8))+'px';const space=Math.max(64,Math.min(190,r.top-16));panel.style.maxHeight=space+'px';panel.style.setProperty('--log-space',space+'px');panel.style.top=Math.max(8,r.top-panel.offsetHeight-6)+'px';
+ const r=log.querySelector('summary').getBoundingClientRect(),width=Math.min(360,innerWidth-16);panel.style.width=width+'px';panel.style.left=Math.max(8,Math.min(r.left,innerWidth-width-8))+'px';const space=Math.max(64,Math.min(190,r.top-16));panel.style.maxHeight=space+'px';panel.style.setProperty('--log-space',space+'px');panel.style.top=Math.max(8,r.top-panel.offsetHeight-6)+'px';
 }
 window.addEventListener('resize',positionBattleLog);window.visualViewport?.addEventListener('resize',positionBattleLog);window.addEventListener('scroll',positionBattleLog,{passive:true});
 function tutorialSelectors(selectors){return selectors.map(selector=>{
  if(selector==='.kingZone.enemy .kingStat:not(.manaStat)')return '.royalHP.enemy';
  if(selector==='.kingZone.player .kingStat:not(.manaStat)')return '.royalHP.player';
  if(selector==='.kingZone.player .manaStat'&&landscapeQuery.matches)return '.manaDock .manaStat';
- if(selector==='.kingZone.enemy .manaStat'&&landscapeQuery.matches)return '.battleInfoDock .manaStat';
+ if(selector==='.kingZone.enemy .manaStat'&&landscapeQuery.matches)return '.enemyInfoDock .manaStat';
  if(selector==='.kingZone.enemy .graveButton'&&landscapeQuery.matches)return '.royalGrave.enemy .graveButton';
  if(selector==='.kingZone.player .graveButton'&&landscapeQuery.matches)return '.royalGrave.player .graveButton';
  if(selector==='.status .statusButton'&&landscapeQuery.matches)return '.battleInfoDock .statusButton';
@@ -196,7 +211,7 @@ function positionTutorialExplanation(){
   if(tutorialLogScrollPending){tutorialLogScrollPending=false;coach.scrollIntoView({block:'start',behavior:'instant'});}return;
  }
  restoreLayoutNode(coach);coach.classList.remove('tutorialAtLog');
- if(landscapeQuery.matches&&presentationView==='left'&&logTarget){const r=document.querySelector('.boardColumn').getBoundingClientRect(),log=document.querySelector('.logPanel').getBoundingClientRect(),left=Math.max(r.left+6,log.right+8);coach.style.left=left+'px';coach.style.width=Math.max(160,r.right-left-6)+'px';coach.style.top=Math.max(r.top+4,r.bottom-coach.offsetHeight-6)+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';return;}
+ if(landscapeQuery.matches&&logTarget){const r=document.querySelector('.boardColumn').getBoundingClientRect(),log=document.querySelector('.logPanel').getBoundingClientRect(),left=Math.max(r.left+6,log.right+8);coach.style.left=left+'px';coach.style.width=Math.max(160,r.right-left-6)+'px';coach.style.top=Math.max(r.top+4,r.bottom-coach.offsetHeight-6)+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';return;}
  if(landscapeQuery.matches){const host=(infoTarget||logTarget)?document.querySelector('.boardColumn'):panel,r=host.getBoundingClientRect();coach.style.left=Math.max(4,r.left+6)+'px';coach.style.width=Math.max(logTarget?160:195,Math.min(infoTarget||logTarget?350:r.width-12,logTarget?Math.max(160,document.querySelector('.logPanel').getBoundingClientRect().left-r.left-18):r.width-12))+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';coach.style.top=Math.max(4,r.bottom-coach.offsetHeight-6)+'px';}
 
  else{for(const k of ['left','top','width','max-height','bottom','right','overflow-y','transform'])coach.style.removeProperty(k);}
@@ -326,7 +341,7 @@ function renderPieces(model){
   if(enchantVisual)v.classList.add("hasCreatureEnchant");
   v.style.left=x+"px";v.style.top=y+"px";
   let width=Math.max(44,r.width*.92),height=Math.max(44,r.height*.98);
-  if(projected){const a=screenPoint(cell.querySelector('[data-plane-point="left"]'),overlay),b=screenPoint(cell.querySelector('[data-plane-point="right"]'),overlay);width=Math.max(34,Math.min(82,Math.hypot(b.x-a.x,b.y-a.y)*.86));height=width;v.style.zIndex=String(100+Math.round(y));v.dataset.footX=x;v.dataset.footY=y;}
+  if(projected){const a=screenPoint(cell.querySelector('[data-plane-point="left"]'),overlay),b=screenPoint(cell.querySelector('[data-plane-point="right"]'),overlay);width=projectedPieceWidth(a,b);height=width;v.style.zIndex=String(100+Math.round(y));v.dataset.footX=x;v.dataset.footY=y;}
   v.style.setProperty('--piece-w',width+'px');v.style.setProperty('--piece-h',height+'px');
   const display=model.describe(p,index);
   v.classList.add('combatHUD');if(compactHUD)v.classList.add('compactHUD');
