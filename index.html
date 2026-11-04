@@ -743,6 +743,12 @@ body.tutorial-mode #app{padding-bottom:240px}
 @media(max-width:620px){#deckBuilderScreen .deckBuilderGrid{grid-template-columns:minmax(0,1fr)}#deckBuilderScreen .deckCardList{max-height:40dvh}#deckBuilderScreen .deckInfoPanel{position:static;max-height:42dvh}#deckBuilderScreen .deckBuilderTitle{font-size:18px}#deckBuilderScreen .deckManagement{gap:6px}#deckBuilderScreen select{max-width:calc(100vw - 40px)}}
 
 .deckBackToList{display:none}@media(max-width:620px){.deckBackToList{display:block;margin-bottom:8px}}
+
+.deckListPanel{min-width:0}.deckListHeading,.deckDetailHeading{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:42px;box-sizing:border-box;padding:6px 8px;background:#202e42;border:1px solid #687f9c;border-radius:8px 8px 0 0;font-size:14px}
+#deckBuilderScreen .deckCardList{max-height:calc(62dvh - 42px)}
+#deckBuilderScreen .deckInfoPanel{display:flex;flex-direction:column;overflow:hidden;padding:0;min-height:100px}#deckInfoBody{overflow:auto;min-height:0;padding:10px;overscroll-behavior:contain}.deckDetailHeading{flex-shrink:0;flex-wrap:wrap;border:0;border-bottom:1px solid #687f9c;border-radius:0}.deckDetailHeading .deckBackToList{margin:0!important}
+#deckCodePanel{margin:12px 0;padding:10px;border:1px solid #60748e;border-radius:8px}#deckCodePanel>summary{cursor:pointer;min-height:32px;font-weight:700}.deckCodeGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.deckCodeGrid section{min-width:0}.deckCodeGrid h2{font-size:16px}.deckCodeGrid textarea{display:block;box-sizing:border-box;width:100%;min-height:100px;margin:5px 0 8px;background:#0c1420;color:#e8f1ff;border:1px solid #6d86a5;border-radius:6px;padding:8px;font-size:13px;overflow-wrap:anywhere}.deckCodeGrid p,.deckCodeGrid div{overflow-wrap:anywhere}.deckCodeGrid p{font-size:14px}.deckCodeGrid label{font-size:14px}#deckImportPreview{white-space:pre-wrap;font-size:14px;max-height:240px;overflow:auto;margin:8px 0}
+@media(max-width:620px){#deckBuilderScreen .deckCardList{max-height:calc(40dvh - 42px)}.deckCodeGrid{grid-template-columns:1fr}}
 /* The existing SVG is the king fallback when no PNG has loaded. The legacy
    image switch hid it with display:none even after resetting its opacity. */
 body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
@@ -1021,8 +1027,11 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 <p>このブラウザに5枠。編集は自動保存、対戦への反映は「このデッキを使う」。同名4枚まで・合計40枚。</p>
 <div class="deckManagement"><label>編集するデッキ<select id="deckSlot"></select></label><label>デッキ名<input id="deckName" maxlength="40"></label><button id="deckCreate">新規</button><button id="deckDuplicate">複製</button><button id="deckDelete">削除</button><button id="deckRetry">保存を再試行</button><button id="deckReload">保存内容を再読込</button><button id="deckUse">このデッキを使う</button></div>
 <p id="deckActive"></p><p id="deckBuilderNotice" role="status"></p><div id="deckSummary"></div>
+<details id="deckCodePanel"><summary>デッキコードの書き出し／読み込み</summary>
+<div class="deckCodeGrid"><section aria-label="コードの書き出し"><h2>編集中のデッキを書き出す</h2><button id="deckExport">コードを書き出す</button><p id="deckExportStatus" role="status"></p><label for="deckExportText">共有コード（選択して手動コピーもできます）</label><textarea id="deckExportText" readonly rows="4" spellcheck="false"></textarea><button id="deckCopy" disabled>コードをコピー</button><p id="deckCopyStatus" role="status"></p></section>
+<section aria-label="コードの読み込み"><h2>コードを読み込む</h2><label for="deckImportText">コードを貼り付け</label><textarea id="deckImportText" rows="4" maxlength="8192" spellcheck="false"></textarea><button id="deckImportCheck">確認</button><p id="deckImportStatus" role="status"></p><div id="deckImportPreview"></div><button id="deckImportSave" disabled>新しいデッキとして保存</button></section></div></details>
 <div class="deckFilters"><label>カード名<input id="deckSearch" type="search"></label><label>種類<select id="deckType"><option value="">すべて</option><option value="creature">クリーチャー</option><option value="spell">スペル</option><option value="enchant">エンチャント</option></select></label><label>コスト<select id="deckCost"><option value="">すべて</option></select></label><label><input id="deckAdopted" type="checkbox">採用中のみ</label><button id="deckClearFilters">フィルター解除</button></div>
-<div class="deckBuilderGrid"><div id="deckCardList" class="deckCardList"></div><aside id="deckInfoPanel" class="deckInfoPanel"><div class="deckInfoTitle">カード情報</div><p>カード名を選択して詳細を確認できます。生成トークン・変身先は投入不可のまま一覧で参照できます。</p></aside></div>
+<div class="deckBuilderGrid"><section class="deckListPanel" aria-label="カード一覧"><div class="deckListHeading"><b class="deckEditCount"></b></div><div id="deckCardList" class="deckCardList"></div></section><aside id="deckInfoPanel" class="deckInfoPanel"><div class="deckDetailHeading"><b class="deckEditCount"></b><button class="deckBackToList" data-list>一覧へ戻る</button></div><div id="deckInfoBody"><div class="deckInfoTitle">カード情報</div><p>カード名を選択して詳細を確認できます。生成トークン・変身先は投入不可のまま一覧で参照できます。</p></div></aside></div>
 </div></div>
 <div id="app" class="gameScreenHidden">
   <div class="gameTopBar">
@@ -3582,17 +3591,54 @@ return module.exports.create(CARD_DEFINITIONS);})();
 (function(root,factory){const api={create:factory};if(typeof module==='object'&&module.exports)module.exports=api;else root.CardTacticsDeckLibrary=api;})(globalThis,function(rules,storage){
 'use strict';
 const key='cardTacticsDeckLibraryV1',oldConfirmed='cardTacticsDeckConfirmedV1',oldDraft='cardTacticsDeckDraftV1',copy=x=>JSON.parse(JSON.stringify(x));
+const validName=name=>typeof name==='string'&&name.trim().length>0&&name.length<=40;
 const same=(a,b)=>JSON.stringify(rules.normalize(a))===JSON.stringify(rules.normalize(b));
 function legacy(k){try{const s=storage.getItem(k);return s===null?null:JSON.parse(s);}catch{return null;}}
 function fallback(){const raw=legacy(oldConfirmed),counts=rules.valid(raw)?rules.normalize(raw):rules.defaultCounts(),draft=legacy(oldDraft),name=rules.valid(raw)?'引継ぎデッキ':'標準デッキ';return {version:1,slots:[{id:'deck-1',name,draft:rules.isRecord(draft)?rules.normalize(draft):copy(counts)}],active:{slotId:'deck-1',name,counts:copy(counts)}};}
-function valid(s){return s?.version===1&&Array.isArray(s.slots)&&s.slots.length>=1&&s.slots.length<=5&&new Set(s.slots.map(x=>x?.id)).size===s.slots.length&&s.slots.every(x=>typeof x?.id==='string'&&/^deck-[1-5]$/.test(x.id)&&typeof x.name==='string'&&x.name.trim().length>0&&x.name.length<=40&&rules.isRecord(x.draft)&&rules.inspect(x.draft).errors.length===0)&&s.slots.some(x=>x.id===s.active?.slotId)&&typeof s.active?.name==='string'&&s.active.name.length>0&&s.active.name.length<=40&&rules.valid(s.active.counts);}
+function valid(s){return s?.version===1&&Array.isArray(s.slots)&&s.slots.length>=1&&s.slots.length<=5&&new Set(s.slots.map(x=>x?.id)).size===s.slots.length&&s.slots.every(x=>typeof x?.id==='string'&&/^deck-[1-5]$/.test(x.id)&&validName(x.name)&&rules.isRecord(x.draft)&&rules.inspect(x.draft).errors.length===0)&&s.slots.some(x=>x.id===s.active?.slotId)&&typeof s.active?.name==='string'&&s.active.name.length>0&&s.active.name.length<=40&&rules.valid(s.active.counts);}
 function read(){let text;try{text=storage.getItem(key);}catch{return {state:fallback(),raw:null,blocked:true,error:'保存データを読み込めません。旧データ／標準デッキを使用します。保存はできません。'};}
 if(text===null)return {state:fallback(),raw:null,blocked:false,migration:true,error:''};
 try{const state=JSON.parse(text);if(!valid(state))throw Error();for(const slot of state.slots)slot.draft=rules.normalize(slot.draft);state.active.counts=rules.normalize(state.active.counts);return {state,raw:text,blocked:false,error:''};}catch{return {state:fallback(),raw:text,blocked:true,error:'複数デッキ保存が破損しています。原文を保持し、旧データ／標準デッキを使用します。上書き保存は停止しています。'};}}
 function write(session,next){if(session.blocked)return {ok:false,error:session.error};if(!valid(next))return {ok:false,error:'デッキデータが不正なため保存できません。'};try{if(storage.getItem(key)!==session.raw)return {ok:false,error:'別タブで保存内容が変わりました。編集中の内容は未保存です。「保存内容を再読込」で確認してください。'};const raw=JSON.stringify(next);storage.setItem(key,raw);session.state=copy(next);session.raw=raw;session.migration=false;session.error='';return {ok:true};}catch{return {ok:false,error:'このブラウザへ保存できませんでした。変更は未保存です。容量・保存許可を確認し、再試行してください。'};}}
 function open(){const s=read();if(s.migration){const result=write(s,s.state);if(!result.ok)s.error=result.error;}return s;}
 function active(){const s=read();return {name:s.state.active.name,counts:copy(s.state.active.counts),error:s.error};}
-return {key,capacity:5,same,open,read,write,active,cardIds(){return rules.toCardIds(active().counts)||rules.toCardIds(rules.defaultCounts());}};
+return {key,capacity:5,validName,same,open,read,write,active,cardIds(){return rules.toCardIds(active().counts)||rules.toCardIds(rules.defaultCounts());}};
+});
+
+(function(root,factory){const api={create:factory};if(typeof module==='object'&&module.exports)module.exports=api;else root.CardTacticsDeckCode=api;})(globalThis,function(definitions,rules,validName){
+'use strict';
+const FORMAT='CARD_TACTICS_DECK',VERSION=1,MAX_LENGTH=8192;
+const fail=error=>({ok:false,error});
+function check(data){
+ if(!data||typeof data!=='object'||Array.isArray(data))return fail('コードの構造が不正です。');
+ if(data.format!==FORMAT)return fail('CARD × TACTICSのデッキコードではありません。');
+ if(data.version!==VERSION)return fail('対応していないデッキコードのバージョンです。');
+ if(Object.keys(data).sort().join(',')!=='cards,format,name,version')return fail('コードに不要な項目があるか、必要な項目がありません。');
+ if(!validName(data.name))return fail('デッキ名は空白以外を含む1〜40文字で指定してください。');
+ if(!Array.isArray(data.cards)||data.cards.length>Object.keys(definitions).length)return fail('カード一覧の構造または件数が不正です。');
+ const counts=Object.create(null),seen=new Set();
+ for(const entry of data.cards){
+  if(!Array.isArray(entry)||entry.length!==2||typeof entry[0]!=='string')return fail('カードは識別子と枚数の組で指定してください。');
+  const [id,n]=entry;
+  if(!Object.hasOwn(definitions,id))return fail('未知のカード識別子です：'+id);
+  if(definitions[id].deckType!=='normal')return fail('デッキへ投入できないカードです：'+id);
+  if(seen.has(id))return fail('同じカード識別子が重複しています：'+id);
+  seen.add(id);counts[id]=n;
+ }
+ const inspected=rules.inspect(counts);
+ if(inspected.errors.length)return fail('カード枚数が不正です。同名カードは0〜'+rules.LIMIT+'の整数で指定してください。');
+ if(!inspected.valid)return fail('合計'+inspected.total+'枚です。'+rules.SIZE+'枚ちょうどのデッキが必要です。');
+ return {ok:true,deck:{name:data.name,counts:inspected.counts},total:inspected.total};
+}
+function decode(text){if(typeof text!=='string'||text.length>MAX_LENGTH)return fail('コードは'+MAX_LENGTH+'文字以内で入力してください。');let data;try{data=JSON.parse(text);}catch{return fail('コードを読み取れません。JSON形式のコード全体を貼り付けてください。');}return check(data);}
+function encode({name,counts}){
+ // Validate the original counts before normalization. Unknown/locked IDs are never silently dropped.
+ if(!rules.isRecord(counts))return fail('カード枚数の構造が不正です。');
+ for(const id of Object.keys(counts))if(!Object.hasOwn(definitions,id)||definitions[id].deckType!=='normal')return fail('不明または投入不可のカードが含まれています。');
+ const inspected=rules.inspect(counts);if(inspected.errors.length)return fail('カード枚数が不正です。');if(!inspected.valid)return fail('合計'+inspected.total+'枚です。書き出しには有効な'+rules.SIZE+'枚が必要です。');
+ const data={format:FORMAT,version:VERSION,name,cards:Object.keys(inspected.counts).sort().filter(id=>inspected.counts[id]>0).map(id=>[id,inspected.counts[id]])},checked=check(data);return checked.ok?{ok:true,code:JSON.stringify(data)}:checked;
+}
+return {FORMAT,VERSION,MAX_LENGTH,encode,decode};
 });
 
 const DeckLibrary=CardTacticsDeckLibrary.create(DeckValidation,{getItem:k=>localStorage.getItem(k),setItem:(k,v)=>localStorage.setItem(k,v)});
@@ -3603,25 +3649,65 @@ const DeckBuilder={selected:null,dirty:false,
  close(){if(this.dirty&&!confirm('変更は未保存です。閉じると未保存の内容は失われます。閉じますか？'))return;document.getElementById('deckBuilderScreen').style.display='none';document.getElementById('titleScreen').style.display='flex';refreshActiveDeck();},
  save(){const r=DeckLibrary.write(this.session,this.data);this.error=r.ok?'':r.error;this.dirty=!r.ok;return r.ok;},
  change(id,delta){if(![1,-1].includes(delta)||CARD_DEFINITIONS[id]?.deckType!=='normal')return;const c=this.slot.draft,qty=c[id]||0;if(delta>0&&(qty>=DeckValidation.LIMIT||DeckValidation.total(c)>=DeckValidation.SIZE)||delta<0&&qty<=0)return;c[id]=qty+delta;this.save();this.render();},
- rename(){const n=document.getElementById('deckName').value.trim();if(!n){this.error='デッキ名を入力してください（40文字まで）。';this.dirty=true;this.status();return;}this.slot.name=n;if(this.data.active.slotId===this.id)this.data.active.name=n;this.save();this.render();},
+ rename(){const n=document.getElementById('deckName').value.trim();if(!DeckLibrary.validName(n)){this.error='デッキ名を入力してください（40文字まで）。';this.dirty=true;this.status();return;}this.slot.name=n;if(this.data.active.slotId===this.id)this.data.active.name=n;this.save();this.render();},
  add(duplicate){if(this.dirty){this.error='未保存の変更があります。保存を再試行してから操作してください。';this.status();return;}if(this.data.slots.length>=5){this.error='5枠すべて使用中です。不要なデッキを削除してから作成してください。';this.status();return;}const id=Array.from({length:5},(_,i)=>'deck-'+(i+1)).find(id=>!this.data.slots.some(s=>s.id===id));this.data.slots.push({id,name:duplicate?(this.slot.name.slice(0,36)+' コピー'):'新しいデッキ',draft:duplicate?JSON.parse(JSON.stringify(this.slot.draft)):DeckValidation.normalize({})});this.id=id;this.save();this.render();},
  remove(){if(this.id===this.data.active.slotId){this.error='使用中デッキは削除できません。別の完成デッキを「使う」にしてから削除してください。';this.status();return;}if(this.dirty){this.error='未保存の変更があります。保存を再試行してください。';this.status();return;}if(!confirm('「'+this.slot.name+'」を削除しますか？ この操作は元に戻せません。'))return;this.data.slots=this.data.slots.filter(x=>x.id!==this.id);this.id=this.data.active.slotId;this.save();this.render();},
  use(){if(!DeckValidation.valid(this.slot.draft)){this.error='実戦への反映には有効な40枚が必要です。';this.status();return;}const next=JSON.parse(JSON.stringify(this.data));next.active={slotId:this.id,name:this.slot.name,counts:JSON.parse(JSON.stringify(this.slot.draft))};const result=DeckLibrary.write(this.session,next);this.error=result.ok?'':result.error;if(result.ok){this.data=next;this.dirty=false;}this.render();refreshActiveDeck();},
+ updateCounts(){const total=DeckValidation.total(this.slot.draft);document.getElementById('deckCountBadge').textContent=total+' / 40';for(const el of document.querySelectorAll('.deckEditCount'))el.textContent='編集中：'+total+' / 40';},
  select(id){this.selected=id;this.renderInfo();if(matchMedia('(max-width:620px)').matches)document.getElementById('deckInfoPanel').scrollIntoView({block:'nearest'});},
- status(){const actual=this.session.state.active,active=this.data.active.slotId===this.id,pending=!active||!DeckLibrary.same(this.slot.draft,actual.counts);document.getElementById('deckActive').textContent='実戦で使用：'+actual.name+(active&&pending?'（編集内容は未反映）':'');const notice=document.getElementById('deckBuilderNotice');notice.textContent=this.error||((this.dirty?'未保存':'編集内容は保存済み')+' ／ '+(pending?'実戦へ未反映':'実戦に反映済み')+(DeckValidation.valid(this.slot.draft)?'':' ／ 下書き・有効な40枚ではありません'));notice.classList.toggle('unsaved',!!this.error||this.dirty);document.getElementById('deckRetry').hidden=!this.dirty||this.session.blocked;document.getElementById('deckReload').hidden=!this.error;document.getElementById('deckUse').disabled=!DeckValidation.valid(this.slot.draft)||this.session.blocked;},
- render(){const list=document.getElementById('deckCardList'),top=list.scrollTop,info=document.getElementById('deckInfoPanel'),itop=info.scrollTop,total=DeckValidation.total(this.slot.draft),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- document.getElementById('deckSlot').innerHTML=this.data.slots.map(s=>'<option value="'+s.id+'" '+(s.id===this.id?'selected':'')+'>'+esc(s.name)+(s.id===this.data.active.slotId?'（使用中）':'')+'</option>').join('');if(document.activeElement!==document.getElementById('deckName'))document.getElementById('deckName').value=this.slot.name;document.getElementById('deckCountBadge').textContent=total+' / 40';this.status();
+ status(){const actual=this.session.state.active,active=this.data.active.slotId===this.id,pending=!active||!DeckLibrary.same(this.slot.draft,actual.counts);document.getElementById('deckActive').textContent='実戦で使用：'+actual.name+(active&&pending?'（編集内容は未反映）':'');const notice=document.getElementById('deckBuilderNotice');notice.textContent=this.error||((this.dirty?'未保存':'編集内容は保存済み')+' ／ '+(pending?'実戦へ未反映':'実戦に反映済み')+(DeckValidation.valid(this.slot.draft)?'':' ／ 下書き・有効な40枚ではありません'));notice.classList.toggle('unsaved',!!this.error||this.dirty);document.getElementById('deckRetry').hidden=!this.dirty||this.session.blocked;document.getElementById('deckReload').hidden=!this.error;document.getElementById('deckUse').disabled=!DeckValidation.valid(this.slot.draft)||this.session.blocked;this.updateCounts();globalThis.DeckSharing?.sync();},
+ render(){const list=document.getElementById('deckCardList'),top=list.scrollTop,info=document.getElementById('deckInfoBody'),itop=info.scrollTop,total=DeckValidation.total(this.slot.draft),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ document.getElementById('deckSlot').innerHTML=this.data.slots.map(s=>'<option value="'+s.id+'" '+(s.id===this.id?'selected':'')+'>'+esc(s.name)+(s.id===this.data.active.slotId?'（使用中）':'')+'</option>').join('');if(document.activeElement!==document.getElementById('deckName'))document.getElementById('deckName').value=this.slot.name;this.updateCounts();this.status();
  const labels={creature:'クリーチャー',spell:'スペル',enchant:'エンチャント'},types={creature:0,spell:0,enchant:0},costs={};for(const[id,n]of Object.entries(this.slot.draft)){const d=CARD_DEFINITIONS[id];types[d.type]+=n;costs[d.cost]=(costs[d.cost]||0)+n;}
  document.getElementById('deckSummary').innerHTML=Object.entries(types).map(([t,n])=>labels[t]+' '+n+'枚').join(' ／ ')+'<div class="deckCurve" aria-label="コスト別採用枚数">'+Object.entries(costs).sort((a,b)=>Number(a[0])-Number(b[0])).map(([c,n])=>'<span> '+n+'<i style="height:'+Math.min(40,n*2)+'px"></i>'+c+'マナ</span>').join('')+'</div>';
  const query=document.getElementById('deckSearch').value.trim().toLocaleLowerCase(),type=document.getElementById('deckType').value,cost=document.getElementById('deckCost').value,adopted=document.getElementById('deckAdopted').checked;
  list.innerHTML=Object.entries(CARD_DEFINITIONS).filter(([id,d])=>id.toLocaleLowerCase().includes(query)&&(!type||d.type===type)&&(cost===''||String(d.cost??0)===cost)&&(!adopted||(this.slot.draft[id]||0)>0)).map(([id,d])=>{const n=this.slot.draft[id]||0,normal=d.deckType==='normal';return '<div class="deckRow" data-card="'+esc(id)+'"><button class="deckCardName" data-select="'+esc(id)+'">'+esc(id)+' <small>('+d.cost+')</small></button>'+(normal?'<div class="deckControls"><button data-delta="-1" '+(n<=0?'disabled':'')+' aria-label="'+esc(id)+'を減らす">−</button><span class="deckQty">'+n+'</span><button data-delta="1" '+(n>=DeckValidation.LIMIT||total>=DeckValidation.SIZE?'disabled':'')+' aria-label="'+esc(id)+'を増やす">＋</button></div>':'<span class="deckLocked">投入不可</span>')+'</div>';}).join('')||'<p>該当するカードはありません。</p>';list.scrollTop=top;if(this.selected)this.renderInfo();info.scrollTop=itop;
  },
- renderInfo(){const id=this.selected,d=CARD_DEFINITIONS[id];if(!d)return;const labels={creature:'クリーチャー',spell:'スペル',enchant:'エンチャント'},normal=d.deckType==='normal';document.getElementById('deckInfoPanel').innerHTML='<button class="deckBackToList" data-list>一覧へ戻る</button><div class="deckInfoTitle">《'+id+'》</div><div>'+labels[d.type]+' / コスト '+d.cost+'</div>'+(d.type==='creature'?'<div class="deckInfoStats">HP '+d.hp+' ／ ATK '+d.atk+'</div>'+rangePair({type:id,side:'p',berserk:0}):'')+'<div class="deckInfoText">'+(d.description||'能力なし。')+'</div>'+(normal?'':'<p class="deckInfoLocked">投入不可：'+(d.deckType==='token'?'生成トークン':'変身先カード')+'</p>')+'<details><summary>生成トークン・変身先を参照</summary><div class="deckRelated">'+Object.entries(CARD_DEFINITIONS).filter(([,x])=>x.deckType!=='normal').map(([n])=>'<button data-related="'+n+'">'+n+'</button>').join('')+'</div></details>';}
+ renderInfo(){const id=this.selected,d=CARD_DEFINITIONS[id];if(!d)return;const labels={creature:'クリーチャー',spell:'スペル',enchant:'エンチャント'},normal=d.deckType==='normal';document.getElementById('deckInfoBody').innerHTML='<div class="deckInfoTitle">《'+id+'》</div><div>'+labels[d.type]+' / コスト '+d.cost+'</div>'+(d.type==='creature'?'<div class="deckInfoStats">HP '+d.hp+' ／ ATK '+d.atk+'</div>'+rangePair({type:id,side:'p',berserk:0}):'')+'<div class="deckInfoText">'+(d.description||'能力なし。')+'</div>'+(normal?'':'<p class="deckInfoLocked">投入不可：'+(d.deckType==='token'?'生成トークン':'変身先カード')+'</p>')+'<details><summary>生成トークン・変身先を参照</summary><div class="deckRelated">'+Object.entries(CARD_DEFINITIONS).filter(([,x])=>x.deckType!=='normal').map(([n])=>'<button data-related="'+n+'">'+n+'</button>').join('')+'</div></details>';}
 };
 function openDeckBuilder(){DeckBuilder.open();}function closeDeckBuilder(){DeckBuilder.close();}
 function refreshActiveDeck(){const a=DeckLibrary.active();for(const el of document.querySelectorAll('.activeDeckLabel'))el.textContent='使用デッキ：'+a.name+(a.error?'（保存読込に問題あり・旧データ／標準を使用）':'');}
 (()=>{const $=id=>document.getElementById(id);$('deckSlot').onchange=e=>{if(DeckBuilder.dirty){e.target.value=DeckBuilder.id;DeckBuilder.error='未保存の変更があります。保存を再試行するか、保存内容を再読込してください。';DeckBuilder.status();return;}DeckBuilder.id=e.target.value;DeckBuilder.render();};$('deckName').oninput=()=>DeckBuilder.rename();$('deckCreate').onclick=()=>DeckBuilder.add(false);$('deckDuplicate').onclick=()=>DeckBuilder.add(true);$('deckDelete').onclick=()=>DeckBuilder.remove();$('deckUse').onclick=()=>DeckBuilder.use();$('deckRetry').onclick=()=>{DeckBuilder.save();DeckBuilder.render();};$('deckReload').onclick=()=>{if(!DeckBuilder.dirty||confirm('未保存の編集を破棄して保存内容を読み直しますか？'))DeckBuilder.open();};
  for(const id of ['deckSearch','deckType','deckCost','deckAdopted'])$(id).addEventListener('input',()=>DeckBuilder.render());$('deckCost').innerHTML+=[...new Set(Object.values(CARD_DEFINITIONS).map(d=>d.cost??0))].sort((a,b)=>a-b).map(c=>'<option value="'+c+'">'+c+'</option>').join('');$('deckClearFilters').onclick=()=>{$('deckSearch').value='';$('deckType').value='';$('deckCost').value='';$('deckAdopted').checked=false;DeckBuilder.render();};$('deckCardList').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.select)DeckBuilder.select(b.dataset.select);if(b.dataset.delta){const id=b.closest('[data-card]').dataset.card,delta=b.dataset.delta;DeckBuilder.change(id,Number(delta));const next=[...$('deckCardList').querySelectorAll('[data-card]')].find(e=>e.dataset.card===id)?.querySelector('[data-delta="'+delta+'"]');if(next&&!next.disabled)next.focus({preventScroll:true});}};$('deckInfoPanel').onclick=e=>{const b=e.target.closest('[data-related]');if(b)DeckBuilder.select(b.dataset.related);if(e.target.closest('[data-list]'))document.getElementById('deckCardList').scrollIntoView({block:'nearest'});};window.addEventListener('storage',e=>{if(e.key!==DeckLibrary.key)return;refreshActiveDeck();if($('deckBuilderScreen').style.display==='block'){DeckBuilder.error='別タブの保存変更を検知しました。編集は自動上書きせず保持しています。保存内容を再読込してください。';DeckBuilder.status();}});refreshActiveDeck();})();
+
+// Local code interchange only. No storage flags, connection data or external service.
+const DeckCode=CardTacticsDeckCode.create(CARD_DEFINITIONS,DeckValidation,DeckLibrary.validName);
+globalThis.DeckSharing=(()=>{
+ const $=id=>document.getElementById(id);let preview=null,previewText=null,exportSignature=null,lastBlock=false;
+ const signature=()=>JSON.stringify({name:$('deckName').value,counts:DeckBuilder.slot.draft});
+ function exportDescription(){const same=DeckBuilder.id===DeckBuilder.session.state.active.slotId&&DeckLibrary.same(DeckBuilder.slot.draft,DeckBuilder.session.state.active.counts);return '編集中の「'+$('deckName').value+'」 '+DeckValidation.total(DeckBuilder.slot.draft)+' / 40'+(same?'（実戦内容と一致）':'（実戦へ未反映の編集内容）')+(DeckBuilder.dirty?'・ブラウザへの保存は未完了':'')+'を書き出しています。';}
+ function importBlock(){if(DeckBuilder.dirty)return '未保存の編集があります。保存を再試行するか、保護された再読込操作を先に行ってください。';if(DeckBuilder.session.blocked)return DeckBuilder.session.error;if(DeckBuilder.data.slots.length>=DeckLibrary.capacity)return '5枠すべて使用中です。先に不要なデッキを削除して空き枠を用意してください。';return '';}
+ function sync(){
+  if(!DeckBuilder.data)return;
+  if(exportSignature!==null&&exportSignature!==signature()){$('deckExportText').value='';$('deckCopyStatus').textContent='';$('deckExportStatus').textContent='編集内容が変わりました。「コードを書き出す」で更新してください。';exportSignature=null;}
+  if(exportSignature!==null)$('deckExportStatus').textContent=exportDescription();
+  $('deckCopy').disabled=!$('deckExportText').value;
+  const block=importBlock();$('deckImportSave').disabled=!preview||!!block||previewText!==$('deckImportText').value;
+  if(preview){if(block)$('deckImportStatus').textContent=block;else if(lastBlock)$('deckImportStatus').textContent='内容を確認して、新しいデッキとして保存してください。使用デッキは変更しません。';}lastBlock=!!block;
+ }
+ $('deckExport').onclick=()=>{const result=DeckCode.encode({name:$('deckName').value,counts:DeckBuilder.slot.draft});$('deckCopyStatus').textContent='';$('deckExportText').value=result.ok?result.code:'';exportSignature=result.ok?signature():null;$('deckExportStatus').textContent=result.ok?exportDescription():result.error;sync();};
+ $('deckCopy').onclick=async()=>{const text=$('deckExportText').value;if(!text)return;try{if(!navigator.clipboard?.writeText)throw Error('clipboard unavailable');await navigator.clipboard.writeText(text);if($('deckExportText').value===text)$('deckCopyStatus').textContent='コードをコピーしました。';}catch{if($('deckExportText').value!==text)return;$('deckCopyStatus').textContent='コピーできませんでした。テキスト欄を選択して手動でコピーしてください。';$('deckExportText').focus();$('deckExportText').select();$('deckExportText').setSelectionRange(0,text.length);}};
+ $('deckImportText').oninput=()=>{preview=null;previewText=null;$('deckImportPreview').textContent='';$('deckImportStatus').textContent='内容を変更しました。「確認」を押してください。';sync();};
+ $('deckImportCheck').onclick=()=>{
+  preview=null;previewText=null;$('deckImportPreview').textContent='';const text=$('deckImportText').value,result=DeckCode.decode(text);
+  if(!result.ok){$('deckImportStatus').textContent=result.error;sync();return;}
+  preview=result.deck;previewText=text;
+  const labels={creature:'クリーチャー',spell:'スペル',enchant:'エンチャント'},types={creature:0,spell:0,enchant:0};for(const[id,n]of Object.entries(preview.counts))types[CARD_DEFINITIONS[id].type]+=n;
+  $('deckImportPreview').textContent='デッキ名：'+preview.name+'\n合計：'+result.total+' / 40\n'+Object.entries(types).map(([t,n])=>labels[t]+' '+n+'枚').join(' ／ ')+'\n\n'+Object.entries(preview.counts).filter(([,n])=>n>0).map(([id,n])=>id+' × '+n).join('\n');
+  $('deckImportStatus').textContent='内容を確認して、新しいデッキとして保存してください。使用デッキは変更しません。';sync();
+ };
+ $('deckImportSave').onclick=()=>{
+  const block=importBlock();if(block){$('deckImportStatus').textContent=block;return;}
+  if(!preview||previewText!==$('deckImportText').value){$('deckImportStatus').textContent='コードをもう一度確認してください。';return;}
+  const checked=DeckCode.decode(previewText);if(!checked.ok){$('deckImportStatus').textContent=checked.error;return;}
+  const next=JSON.parse(JSON.stringify(DeckBuilder.data)),id=Array.from({length:DeckLibrary.capacity},(_,i)=>'deck-'+(i+1)).find(id=>!next.slots.some(s=>s.id===id));
+  next.slots.push({id,name:checked.deck.name,draft:checked.deck.counts});
+  const result=DeckLibrary.write(DeckBuilder.session,next);
+  if(!result.ok){DeckBuilder.error=result.error;DeckBuilder.status();$('deckImportStatus').textContent=result.error;return;}
+  DeckBuilder.data=next;DeckBuilder.id=id;DeckBuilder.error='';DeckBuilder.dirty=false;preview=null;previewText=null;$('deckImportPreview').textContent='';DeckBuilder.render();$('deckImportStatus').textContent='新しいデッキとして保存しました。実戦へは未反映です。「このデッキを使う」で反映してください。';refreshActiveDeck();
+ };
+ return {sync};
+})();
 
 // 既存コードとの互換アダプター。段階的に CARD_DEFINITIONS へ移行する。
 const T=Object.fromEntries(Object.entries(CARD_DEFINITIONS).filter(([,c])=>c.type==="creature"));
