@@ -1,5 +1,5 @@
 'use strict';
 const OnlineDeckLibrary=CardTacticsDeckLibrary.create(B2Protocol.deckRules(B2Runtime.definitions),{getItem:k=>localStorage.getItem(k),setItem:(k,v)=>localStorage.setItem(k,v)});
-let stagedDeck=null;function refreshOnlineDeck(){const running=globalThis.B4Poc?.inspect().status;const a=stagedDeck&&['waiting','approval','connected','finished','recovering'].includes(running)?stagedDeck:OnlineDeckLibrary.active();document.getElementById('onlineActiveDeck').textContent='使用デッキ：'+a.name+(a.error?'（保存読込に問題あり・旧データ／標準を使用）':'');}
-refreshOnlineDeck();window.addEventListener('storage',refreshOnlineDeck);
+let stagedDeck=null;function refreshOnlineDeck(){const running=globalThis.B4Poc?.inspect().status;const a=stagedDeck&&['waiting','approval','connected','finished','recovering'].includes(running)?stagedDeck:OnlineDeckLibrary.active();document.getElementById('onlineActiveDeck').textContent='使用デッキ：'+a.name+(a.error?'（保存読込に問題あり・代替内容を使用）':'');}
+refreshOnlineDeck();window.addEventListener('storage',e=>{if(e.key===null||[OnlineDeckLibrary.key,OnlineDeckLibrary.backupKey,OnlineDeckLibrary.historyKey].includes(e.key))refreshOnlineDeck();});
 globalThis.B2Fixture={deck(){stagedDeck=OnlineDeckLibrary.active();refreshOnlineDeck();return B2Protocol.deckRules(B2Runtime.definitions).toCardIds(stagedDeck.counts);},create(Core,definitions,{matchId}){const seed=new Uint32Array(1);crypto.getRandomValues(seed);return {matchId,seed:seed[0],random:B2Runtime.random,hostDeck:B2Fixture.deck()};}};
