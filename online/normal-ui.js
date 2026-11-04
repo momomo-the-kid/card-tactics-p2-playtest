@@ -43,17 +43,30 @@ function arrangeBattleStrip(active,app){
  for(const [node,parent]of nodes)if(active)moveLayoutNode(node,parent);else restoreLayoutNode(node);
  if($('hand'))$('hand').scrollLeft=scroll;
 }
-let noticeScope=null,noticeKind=null;
-function syncTutorialNotice(){const message=$('message');if(message)message.classList.toggle('tutorialTurnNoticeHidden',document.body.classList.contains('tutorial-mode')&&tutorialExplanation?.step===4&&tutorialExplanation.glow?.includes('#log')&&noticeKind==='turn');}
-function setNotice(text,scope,kind='general'){const message=$('message');if(message){message.textContent=text;noticeScope=scope;noticeKind=kind;syncTutorialNotice();}}
-function renderSelectionStatus({operation='',guide='',choice='',paused='',scope=''}){
- const label=$('selectionContext'),message=$('message');if(!label)return;
- const viewing=$('infoContent')?.querySelector('.infoName')?.textContent||'';
- const live=choice?'必須選択：'+choice:paused?paused:operation?'操作対象：'+operation+(guide?' — '+guide:''):'対象を選択してください。';
- label.textContent=live+(viewing&&(!operation||!viewing.startsWith(operation))?' ／ 閲覧：'+viewing:'');
- label.dataset.operation=operation;label.dataset.viewing=viewing;
- if(message&&noticeScope!==scope){message.textContent='';noticeScope=null;noticeKind=null;}
- syncTutorialNotice();
+let detailContext=null,detailNotice=null;
+// Routine selection / turn / battle results already have dedicated presenters.
+// Unknown notices remain actionable errors; they are never silently discarded.
+function setNotice(text,scope,kind='error'){
+ detailNotice=['routine','guide','turn'].includes(kind)?null:{text:String(text),scope,kind};
+ if(detailContext?.scope===scope)renderDetailStatus(detailContext);
+}
+function cardUseReason({available,active=true,paused=false,sealed=false,cost,mana}){
+ // Availability comes from Core candidates, not from this explanation helper.
+ if(available||!active||paused)return '';
+ if(sealed)return '封魔中のためスペルを使用できません。';
+ if(mana<cost)return `マナ不足：必要 ${cost} / 現在 ${mana}`;
+ return '現在使用できる対象がありません。';
+}
+function mandatoryPrompt(kind){return kind==='effectMove'?'竜巻：色の付いた空きマスへ移動してください。支払い・ダメージは解決済みで、取消はできません。':kind==='promotion'?'暗殺者に変身するか選んでください。':kind==='token'?'バリケードの生成先：緑色の空きマスを選んでください。':'';}
+function renderDetailStatus(context){
+ const info=$('infoContent');if(!info)return;const changed=detailContext?.scope!==context.scope;detailContext=context;
+ if(detailNotice?.scope!==context.scope)detailNotice=null;
+ info.querySelectorAll('.detailPrompt').forEach(e=>e.remove());
+ const {choice='',reason='',guide=''}=context,error=detailNotice?.text||'';
+ const text=choice?(choice+(error?'\n操作エラー：'+error:'')):reason||guide||(error?'操作エラー：'+error:'');
+ if(!text)return;
+ const el=document.createElement('div');el.className='detailPrompt'+(choice?' required':'');el.dataset.kind=choice?'required':reason?'reason':guide?'guide':'error';el.setAttribute('role',error&&!reason&&!guide?'alert':'status');el.textContent=text;info.prepend(el);
+ if(changed)info.scrollTop=0;
 }
 function restoreNativePlane(board,wrap){
  // Release all presentation-owned projection state before any geometry reads.
@@ -142,8 +155,6 @@ function syncLayout(){
  if(mana&&dock&&zone)(landscape?dock:zone).append(mana);
  const enemyZone=column?.querySelector(".kingZone.enemy"),enemyDock=app.querySelector(".enemyManaDock"),enemyMana=enemyZone?.querySelector(".manaStat")||enemyDock?.querySelector(".manaStat");
  if(enemyMana&&enemyDock&&enemyZone)(landscape?enemyDock:enemyZone).append(enemyMana);
- const message=$('message'),panel=$('infoPanel'),area=app.querySelector('.playArea');
- if(message&&panel&&area){if(landscape)panel.append(message);else app.insertBefore(message,area);}
  if(projected)fitProjection(wrap,infoDock);
 }
 function screenPoint(element,relative){const r=element.getBoundingClientRect(),o=relative.getBoundingClientRect();return {x:r.left-o.left,y:r.top-o.top};}
@@ -164,7 +175,7 @@ function bindPresentation(){
  const wrap=$('board')?.closest('.boardWrap');if(wrap&&typeof ResizeObserver!=='undefined')new ResizeObserver(queuePresentation).observe(wrap);
  syncLayout();
 }
-function startPlayPresentation(){const log=document.querySelector('.layoutLog');if(log)log.open=false;previousLogExplanation=false;tutorialExplanation=null;}
+function startPlayPresentation(){detailContext=null;detailNotice=null;const log=document.querySelector('.layoutLog');if(log)log.open=false;previousLogExplanation=false;tutorialExplanation=null;}
 function positionBattleLog(){
  const log=document.querySelector('.layoutLog'),panel=log?.querySelector('.logPanel');if(!panel)return;
  // Portrait is ordinary document flow. Never retain popup geometry, even closed.
@@ -194,7 +205,7 @@ function refreshTutorialGeometry(){
  for(const cell of board.querySelectorAll('.cell.tutorialGlow')){const e=document.createElementNS('http://www.w3.org/2000/svg','polygon');e.dataset.tutorialCell=cell.dataset.cell;e.setAttribute('points',['nw','ne','se','sw'].map(name=>{const p=screenPoint(cell.querySelector('[data-plane-point='+name+']'),wrap);return p.x+','+p.y;}).join(' '));svg.append(e);}
 }
 function presentTutorial(explanation){
- tutorialExplanation=explanation;syncTutorialNotice();
+ tutorialExplanation=explanation;
  const log=explanation?.glow?.includes('#log')||false,details=$('log')?.closest('details');
  if(log!==previousLogExplanation&&details){details.open=log;if(log)tutorialLogScrollPending=true;}previousLogExplanation=log;
  queueTutorialPresentation();
@@ -414,7 +425,15 @@ function rangeDiagram(p,action,pattern){
 }
 function rangePair(p,pattern){return `<div class="rangePair">${rangeDiagram(p,'move',pattern)}${rangeDiagram(p,'attack',pattern)}</div>`;}
 
-function cardHTML(t,d,{spell,enchant,text}){return enchant?`<div class="name">${t==="封魔"?"🔒":t==="王の覚醒"?"👑":t==="防御結界"?"🛡️":"💢"} ${t}</div><div class="cost">エンチャント / コスト ${d.cost}</div><div class="desc">${text}</div>`:spell?`<div class="name">${t==="ファイヤーボルト"?"🔥":t==="ホープ"?"✨":t==="転移魔法"?"🌀":t==="解呪"?"✨":t==="裏切り"?"↩️":t==="圧殺"?"💥":"💧"} ${t}</div><div class="cost">スペル / コスト ${d.cost}</div><div class="desc">${t==="ファイヤーボルト"?"対象に2ダメージ":t==="ホープ"?"対象のプレイヤーが2枚引く":t==="転移魔法"?"敵味方の駒を空きマスへ転移":t==="解呪"?"公開エンチャント・一時効果を解除（盤面全体も対象）":t==="裏切り"?"敵味方の駒の支配権を反転":t==="圧殺"?"自軍10体以上なら相手王のHPを0に":"自分の最大・未使用マナ+1（上限10）"}</div>`:`<div class="name">${t}</div><div class="cost">コスト ${d.cost}</div><div class="desc">ATK ${d.atk} / HP ${d.hp}${d.abilities?.length?`<br>${text}`:""}</div>`;}
+// Explicit legacy short forms only. Unregistered spells use their own definition.
+const SPELL_SHORT={ファイヤーボルト:'対象に2ダメージ',ホープ:'対象のプレイヤーが2枚引く',転移魔法:'敵味方の駒を空きマスへ転移',解呪:'公開エンチャント・一時効果を解除（盤面全体も対象）',裏切り:'敵味方の駒の支配権を反転',圧殺:'自軍10体以上なら相手王のHPを0に',マナ:'自分の最大・未使用マナ+1（上限10）'};
+const SPELL_ICON={ファイヤーボルト:'🔥',ホープ:'✨',転移魔法:'🌀',解呪:'✨',裏切り:'↩️',圧殺:'💥',マナ:'💧',突風:'💨',竜巻:'🌀'};
+function cardHTML(t,d,{spell=d.type==='spell',enchant=d.type==='enchant',text=''}={}){
+ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const description=d.description??text,icon=enchant?({封魔:'🔒',王の覚醒:'👑',防御結界:'🛡️',バーサーク:'💢',マイン:'💢',決戦:'💢'}[t]||''):spell?(SPELL_ICON[t]||''):'';
+ const body=spell?(Object.hasOwn(SPELL_SHORT,t)?SPELL_SHORT[t]:description):enchant?description:`ATK ${d.atk} / HP ${d.hp}${d.abilities?.length?'\n'+description:''}`;
+ return `<div class="name">${icon?icon+' ':''}${esc(t)}</div><div class="cost">${enchant?'エンチャント / ':spell?'スペル / ':''}コスト ${d.cost}</div><div class="desc">${esc(body).replace(/\n/g,'<br>')}</div>`;
+}
 function createVisualSettings({includeCPU=true}={}){
 const KING_ASSET_PATHS={
  default:assetURL('kings/default.png'),
@@ -509,5 +528,5 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderSelectionStatus,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();

@@ -811,7 +811,6 @@ body.layout-landscape .kingZone .king{display:none}
 body.layout-landscape #infoPanel{height:100%!important;max-height:100%!important;min-height:0;overflow:hidden;position:relative}
 body.layout-landscape .infoHeading{font-size:13px;padding:5px 8px;flex:0 0 auto}
 body.layout-landscape #infoContent{font-size:13px;line-height:1.35;padding:7px 8px;min-height:0;flex:1 1 0;overflow:auto;overscroll-behavior:contain}
-body.layout-landscape #message{font-size:12px;line-height:1.3;min-height:0;max-height:32px;overflow:auto;margin:0;padding:3px 6px;flex:0 0 auto}
 body.layout-landscape #requestStatus{grid-column:1/-1;grid-row:2;position:relative;align-self:end;pointer-events:none;z-index:850;margin:0;width:55%;height:18px}
 body.layout-landscape #actions{min-height:0;max-height:45%;overflow:auto;flex:0 1 auto}
 body.layout-landscape #actions .useCardButton,body.layout-landscape #infoContent .useCardButton{min-height:36px;font-size:12px;padding:8px}
@@ -931,11 +930,6 @@ body.layout-landscape .stripButtons button{flex:0 0 auto;min-width:44px;min-heig
 body.layout-landscape .stripEnd{display:flex;justify-content:flex-end}
 body.layout-landscape .stripEnd #endTurn{min-height:38px;padding:7px 14px;font-size:13px}
 body.layout-landscape .stripLeft .layoutLog summary{min-height:36px;padding:8px 6px}
-#selectionContext{font-size:11px;line-height:1.35;padding:4px 8px;border-bottom:1px solid #475363;flex:0 0 auto;max-height:48px;overflow:auto;background:#18212c}
-body.layout-landscape #message:empty{display:none}
-#message:not(:empty)::before{content:'通知：';font-weight:700}
-#message.tutorialTurnNoticeHidden{display:none!important}
-body.layout-landscape #message{border-top:1px solid #5d6270;max-height:48px;flex:0 0 auto}
 
 /* Compact, fixed-width current/max mana; the same live values in all views. */
 body #app .manaStat{box-sizing:border-box;display:inline-flex;align-items:center;gap:3px;width:92px;height:26px;min-height:26px;padding:3px 4px!important;border:1px solid #536071;border-radius:6px;background:#171e27;white-space:nowrap;font:700 12px/1.2 system-ui!important}
@@ -956,6 +950,10 @@ body:not(.layout-landscape) #app .manaStat{width:72px;height:14px;min-height:14p
 body:not(.layout-landscape) #app .manaOwner{font-size:9px;line-height:10px}
 body:not(.layout-landscape) #app .manaGlyph{font-size:9px;line-height:10px}
 body:not(.layout-landscape) #app .manaStat b{font:700 11px/12px ui-monospace,monospace}
+
+/* Conditional detail content only: no permanent operation / notice rows. */
+.detailPrompt{position:relative;z-index:3;box-sizing:border-box;padding:7px 8px;margin:0 0 6px;border:1px solid #927344;border-radius:6px;background:#332c20;color:#ffe0ad;font-size:12px;line-height:1.4;white-space:pre-line;overflow-wrap:anywhere}
+.detailPrompt.required{position:sticky;top:0;background:#17364d;border-color:#76b8ea;color:#eef8ff}
 
 /* Screen-facing public combat information; no hit targets or board geometry. */
 .overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-name:-52px;--hud-foot:0px;transform:translate(-50%,-50%);pointer-events:none}
@@ -1021,7 +1019,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-tutorial-placement-text-v23">ver p3-tutorial-placement-text-v23</div>
+  <div class="titleVersion" data-build="p3-card-info-cleanup-v24">ver p3-card-info-cleanup-v24</div>
   <div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -1046,8 +1044,8 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
     <button type="button" onclick="returnToTitle()">タイトルへ戻る</button>
     <span class="enemyManaDock" aria-label="相手のマナ"></span><button id="settingsButton" class="settingsTopButton" type="button" aria-label="設定">設定⚙️</button>
   </div>
-  <div class="status"><span class="badge">ターン: <b id="turn">1</b></span><span class="badge">自分山札: <b id="deck">35</b></span><span class="badge">相手山札: <b id="cpuDeck">35</b></span><span class="badge">相手手札: <b id="cpuHand">5</b>枚</span><button class="badge statusButton" type="button" onclick="showGlobalEnchantments()">全体エンチャント🔮<b id="globalEnchantCount">0</b></button></div><div id="message" role="status"></div><div class="playArea"><div class="boardColumn"><div id="turnIndicator" class="turnIndicator" role="status" hidden></div><div class="kingZone enemy"><span class="kingStat">❤️HP<b id="cHp">20</b></span><button class="graveButton" type="button" onclick="showGraveyard('c')">🪦<b id="cGrave">0</b></button><div class="king" onclick="clickKing('c')">相手の王</div><span class="kingStat manaStat"><span class="manaOwner">相手</span><span class="manaGlyph" aria-hidden="true">💧</span><b id="cpuMana">2/2</b></span></div><div class="boardWrap"><div class="boardPlane"><div id="board" class="board" aria-label="5行5列の戦闘盤面"></div><svg class="boardGrid" viewBox="0 0 5 5" aria-hidden="true"><path data-grid-axis="column" d="M0 0V5"/><path data-grid-axis="column" d="M1 0V5"/><path data-grid-axis="column" d="M2 0V5"/><path data-grid-axis="column" d="M3 0V5"/><path data-grid-axis="column" d="M4 0V5"/><path data-grid-axis="column" d="M5 0V5"/><path data-grid-axis="row" d="M0 0H5"/><path data-grid-axis="row" d="M0 1H5"/><path data-grid-axis="row" d="M0 2H5"/><path data-grid-axis="row" d="M0 3H5"/><path data-grid-axis="row" d="M0 4H5"/><path data-grid-axis="row" d="M0 5H5"/></svg><span class="royalFoot enemy" aria-hidden="true"></span><span class="royalFoot player" aria-hidden="true"></span></div><div id="pieceOverlay" aria-hidden="true"></div><button id="enemyPedestal" class="royalPedestal enemy" type="button" onclick="clickKing('c')" aria-label="相手の王"><div class="crownModel" aria-hidden="true"><svg class="crownSvg" viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="goldA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a1805"/><stop offset=".13" stop-color="#9c681d"/><stop offset=".27" stop-color="#f2cc69"/><stop offset=".39" stop-color="#6c4310"/><stop offset=".53" stop-color="#d7a33b"/><stop offset=".69" stop-color="#fff0a3"/><stop offset=".78" stop-color="#8a5818"/><stop offset="1" stop-color="#251505"/></linearGradient><linearGradient id="goldB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8dc7a"/><stop offset=".22" stop-color="#a66b1c"/><stop offset=".48" stop-color="#e3b449"/><stop offset=".72" stop-color="#5a350d"/><stop offset="1" stop-color="#d8a13a"/></linearGradient><radialGradient id="gem" cx="35%" cy="25%"><stop offset="0" stop-color="#fff4aa"/><stop offset=".35" stop-color="#d7a42e"/><stop offset="1" stop-color="#5a3208"/></radialGradient><filter id="metal"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#000" flood-opacity=".8"/></filter></defs><g filter="url(#metal)" stroke="#211304" stroke-width="4" stroke-linejoin="round"><path fill="url(#goldA)" d="M25 143 C25 121 31 101 43 72 L69 109 L89 48 L118 103 L150 14 L182 103 L211 48 L231 109 L257 72 C269 101 275 121 275 143 Z"/><path fill="#160d04" opacity=".58" d="M41 133 C55 116 66 110 83 121 C101 132 114 119 126 105 C137 92 145 86 150 86 C156 86 165 94 175 106 C188 121 201 132 218 121 C236 109 248 117 260 133 L260 146 L41 146Z"/><path fill="none" stroke="url(#goldB)" stroke-width="8" d="M37 132 C61 107 77 108 96 126 C113 141 126 116 150 91 C174 116 187 141 204 126 C223 108 239 107 263 132"/><path fill="url(#goldB)" d="M22 137 Q150 151 278 137 L274 171 Q150 186 26 171Z"/><path fill="none" stroke="#f4d574" stroke-width="3" opacity=".7" d="M31 148 Q150 159 269 148"/><path fill="none" stroke="#51300c" stroke-width="5" d="M31 162 Q150 175 269 162"/></g><g fill="url(#gem)" stroke="#241504" stroke-width="3"><path d="M150 27 l11 17 -11 18 -11-18z"/><path d="M90 61 l9 14 -9 15 -9-15z"/><path d="M210 61 l9 14 -9 15 -9-15z"/><circle cx="48" cy="91" r="7"/><circle cx="252" cy="91" r="7"/><circle cx="150" cy="126" r="9"/></g><g fill="none" stroke="#d9a63d" stroke-width="5" stroke-linecap="round"><path d="M57 139 C57 117 79 115 84 133 C88 147 105 145 110 132 C116 115 135 113 142 132"/><path d="M243 139 C243 117 221 115 216 133 C212 147 195 145 190 132 C184 115 165 113 158 132"/></g><g fill="#1b1005" opacity=".95"><circle cx="62" cy="155" r="4"/><circle cx="88" cy="158" r="4"/><circle cx="116" cy="160" r="4"/><circle cx="150" cy="162" r="5"/><circle cx="184" cy="160" r="4"/><circle cx="212" cy="158" r="4"/><circle cx="238" cy="155" r="4"/></g><path d="M34 169 Q150 183 266 169" fill="none" stroke="#f4cf64" stroke-width="3" opacity=".6"/></svg></div><span class="kingLabel">相手の王</span></button><button id="playerPedestal" class="royalPedestal player" type="button" onclick="clickKing('p')" aria-label="あなたの王"><div class="crownModel" aria-hidden="true"><svg class="crownSvg" viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="goldA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a1805"/><stop offset=".13" stop-color="#9c681d"/><stop offset=".27" stop-color="#f2cc69"/><stop offset=".39" stop-color="#6c4310"/><stop offset=".53" stop-color="#d7a33b"/><stop offset=".69" stop-color="#fff0a3"/><stop offset=".78" stop-color="#8a5818"/><stop offset="1" stop-color="#251505"/></linearGradient><linearGradient id="goldB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8dc7a"/><stop offset=".22" stop-color="#a66b1c"/><stop offset=".48" stop-color="#e3b449"/><stop offset=".72" stop-color="#5a350d"/><stop offset="1" stop-color="#d8a13a"/></linearGradient><radialGradient id="gem" cx="35%" cy="25%"><stop offset="0" stop-color="#fff4aa"/><stop offset=".35" stop-color="#d7a42e"/><stop offset="1" stop-color="#5a3208"/></radialGradient><filter id="metal"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#000" flood-opacity=".8"/></filter></defs><g filter="url(#metal)" stroke="#211304" stroke-width="4" stroke-linejoin="round"><path fill="url(#goldA)" d="M25 143 C25 121 31 101 43 72 L69 109 L89 48 L118 103 L150 14 L182 103 L211 48 L231 109 L257 72 C269 101 275 121 275 143 Z"/><path fill="#160d04" opacity=".58" d="M41 133 C55 116 66 110 83 121 C101 132 114 119 126 105 C137 92 145 86 150 86 C156 86 165 94 175 106 C188 121 201 132 218 121 C236 109 248 117 260 133 L260 146 L41 146Z"/><path fill="none" stroke="url(#goldB)" stroke-width="8" d="M37 132 C61 107 77 108 96 126 C113 141 126 116 150 91 C174 116 187 141 204 126 C223 108 239 107 263 132"/><path fill="url(#goldB)" d="M22 137 Q150 151 278 137 L274 171 Q150 186 26 171Z"/><path fill="none" stroke="#f4d574" stroke-width="3" opacity=".7" d="M31 148 Q150 159 269 148"/><path fill="none" stroke="#51300c" stroke-width="5" d="M31 162 Q150 175 269 162"/></g><g fill="url(#gem)" stroke="#241504" stroke-width="3"><path d="M150 27 l11 17 -11 18 -11-18z"/><path d="M90 61 l9 14 -9 15 -9-15z"/><path d="M210 61 l9 14 -9 15 -9-15z"/><circle cx="48" cy="91" r="7"/><circle cx="252" cy="91" r="7"/><circle cx="150" cy="126" r="9"/></g><g fill="none" stroke="#d9a63d" stroke-width="5" stroke-linecap="round"><path d="M57 139 C57 117 79 115 84 133 C88 147 105 145 110 132 C116 115 135 113 142 132"/><path d="M243 139 C243 117 221 115 216 133 C212 147 195 145 190 132 C184 115 165 113 158 132"/></g><g fill="#1b1005" opacity=".95"><circle cx="62" cy="155" r="4"/><circle cx="88" cy="158" r="4"/><circle cx="116" cy="160" r="4"/><circle cx="150" cy="162" r="5"/><circle cx="184" cy="160" r="4"/><circle cx="212" cy="158" r="4"/><circle cx="238" cy="155" r="4"/></g><path d="M34 169 Q150 183 266 169" fill="none" stroke="#f4cf64" stroke-width="3" opacity=".6"/></svg></div><span class="kingLabel">あなたの王</span></button></div>
-<div class="kingZone player"><span class="kingStat">❤️HP<b id="pHp">20</b></span><button class="graveButton" type="button" onclick="showGraveyard('p')">🪦<b id="pGrave">0</b></button><div class="king" onclick="clickKing('p')">あなたの王</div><span class="kingStat manaStat"><span class="manaOwner">自分</span><span class="manaGlyph" aria-hidden="true">💧</span><b id="mana">1/1</b></span></div></div><aside id="infoPanel" aria-live="polite"><div class="infoHeading">選択中の情報</div><div id="selectionContext" role="status"></div><div id="infoContent" class="infoContent">カードや駒、マスをタップすると情報を表示します。</div></aside></div><div class="handTitle">手札（タップして使用）</div><div class="handScroller"><button type="button" class="layoutHandScroll" data-scroll-hand="-1" aria-label="手札を左へ">◀</button><div id="hand" class="hand"></div><button type="button" class="layoutHandScroll" data-scroll-hand="1" aria-label="手札を右へ">▶</button></div><div class="battleStrip" aria-label="手札と対戦操作"><div class="stripLeft"></div><div class="stripRight"><div class="stripButtons"></div><div class="stripEnd"></div></div></div><div class="controls"><span class="manaDock" aria-label="自分のマナ"></span><details class="layoutLog"><summary>戦闘ログ</summary><div class="logPanel"><div id="log"></div></div></details><button id="endTurn">ターン終了</button><button id="undoOne" class="secondary" disabled>1手戻る</button></div></div>
+  <div class="status"><span class="badge">ターン: <b id="turn">1</b></span><span class="badge">自分山札: <b id="deck">35</b></span><span class="badge">相手山札: <b id="cpuDeck">35</b></span><span class="badge">相手手札: <b id="cpuHand">5</b>枚</span><button class="badge statusButton" type="button" onclick="showGlobalEnchantments()">全体エンチャント🔮<b id="globalEnchantCount">0</b></button></div><div class="playArea"><div class="boardColumn"><div id="turnIndicator" class="turnIndicator" role="status" hidden></div><div class="kingZone enemy"><span class="kingStat">❤️HP<b id="cHp">20</b></span><button class="graveButton" type="button" onclick="showGraveyard('c')">🪦<b id="cGrave">0</b></button><div class="king" onclick="clickKing('c')">相手の王</div><span class="kingStat manaStat"><span class="manaOwner">相手</span><span class="manaGlyph" aria-hidden="true">💧</span><b id="cpuMana">2/2</b></span></div><div class="boardWrap"><div class="boardPlane"><div id="board" class="board" aria-label="5行5列の戦闘盤面"></div><svg class="boardGrid" viewBox="0 0 5 5" aria-hidden="true"><path data-grid-axis="column" d="M0 0V5"/><path data-grid-axis="column" d="M1 0V5"/><path data-grid-axis="column" d="M2 0V5"/><path data-grid-axis="column" d="M3 0V5"/><path data-grid-axis="column" d="M4 0V5"/><path data-grid-axis="column" d="M5 0V5"/><path data-grid-axis="row" d="M0 0H5"/><path data-grid-axis="row" d="M0 1H5"/><path data-grid-axis="row" d="M0 2H5"/><path data-grid-axis="row" d="M0 3H5"/><path data-grid-axis="row" d="M0 4H5"/><path data-grid-axis="row" d="M0 5H5"/></svg><span class="royalFoot enemy" aria-hidden="true"></span><span class="royalFoot player" aria-hidden="true"></span></div><div id="pieceOverlay" aria-hidden="true"></div><button id="enemyPedestal" class="royalPedestal enemy" type="button" onclick="clickKing('c')" aria-label="相手の王"><div class="crownModel" aria-hidden="true"><svg class="crownSvg" viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="goldA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a1805"/><stop offset=".13" stop-color="#9c681d"/><stop offset=".27" stop-color="#f2cc69"/><stop offset=".39" stop-color="#6c4310"/><stop offset=".53" stop-color="#d7a33b"/><stop offset=".69" stop-color="#fff0a3"/><stop offset=".78" stop-color="#8a5818"/><stop offset="1" stop-color="#251505"/></linearGradient><linearGradient id="goldB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8dc7a"/><stop offset=".22" stop-color="#a66b1c"/><stop offset=".48" stop-color="#e3b449"/><stop offset=".72" stop-color="#5a350d"/><stop offset="1" stop-color="#d8a13a"/></linearGradient><radialGradient id="gem" cx="35%" cy="25%"><stop offset="0" stop-color="#fff4aa"/><stop offset=".35" stop-color="#d7a42e"/><stop offset="1" stop-color="#5a3208"/></radialGradient><filter id="metal"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#000" flood-opacity=".8"/></filter></defs><g filter="url(#metal)" stroke="#211304" stroke-width="4" stroke-linejoin="round"><path fill="url(#goldA)" d="M25 143 C25 121 31 101 43 72 L69 109 L89 48 L118 103 L150 14 L182 103 L211 48 L231 109 L257 72 C269 101 275 121 275 143 Z"/><path fill="#160d04" opacity=".58" d="M41 133 C55 116 66 110 83 121 C101 132 114 119 126 105 C137 92 145 86 150 86 C156 86 165 94 175 106 C188 121 201 132 218 121 C236 109 248 117 260 133 L260 146 L41 146Z"/><path fill="none" stroke="url(#goldB)" stroke-width="8" d="M37 132 C61 107 77 108 96 126 C113 141 126 116 150 91 C174 116 187 141 204 126 C223 108 239 107 263 132"/><path fill="url(#goldB)" d="M22 137 Q150 151 278 137 L274 171 Q150 186 26 171Z"/><path fill="none" stroke="#f4d574" stroke-width="3" opacity=".7" d="M31 148 Q150 159 269 148"/><path fill="none" stroke="#51300c" stroke-width="5" d="M31 162 Q150 175 269 162"/></g><g fill="url(#gem)" stroke="#241504" stroke-width="3"><path d="M150 27 l11 17 -11 18 -11-18z"/><path d="M90 61 l9 14 -9 15 -9-15z"/><path d="M210 61 l9 14 -9 15 -9-15z"/><circle cx="48" cy="91" r="7"/><circle cx="252" cy="91" r="7"/><circle cx="150" cy="126" r="9"/></g><g fill="none" stroke="#d9a63d" stroke-width="5" stroke-linecap="round"><path d="M57 139 C57 117 79 115 84 133 C88 147 105 145 110 132 C116 115 135 113 142 132"/><path d="M243 139 C243 117 221 115 216 133 C212 147 195 145 190 132 C184 115 165 113 158 132"/></g><g fill="#1b1005" opacity=".95"><circle cx="62" cy="155" r="4"/><circle cx="88" cy="158" r="4"/><circle cx="116" cy="160" r="4"/><circle cx="150" cy="162" r="5"/><circle cx="184" cy="160" r="4"/><circle cx="212" cy="158" r="4"/><circle cx="238" cy="155" r="4"/></g><path d="M34 169 Q150 183 266 169" fill="none" stroke="#f4cf64" stroke-width="3" opacity=".6"/></svg></div><span class="kingLabel">相手の王</span></button><button id="playerPedestal" class="royalPedestal player" type="button" onclick="clickKing('p')" aria-label="あなたの王"><div class="crownModel" aria-hidden="true"><svg class="crownSvg" viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="goldA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a1805"/><stop offset=".13" stop-color="#9c681d"/><stop offset=".27" stop-color="#f2cc69"/><stop offset=".39" stop-color="#6c4310"/><stop offset=".53" stop-color="#d7a33b"/><stop offset=".69" stop-color="#fff0a3"/><stop offset=".78" stop-color="#8a5818"/><stop offset="1" stop-color="#251505"/></linearGradient><linearGradient id="goldB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8dc7a"/><stop offset=".22" stop-color="#a66b1c"/><stop offset=".48" stop-color="#e3b449"/><stop offset=".72" stop-color="#5a350d"/><stop offset="1" stop-color="#d8a13a"/></linearGradient><radialGradient id="gem" cx="35%" cy="25%"><stop offset="0" stop-color="#fff4aa"/><stop offset=".35" stop-color="#d7a42e"/><stop offset="1" stop-color="#5a3208"/></radialGradient><filter id="metal"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#000" flood-opacity=".8"/></filter></defs><g filter="url(#metal)" stroke="#211304" stroke-width="4" stroke-linejoin="round"><path fill="url(#goldA)" d="M25 143 C25 121 31 101 43 72 L69 109 L89 48 L118 103 L150 14 L182 103 L211 48 L231 109 L257 72 C269 101 275 121 275 143 Z"/><path fill="#160d04" opacity=".58" d="M41 133 C55 116 66 110 83 121 C101 132 114 119 126 105 C137 92 145 86 150 86 C156 86 165 94 175 106 C188 121 201 132 218 121 C236 109 248 117 260 133 L260 146 L41 146Z"/><path fill="none" stroke="url(#goldB)" stroke-width="8" d="M37 132 C61 107 77 108 96 126 C113 141 126 116 150 91 C174 116 187 141 204 126 C223 108 239 107 263 132"/><path fill="url(#goldB)" d="M22 137 Q150 151 278 137 L274 171 Q150 186 26 171Z"/><path fill="none" stroke="#f4d574" stroke-width="3" opacity=".7" d="M31 148 Q150 159 269 148"/><path fill="none" stroke="#51300c" stroke-width="5" d="M31 162 Q150 175 269 162"/></g><g fill="url(#gem)" stroke="#241504" stroke-width="3"><path d="M150 27 l11 17 -11 18 -11-18z"/><path d="M90 61 l9 14 -9 15 -9-15z"/><path d="M210 61 l9 14 -9 15 -9-15z"/><circle cx="48" cy="91" r="7"/><circle cx="252" cy="91" r="7"/><circle cx="150" cy="126" r="9"/></g><g fill="none" stroke="#d9a63d" stroke-width="5" stroke-linecap="round"><path d="M57 139 C57 117 79 115 84 133 C88 147 105 145 110 132 C116 115 135 113 142 132"/><path d="M243 139 C243 117 221 115 216 133 C212 147 195 145 190 132 C184 115 165 113 158 132"/></g><g fill="#1b1005" opacity=".95"><circle cx="62" cy="155" r="4"/><circle cx="88" cy="158" r="4"/><circle cx="116" cy="160" r="4"/><circle cx="150" cy="162" r="5"/><circle cx="184" cy="160" r="4"/><circle cx="212" cy="158" r="4"/><circle cx="238" cy="155" r="4"/></g><path d="M34 169 Q150 183 266 169" fill="none" stroke="#f4cf64" stroke-width="3" opacity=".6"/></svg></div><span class="kingLabel">あなたの王</span></button></div>
+<div class="kingZone player"><span class="kingStat">❤️HP<b id="pHp">20</b></span><button class="graveButton" type="button" onclick="showGraveyard('p')">🪦<b id="pGrave">0</b></button><div class="king" onclick="clickKing('p')">あなたの王</div><span class="kingStat manaStat"><span class="manaOwner">自分</span><span class="manaGlyph" aria-hidden="true">💧</span><b id="mana">1/1</b></span></div></div><aside id="infoPanel" aria-live="polite"><div class="infoHeading">選択中の情報</div><div id="infoContent" class="infoContent"></div></aside></div><div class="handTitle">手札（タップして使用）</div><div class="handScroller"><button type="button" class="layoutHandScroll" data-scroll-hand="-1" aria-label="手札を左へ">◀</button><div id="hand" class="hand"></div><button type="button" class="layoutHandScroll" data-scroll-hand="1" aria-label="手札を右へ">▶</button></div><div class="battleStrip" aria-label="手札と対戦操作"><div class="stripLeft"></div><div class="stripRight"><div class="stripButtons"></div><div class="stripEnd"></div></div></div><div class="controls"><span class="manaDock" aria-label="自分のマナ"></span><details class="layoutLog"><summary>戦闘ログ</summary><div class="logPanel"><div id="log"></div></div></details><button id="endTurn">ターン終了</button><button id="undoOne" class="secondary" disabled>1手戻る</button></div></div>
 <div id="settingsOverlay" aria-hidden="true"><div class="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="settingsHead"><b id="settingsTitle">⚙️ 設定</b><button id="settingsClose" type="button">×</button></div><div class="settingsGroup"><div class="settingsLabel">視点比較（試作）</div><div class="settingsChoices" data-setting="view"><button type="button" data-value="current">A：現行方向</button><button type="button" data-value="left">B：左回転俯瞰</button></div><div class="settingsNote">横画面で比較します。端末だけの表示設定です。Bは正式採用前の試作です。</div></div><div class="settingsGroup"><div class="settingsLabel">ボード</div><div class="settingsChoices" data-setting="board"><button type="button" data-value="rich">リッチ</button><button type="button" data-value="simple">シンプル</button><button type="button" data-value="antique">アンティーク</button><button type="button" data-value="light">ライト</button></div></div><div class="settingsGroup"><div class="settingsLabel">王アイコン</div><div class="settingsChoices kingChoices" data-setting="king"><button type="button" data-value="simple1">デフォルト</button><button type="button" data-value="dark">ダーク</button><button type="button" data-value="default">ゴージャス</button><button type="button" data-value="simple2">シンプル</button><button type="button" data-value="oldking">老王1</button><button type="button" data-value="oldking2">老王2</button></div><div class="settingsNote">王冠画像アセットを切り替えます。ゲームルールには影響しません。</div></div><div class="settingsGroup"><div class="settingsLabel">BGM</div><div class="settingsChoices"><button type="button" data-bgm-enabled="true">ON</button><button type="button" data-bgm-enabled="false">OFF</button></div><div class="bgmVolumeRow"><label for="bgmVolume">音量</label><input id="bgmVolume" type="range" min="0" max="100" step="1" value="50" aria-describedby="bgmStatus"><output id="bgmVolumeValue" for="bgmVolume">50％</output></div><div id="bgmStatus" class="settingsNote">対戦中にループ再生します。音量0％は無音です。</div></div><div class="settingsGroup"><div class="settingsLabel">クリーチャー名称表示</div><div class="settingsChoices" id="creatureNameChoices"><button type="button" data-name-visible="true">ON</button><button type="button" data-name-visible="false">OFF</button></div><div class="settingsNote">盤上のクリーチャー名称のみ表示・非表示を切り替えます。</div></div><!-- CPU_SETTINGS_START --><div class="settingsGroup"><div class="settingsLabel">CPU演出</div><div id="cpuPresentationChoices" class="settingsChoices"><button type="button" data-cpu-speed="normal" aria-pressed="true">通常</button><button type="button" data-cpu-speed="fast" aria-pressed="false">高速</button><button type="button" data-cpu-speed="skip" aria-pressed="false">演出スキップ</button></div><div class="settingsNote">思考・ルール結果を変えず、CPUの演出待ちだけを変更します。</div></div><div class="settingsGroup"><div class="settingsLabel">CPUの強さ</div><div class="settingsChoices" data-setting="cpuDifficulty"><button type="button" data-value="weak">よわい</button><button type="button" data-value="strong">つよい</button></div><div class="settingsNote">「よわい」は従来CPU。「つよい」は王へ前進しながら、移動→攻撃／攻撃→移動を1手先まで判断する攻撃型CPUです。</div></div><!-- CPU_SETTINGS_END --></div></div>
 <div id="tutorialCoach" role="dialog" aria-live="polite"><div id="tutorialStep" class="tutorialStep"></div><div id="tutorialText" class="tutorialText"></div><div class="tutorialActions"><button id="tutorialBack" type="button">戻る</button><button id="tutorialNext" type="button">次へ</button></div></div><div id="infoScrollUp" class="scrollHint info" aria-hidden="true">▲</div><div id="infoScrollDown" class="scrollHint info" aria-hidden="true">▼</div><div id="handScrollLeft" class="scrollHint hand" aria-hidden="true">◀</div><div id="handScrollRight" class="scrollHint hand" aria-hidden="true">▶</div><div id="overlay"><div class="result"><h2 id="resultTitle"></h2><p id="resultText"></p><div class="resultActions"><button id="playAgain" type="button">もう一度プレイ</button><button id="resultToTitle" type="button">タイトルに戻る</button></div></div></div>
 <script>'use strict';
@@ -1157,17 +1155,30 @@ function arrangeBattleStrip(active,app){
  for(const [node,parent]of nodes)if(active)moveLayoutNode(node,parent);else restoreLayoutNode(node);
  if($('hand'))$('hand').scrollLeft=scroll;
 }
-let noticeScope=null,noticeKind=null;
-function syncTutorialNotice(){const message=$('message');if(message)message.classList.toggle('tutorialTurnNoticeHidden',document.body.classList.contains('tutorial-mode')&&tutorialExplanation?.step===4&&tutorialExplanation.glow?.includes('#log')&&noticeKind==='turn');}
-function setNotice(text,scope,kind='general'){const message=$('message');if(message){message.textContent=text;noticeScope=scope;noticeKind=kind;syncTutorialNotice();}}
-function renderSelectionStatus({operation='',guide='',choice='',paused='',scope=''}){
- const label=$('selectionContext'),message=$('message');if(!label)return;
- const viewing=$('infoContent')?.querySelector('.infoName')?.textContent||'';
- const live=choice?'必須選択：'+choice:paused?paused:operation?'操作対象：'+operation+(guide?' — '+guide:''):'対象を選択してください。';
- label.textContent=live+(viewing&&(!operation||!viewing.startsWith(operation))?' ／ 閲覧：'+viewing:'');
- label.dataset.operation=operation;label.dataset.viewing=viewing;
- if(message&&noticeScope!==scope){message.textContent='';noticeScope=null;noticeKind=null;}
- syncTutorialNotice();
+let detailContext=null,detailNotice=null;
+// Routine selection / turn / battle results already have dedicated presenters.
+// Unknown notices remain actionable errors; they are never silently discarded.
+function setNotice(text,scope,kind='error'){
+ detailNotice=['routine','guide','turn'].includes(kind)?null:{text:String(text),scope,kind};
+ if(detailContext?.scope===scope)renderDetailStatus(detailContext);
+}
+function cardUseReason({available,active=true,paused=false,sealed=false,cost,mana}){
+ // Availability comes from Core candidates, not from this explanation helper.
+ if(available||!active||paused)return '';
+ if(sealed)return '封魔中のためスペルを使用できません。';
+ if(mana<cost)return `マナ不足：必要 ${cost} / 現在 ${mana}`;
+ return '現在使用できる対象がありません。';
+}
+function mandatoryPrompt(kind){return kind==='effectMove'?'竜巻：色の付いた空きマスへ移動してください。支払い・ダメージは解決済みで、取消はできません。':kind==='promotion'?'暗殺者に変身するか選んでください。':kind==='token'?'バリケードの生成先：緑色の空きマスを選んでください。':'';}
+function renderDetailStatus(context){
+ const info=$('infoContent');if(!info)return;const changed=detailContext?.scope!==context.scope;detailContext=context;
+ if(detailNotice?.scope!==context.scope)detailNotice=null;
+ info.querySelectorAll('.detailPrompt').forEach(e=>e.remove());
+ const {choice='',reason='',guide=''}=context,error=detailNotice?.text||'';
+ const text=choice?(choice+(error?'\n操作エラー：'+error:'')):reason||guide||(error?'操作エラー：'+error:'');
+ if(!text)return;
+ const el=document.createElement('div');el.className='detailPrompt'+(choice?' required':'');el.dataset.kind=choice?'required':reason?'reason':guide?'guide':'error';el.setAttribute('role',error&&!reason&&!guide?'alert':'status');el.textContent=text;info.prepend(el);
+ if(changed)info.scrollTop=0;
 }
 function restoreNativePlane(board,wrap){
  // Release all presentation-owned projection state before any geometry reads.
@@ -1256,8 +1267,6 @@ function syncLayout(){
  if(mana&&dock&&zone)(landscape?dock:zone).append(mana);
  const enemyZone=column?.querySelector(".kingZone.enemy"),enemyDock=app.querySelector(".enemyManaDock"),enemyMana=enemyZone?.querySelector(".manaStat")||enemyDock?.querySelector(".manaStat");
  if(enemyMana&&enemyDock&&enemyZone)(landscape?enemyDock:enemyZone).append(enemyMana);
- const message=$('message'),panel=$('infoPanel'),area=app.querySelector('.playArea');
- if(message&&panel&&area){if(landscape)panel.append(message);else app.insertBefore(message,area);}
  if(projected)fitProjection(wrap,infoDock);
 }
 function screenPoint(element,relative){const r=element.getBoundingClientRect(),o=relative.getBoundingClientRect();return {x:r.left-o.left,y:r.top-o.top};}
@@ -1278,7 +1287,7 @@ function bindPresentation(){
  const wrap=$('board')?.closest('.boardWrap');if(wrap&&typeof ResizeObserver!=='undefined')new ResizeObserver(queuePresentation).observe(wrap);
  syncLayout();
 }
-function startPlayPresentation(){const log=document.querySelector('.layoutLog');if(log)log.open=false;previousLogExplanation=false;tutorialExplanation=null;}
+function startPlayPresentation(){detailContext=null;detailNotice=null;const log=document.querySelector('.layoutLog');if(log)log.open=false;previousLogExplanation=false;tutorialExplanation=null;}
 function positionBattleLog(){
  const log=document.querySelector('.layoutLog'),panel=log?.querySelector('.logPanel');if(!panel)return;
  // Portrait is ordinary document flow. Never retain popup geometry, even closed.
@@ -1308,7 +1317,7 @@ function refreshTutorialGeometry(){
  for(const cell of board.querySelectorAll('.cell.tutorialGlow')){const e=document.createElementNS('http://www.w3.org/2000/svg','polygon');e.dataset.tutorialCell=cell.dataset.cell;e.setAttribute('points',['nw','ne','se','sw'].map(name=>{const p=screenPoint(cell.querySelector('[data-plane-point='+name+']'),wrap);return p.x+','+p.y;}).join(' '));svg.append(e);}
 }
 function presentTutorial(explanation){
- tutorialExplanation=explanation;syncTutorialNotice();
+ tutorialExplanation=explanation;
  const log=explanation?.glow?.includes('#log')||false,details=$('log')?.closest('details');
  if(log!==previousLogExplanation&&details){details.open=log;if(log)tutorialLogScrollPending=true;}previousLogExplanation=log;
  queueTutorialPresentation();
@@ -1528,7 +1537,15 @@ function rangeDiagram(p,action,pattern){
 }
 function rangePair(p,pattern){return `<div class="rangePair">${rangeDiagram(p,'move',pattern)}${rangeDiagram(p,'attack',pattern)}</div>`;}
 
-function cardHTML(t,d,{spell,enchant,text}){return enchant?`<div class="name">${t==="封魔"?"🔒":t==="王の覚醒"?"👑":t==="防御結界"?"🛡️":"💢"} ${t}</div><div class="cost">エンチャント / コスト ${d.cost}</div><div class="desc">${text}</div>`:spell?`<div class="name">${t==="ファイヤーボルト"?"🔥":t==="ホープ"?"✨":t==="転移魔法"?"🌀":t==="解呪"?"✨":t==="裏切り"?"↩️":t==="圧殺"?"💥":"💧"} ${t}</div><div class="cost">スペル / コスト ${d.cost}</div><div class="desc">${t==="ファイヤーボルト"?"対象に2ダメージ":t==="ホープ"?"対象のプレイヤーが2枚引く":t==="転移魔法"?"敵味方の駒を空きマスへ転移":t==="解呪"?"公開エンチャント・一時効果を解除（盤面全体も対象）":t==="裏切り"?"敵味方の駒の支配権を反転":t==="圧殺"?"自軍10体以上なら相手王のHPを0に":"自分の最大・未使用マナ+1（上限10）"}</div>`:`<div class="name">${t}</div><div class="cost">コスト ${d.cost}</div><div class="desc">ATK ${d.atk} / HP ${d.hp}${d.abilities?.length?`<br>${text}`:""}</div>`;}
+// Explicit legacy short forms only. Unregistered spells use their own definition.
+const SPELL_SHORT={ファイヤーボルト:'対象に2ダメージ',ホープ:'対象のプレイヤーが2枚引く',転移魔法:'敵味方の駒を空きマスへ転移',解呪:'公開エンチャント・一時効果を解除（盤面全体も対象）',裏切り:'敵味方の駒の支配権を反転',圧殺:'自軍10体以上なら相手王のHPを0に',マナ:'自分の最大・未使用マナ+1（上限10）'};
+const SPELL_ICON={ファイヤーボルト:'🔥',ホープ:'✨',転移魔法:'🌀',解呪:'✨',裏切り:'↩️',圧殺:'💥',マナ:'💧',突風:'💨',竜巻:'🌀'};
+function cardHTML(t,d,{spell=d.type==='spell',enchant=d.type==='enchant',text=''}={}){
+ const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const description=d.description??text,icon=enchant?({封魔:'🔒',王の覚醒:'👑',防御結界:'🛡️',バーサーク:'💢',マイン:'💢',決戦:'💢'}[t]||''):spell?(SPELL_ICON[t]||''):'';
+ const body=spell?(Object.hasOwn(SPELL_SHORT,t)?SPELL_SHORT[t]:description):enchant?description:`ATK ${d.atk} / HP ${d.hp}${d.abilities?.length?'\n'+description:''}`;
+ return `<div class="name">${icon?icon+' ':''}${esc(t)}</div><div class="cost">${enchant?'エンチャント / ':spell?'スペル / ':''}コスト ${d.cost}</div><div class="desc">${esc(body).replace(/\n/g,'<br>')}</div>`;
+}
 function createVisualSettings({includeCPU=true}={}){
 const KING_ASSET_PATHS={
  default:assetURL('kings/default.png'),
@@ -1623,7 +1640,7 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderSelectionStatus,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();
 </script><script>
 (function(){const modules={"./game-core.cjs":function(module,exports,require){
@@ -3470,7 +3487,7 @@ const TutorialController={
  get current(){return this.steps[this.index]},
  start(){
   this.epoch++;this.running=false;this.error=null;this.active=true;this.index=0;this.historyViewing=false;this.steps=tutorialSteps();
-   msg('説明を読んで「次へ」を押して下さい。');
+   msg('説明を読んで「次へ」を押して下さい。','routine');
   delete S.cardIdentities;delete S.coreBridge;delete S.pendingCardTransfers;delete S.pendingSummon;delete S.pendingEntry;delete S.pendingChoice;delete S.pendingEntryHtml;Object.assign(S,{turn:1,side:'p',manaBySide:{p:1,c:2},maxManaBySide:{p:1,c:2},manaBonus:{p:0,c:0},pHp:20,cHp:20,board:Array(25).fill(null),hand:['歩兵','歩兵','銀級兵','銀級兵','バーサーク'],deck:[...Array(31).fill('歩兵'),'バーサーク','チャリオット','ファイヤーボルト','マナ'],cHand:['歩兵','踊り子','金級兵','チャリオット','銀級兵'],cDeck:Array(35).fill('歩兵'),card:null,piece:null,inspect:null,gameOver:false,mines:Array(25).fill(null),enchantments:[],battles:[],graveyards:{p:[],c:[]},nextCardInstanceId:1,kingAction:{p:{},c:{}},kingAttackMode:false,sorcererMode:false,tokenPlacement:null,teleportSource:null,dispelTarget:null,cpuPreview:null});
   $('log').innerHTML='';clearOneStepUndo();document.body.classList.add('tutorial-mode');startGameScreen();this.show();
  },
@@ -3868,7 +3885,7 @@ function undoOneAction(){
  Object.defineProperties(S,{mana:{configurable:true,get(){return this.manaBySide[this.side]},set(v){this.manaBySide[this.side]=v}},maxMana:{configurable:true,get(){return this.maxManaBySide[this.side]},set(v){this.maxManaBySide[this.side]=v}}});
  pendingSummonAbilities.splice(0,pendingSummonAbilities.length,...snap.summonQueue);EffectEngine.queue=snap.queue;EffectEngine.resolving=false;S.eventHistory=snap.history;
  S.card=null;S.piece=null;S.inspect=null;S.cpuPreview=null;S.teleportSource=null;delete S.teleportIdentity;S.dispelTarget=null;S.kingAttackMode=false;S.sorcererMode=false;
- $("log").innerHTML=snap.logHTML;$("message").textContent=snap.message;
+ $("log").innerHTML=snap.logHTML;NormalGameUI.setNotice('',cpuNoticeScope(),'routine');
  document.body.classList.remove('result-open');$("overlay")?.classList.remove('show');
  render();updateUndoButton();return true;
 }
@@ -4015,7 +4032,7 @@ function kingAbilities(side){const abilities=new Set();for(const id of S.kingBas
 function kingAbilityReady(side,id){return kingAbilities(side).includes(id)&&(S.kingAction[side][id]||0)<KING_ABILITIES[id].usesPerTurn}
 function kingAbilityTargets(side,id){return GameCore.abilityQuery(side,id).map(a=>S.board.findIndex(p=>p&&p.sourceInstanceId===a.target.instanceId)).filter(k=>k>=0);}
 function activateKingAbility(side,id,k){if(!GameCore.abilityAllowed(side,id,null,{kind:'piece',k}))return false;if(id!=='awaken_attack')return false;if(side==='p')beginPlayerActionUndo();const r=finishR5Command(R5Command.activate(S,side,id,null,{kind:'piece',k},CARD_DEFINITIONS));if(!r.ok){if(side==='p')cancelPlayerActionUndo();return false;}render();flashHit(k);if(side==='p')commitPlayerActionUndo();return true;}
-function beginKingAttack(){if(S.side!=="p"||S.gameOver||!kingAbilityReady("p","awaken_attack"))return;S.card=null;S.piece=null;S.kingAttackMode=true;S.inspect={kind:"king",side:"p"};msg("王の攻撃：自陣1段目の敵軍クリーチャーをタップ。王を再タップでキャンセル。");render()}
+function beginKingAttack(){if(S.side!=="p"||S.gameOver||!kingAbilityReady("p","awaken_attack"))return;S.card=null;S.piece=null;S.kingAttackMode=true;S.inspect={kind:"king",side:"p"};msg("王の攻撃：自陣1段目の敵軍クリーチャーをタップ。王を再タップでキャンセル。","guide");render()}
 function spellsBlocked(side){return R12Core.spellsBlocked(R13View.view(S,side),side);}
 const $=x=>document.getElementById(x),I=(r,c)=>r*5+c,IB=(r,c)=>r>=0&&r<5&&c>=0&&c<5;
 // A5-R2: fresh match entropy; subsequent randomness remains in S for Undo/replay.
@@ -4029,14 +4046,15 @@ function defaultDeck(){const a=Object.entries(CARD_DEFINITIONS).filter(([,card])
 function playerDeck(){const a=DeckRepository.toCardIds(DeckRepository.loadConfirmed());if(!a||a.length!==40)return defaultDeck();return sh(a)}
 function deck(){return defaultDeck()}
 function log(x){$("log").innerHTML+="<div>"+x+"</div>";$("log").scrollTop=$("log").scrollHeight}
-// CPU presentation adapter: reuse existing selection state, never infer legality.
-function cpuNoticeScope(){return JSON.stringify([S.side,S.turn,S.card,S.hand[S.card],S.piece,S.board[S.piece]?.sourceInstanceId,S.inspect,S.teleportSource,S.sorcererMode,S.kingAttackMode,!!S.tokenPlacement,S.gameOver]);}
-function msg(x,kind){NormalGameUI.setNotice(x,cpuNoticeScope(),kind);}
+// CPU presentation adapter. Core candidates determine availability; reasons only explain it.
+function cpuNoticeScope(){return JSON.stringify([S.side,S.turn,S.card,S.hand[S.card],S.piece,S.board[S.piece]?.sourceInstanceId,S.inspect,S.teleportSource,S.sorcererMode,S.kingAttackMode,S.tokenPlacement?.cell,S.pendingChoice?.type,S.gameOver,S.manaBySide,S.board.map(p=>p?[p.sourceInstanceId,p.hp,p.m,p.a]:null),S.enchantments,TutorialController.active?TutorialController.phase:null]);}
+function msg(x,kind='error'){NormalGameUI.setNotice(x,cpuNoticeScope(),kind);}
 function syncCpuSelectionStatus(){
- const card=S.card!==null?S.hand[S.card]:null,piece=S.piece!==null?S.board[S.piece]:null;
- const operation=card||piece?.type||(S.kingAttackMode?'あなたの王':'');
- const guide=S.teleportSource!=null?'転移先を選択':S.sorcererMode||S.kingAttackMode?'能力の対象を選択':card?'詳細の可否と色の付いた対象を確認':piece?'移動先・攻撃対象・王を選択':'';
- NormalGameUI.renderSelectionStatus({operation,guide,choice:S.pendingChoice?.type==='effectMove'?'竜巻：色の付いた移動先を選択（取消不可）':S.tokenPlacement?'緑色のマスからバリケードの配置先を選択':'',paused:S.gameOver?'対戦終了':S.side!=='p'?'相手の手番です。':'',scope:cpuNoticeScope()});
+ const browsingOther=['graveyard','globalEnchantments','globalEnchantmentCard'].includes(S.inspect?.kind),card=!browsingOther&&S.card!==null?S.hand[S.card]:null,d=CARD_DEFINITIONS[card];
+ const query=d?GameCore.selectedTargets():null;
+ const reason=d?NormalGameUI.cardUseReason({available:query.choices.length>0,active:S.side==='p',paused:S.gameOver,sealed:d.type==='spell'&&spellsBlocked('p'),cost:d.cost,mana:S.mana}):'';
+ const choice=NormalGameUI.mandatoryPrompt(S.pendingChoice?.side==='p'?S.pendingChoice.type:S.tokenPlacement?.side==='p'?'token':null);
+ NormalGameUI.renderDetailStatus({reason,choice,guide:card&&S.teleportSource!=null?'転移先の空きマスを選んでください。':'',scope:cpuNoticeScope()});
 }
 
 function draw(side="p"){let d=side==="p"?S.deck:S.cDeck,h=side==="p"?S.hand:S.cHand;if(!d.length){if(side==="p")lose("山札切れ");else win("CPUの山札切れ");return false}R3Cards.draw(S,side);return true}
@@ -4092,20 +4110,22 @@ const RANGE_ARROWS={'-1,-1':'↖','-1,0':'↑','-1,1':'↗','0,-1':'←','0,1':'
  '-2,-2':'↖','-2,0':'↑','-2,2':'↗','0,-2':'←','0,2':'→','2,-2':'↙','2,0':'↓','2,2':'↘'};
 function rangeDiagram(p,action){return NormalGameUI.rangeDiagram(p,action,pattern); }
 function rangePair(p){return `<div class="rangePair">${rangeDiagram(p,'move')}${rangeDiagram(p,'attack')}</div>`;}
+// Editable CPU detail body. The common presenter owns conditional reasons / prompts.
 function infoHTML(){
  const esc=x=>String(x).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
  const line=x=>`<div class="infoLine">${esc(x)}</div>`;
- if(S.tokenPlacement){return `<div class="infoName">バリケードの配置先</div>`+line("守備兵の左右の緑色の空きマスを選んでください。");}
+ if(S.tokenPlacement||S.pendingChoice?.side==='p')return ''; // Common sticky mandatory-choice prompt owns this content.
  if(S.inspect?.kind==="graveyard"){return NormalGameUI.graveyardHTML(S.graveyards[S.inspect.side],S.inspect.side==='p'?'あなた':'CPU');}
  if(S.inspect?.kind==="globalEnchantments")return NormalGameUI.globalEffectsHTML(activeGlobalEnchantments());
  if(S.inspect?.kind==="globalEnchantmentCard"){const c=activeGlobalEnchantments().find(c=>String(c.instanceId)===String(S.inspect.instanceId));return NormalGameUI.globalDetailHTML(c,CARD_DEFINITIONS[c?.cardId],CARD_TEXT[c?.cardId]);}
- if(S.card!==null){const t=S.hand[S.card],d=T[t]||SPELL[t]||ENCHANT[t];if(t&&d)return `<div class="infoName">${esc(t)}</div>`+line(`${T[t]?'クリーチャー':SPELL[t]?'スペル':'エンチャント'} / コスト ${d.cost}`)+(T[t]?line(`ATK ${d.atk} / HP ${d.hp}`)+rangePair({type:t,berserk:0}):'')+(CARD_TEXT[t]?`<div class="infoEffect">${esc(CARD_TEXT[t])}</div>`:'')+(SPELL[t]&&spellsBlocked("p")?line("🔒 封魔中：カードの情報は確認できますが、スペルは使用できません。") :d.cost>S.mana?line(`必要マナ ${d.cost} / 現在 ${S.mana}：マナ不足のため使用不可`):t==='解呪'?`<button type="button" class="useCardButton" onclick="chooseDispelGlobal()">盤面全体を対象にする</button>`+line('クリーチャー・王・マスは盤面で選択。'):t==='マナ'?`<button type="button" class="useCardButton" onclick="useSelectedMana()">使用する</button>`+line('自分の王をタップしても発動。カード再タップで選択解除。'):line('対象をタップして使用。カード再タップで選択解除。'))}
+ if(S.card!==null){const t=S.hand[S.card],d=CARD_DEFINITIONS[t];if(t&&d){const query=GameCore.cardQuery('p',S.card),available=query.choices.length>0;return `<div class="infoName">${esc(t)}</div>`+line(`${d.type==='creature'?'クリーチャー':d.type==='spell'?'スペル':'エンチャント'} / コスト ${d.cost}`)+(d.type==='creature'?line(`ATK ${d.atk} / HP ${d.hp}`)+rangePair({type:t,berserk:0}):'')+(d.description?`<div class="infoEffect">${esc(d.description)}</div>`:'')+(available&&t==='解呪'?`<button type="button" class="useCardButton" onclick="chooseDispelGlobal()">盤面全体を対象にする</button>`:available&&t==='マナ'?`<button type="button" class="useCardButton" onclick="useSelectedMana()">使用する</button>`:'');}}
  if(S.piece!==null&&S.board[S.piece])return creatureInfo(S.board[S.piece],S.piece,esc,line,S.board[S.piece].type==="ソーサラー"&&S.board[S.piece].side==="p"?line("魔法：攻撃権＋マナ2で、盤上の任意のクリーチャー／王に2ダメージ")+(canAttack(S.board[S.piece])&&S.mana>=2?`<button type="button" class="useCardButton" onclick="beginSorcererAbility()">魔法を使用</button>`:line("攻撃済み、またはマナ不足"))+(S.sorcererMode?line("対象のクリーチャーか王をタップ。再度ボタンで解除。"):""):"");
  if(S.inspect?.kind==='piece'&&S.board[S.inspect.k])return creatureInfo(S.board[S.inspect.k],S.inspect.k,esc,line);
  if(S.inspect?.kind==='king'){const side=S.inspect.side;return `<div class="infoName">${side==='p'?'あなたの王':'相手の王'}</div>`+ (spellsBlocked(side)?`<div class="infoEffect">🔒 封魔：スペル使用不可（次のターン終了まで）</div>`:``)+line(`HP ${side==='p'?S.pHp:S.cHp} / 20`)+line(`マナ ${S.manaBySide[side]} / ${S.maxManaBySide[side]}`)+EnchantmentZone.attachedToKing(side).filter(card=>card.cardId==="王の覚醒").map(card=>`<div class="infoEffect">王の覚醒：残り${card.remainingTurns}ターン</div>`).join("")+(side==="p"&&kingAbilities(side).includes("awaken_attack")?line(`王の攻撃：${S.kingAction.p.awaken_attack||0}/1回（攻撃力5）`)+(kingAbilityReady("p","awaken_attack")?`<button type="button" class="useCardButton" onclick="beginKingAttack()">攻撃</button>`:line("このターンは攻撃済み"))+(S.kingAttackMode?line("自陣1段目のクリーチャーをタップして攻撃。王を再タップでキャンセル。"):""):"")+line('通常の王への攻撃対象は盤外の中央3列。')}
  if(S.inspect?.kind==='cell'){const k=S.inspect.k,cards=publicCellEnchantments(k,'p');return `<div class="infoName">${Math.floor(k/5)+1}行 ${k%5+1}列</div>`+(cards.length?cards.map(card=>line(`${card.cardId} / 残り${card.remainingTurns}ターン`)+`<div class="infoEffect">${esc(CARD_TEXT[card.cardId]||'')}</div>`).join(''):line('確認できるエンチャントはありません。'))}
- return 'カード・駒・空きマス・王をタップすると、ここに情報を表示します。';
+ return '';
 }
+
 function creatureAttackStatus(p){
  const remain=Math.max(0,attackLimit(p)-attacksUsed(p));
  if(attackLimit(p)>1)return remain>0?`攻撃 残${remain}`:"攻撃 済";
@@ -4227,11 +4247,11 @@ for(const [id,side] of [['enemyPedestal','enemy'],['playerPedestal','player']]){
 let b=$("board");b.innerHTML="";for(let r=0;r<5;r++)for(let c=0;c<5;c++){let k=I(r,c),e=document.createElement("div");e.className="cell";if(S.piece===k)e.classList.add("selected");if(S.side==='p'&&targetHighlights.choices.some(a=>a.type==='summon'&&a.to===k))e.classList.add('summonTarget');if(EnchantmentZone.attachedToCell(k).some(e=>e.cardId==="マイン"&&e.owner==="p"))e.classList.add("mineCell","ownMine");if(publicCellEnchantments(k,"p").length)e.classList.add("cellEnchanted");if(S.side==='p'&&targetHighlights.choices.some(a=>a.type!=='summon'&&R13View.atCell(S,a,k)))e.classList.add(S.kingAttackMode?'attackTarget':'spellTarget');if(S.tokenPlacement?.choices.includes(k))e.classList.add("summonTarget");if(S.cpuPreview?.from===k)e.classList.add("cpuSelected");let p=S.board[k];if(S.piece!==null||S.cpuPreview){let origin=S.cpuPreview?.from??S.piece;let q=S.board[origin];if(q){let canMove=S.cpuPreview?.kind==="attack"?false:combatHighlights.moves.includes(k),canAttack=S.cpuPreview?.kind==="move"?false:combatHighlights.attackRange.includes(k);if(canMove&&canAttack)e.classList.add("bothTarget");else if(canMove)e.classList.add("moveTarget");else if(canAttack)e.classList.add("attackTarget")}}if(p){let z=document.createElement("div");z.className="piece "+(p.side==="p"?"player":"cpu")+(p.berserk>0?" berserk":"");z.innerHTML=`${GameCore.combatRights(p).attack?'<span class="actionDot attack" aria-label="攻撃可能"></span>':''}${GameCore.combatRights(p).move?'<span class="actionDot move" aria-label="移動可能"></span>':''}<div class="pieceOrb" aria-hidden="true"></div><div class="pieceHud"><div class="pieceHudName">${p.type}</div><div class="pieceHudStats">❤️${p.hp} ⚔️${power(p)}</div></div>${p.berserk>0?`<span class="buffTag">狂化 ${p.berserk}</span>`:""}`;e.appendChild(z)}e.onclick=()=>clickCell(r,c);b.appendChild(e)}
 renderPieceOverlay();
 let h=$("hand");h.innerHTML="";S.hand.forEach((t,i)=>{let d=T[t]||SPELL[t]||ENCHANT[t],spell=!!SPELL[t],enchant=!!ENCHANT[t],e=document.createElement("div");e.className="card"+(spell?" spell":enchant?" enchant":"")+(S.card===i?" selected":"");e.innerHTML=NormalGameUI.cardHTML(t,d,{spell,enchant,text:CARD_TEXT[t]});e.onclick=()=>pickCard(i);h.appendChild(e)});renderInfo();TutorialController.decorate()}
-function pickCard(i){if(S.side!=="p"||!GameCore.combatInputAllowed())return;if(S.tokenPlacement){msg("先にバリケードの生成先を選んでください。");return;}S.sorcererMode=false;let t=S.hand[i],d=T[t]||SPELL[t]||ENCHANT[t];if(S.card===i){S.card=null;S.piece=null;S.teleportSource=null;delete S.teleportIdentity;S.dispelTarget=null;msg("選択を解除しました。");render();return}
+function pickCard(i){if(S.side!=="p"||!GameCore.combatInputAllowed())return;if(S.tokenPlacement){msg("先にバリケードの生成先を選んでください。","guide");return;}S.sorcererMode=false;let t=S.hand[i],d=T[t]||SPELL[t]||ENCHANT[t];if(S.card===i){S.card=null;S.piece=null;S.teleportSource=null;delete S.teleportIdentity;S.dispelTarget=null;msg("選択を解除しました。","routine");render();return}
 
-if(t==="決戦"&&GameCore.cardQuery("p",i).choices.length){beginPlayerActionUndo();if(!playCardUnified("p",i,{kind:"global"}).ok){cancelPlayerActionUndo();return}S.card=null;S.piece=null;log("あなたは決戦を使用。全クリーチャーの攻撃力+1（2ターン）。");msg("決戦！ 全クリーチャーの攻撃力が+1！");render();commitPlayerActionUndo();return}
+if(t==="決戦"&&GameCore.cardQuery("p",i).choices.length){beginPlayerActionUndo();if(!playCardUnified("p",i,{kind:"global"}).ok){cancelPlayerActionUndo();return}S.card=null;S.piece=null;log("あなたは決戦を使用。全クリーチャーの攻撃力+1（2ターン）。");msg("決戦！ 全クリーチャーの攻撃力が+1！","routine");render();commitPlayerActionUndo();return}
 
-S.card=i;S.piece=null;S.kingAttackMode=false;S.teleportSource=null;delete S.teleportIdentity;S.dispelTarget=null;S.inspect=null;if(SPELL[t]&&spellsBlocked("p")){msg("封魔中：スペルの詳細は確認できますが、使用はできません。");render();return}if(d.cost>S.mana){msg(`${t}：必要マナ ${d.cost}。現在 ${S.mana}。マナが足りないため使用できません。`);render();return}msg((["突風","竜巻"].includes(t))?t+"：敵味方のクリーチャーを選択。カード再タップで取消。":t==="バーサーク"?"バーサーク：敵味方のクリーチャーをタップ。カード再タップでキャンセル。":t==="マイン"?"マイン：空きマスをタップして設置。4ターン持続・踏むと5ダメージ。":t==="防御結界"?"防御結界：対象のマスをタップ。空きマス・クリーチャー配置済みのマスどちらも対象にできます。":t==="決戦"?"決戦：カードをもう一度タップするとキャンセル。全クリーチャーの攻撃力+1（2ターン）。":t==="ファイヤーボルト"?"ファイヤーボルト：クリーチャーか王をタップ。カードを再タップでキャンセル。":t==="ホープ"?"ホープ：自分か相手の王をタップして、引くプレイヤーを選択。":t==="マナ"?"マナ：自分の王をタップ、または右の「使用する」で発動。":t==="転移魔法"?"転移魔法：敵味方のクリーチャーを選択し、転移先の空きマスをタップ。":t==="解呪"?"解呪：クリーチャー・王・マスを選択、または情報欄の「盤面全体を対象にする」を押し、公開エンチャント・一時効果を選択。クリーチャーのいるマスでは対象を選び分けます。":t==="裏切り"?"裏切り：敵味方のクリーチャーをタップして支配権を変更。":t==="圧殺"?"圧殺：相手の王をタップ。自軍10体未満でもカードとマナは消費します。":t==="王の覚醒"?"王の覚醒：自分の王をタップして付ける。王を選択すると攻撃ボタンが表示されます。":t==="封魔"?"封魔：相手の王をタップして付ける。相手の次のターン終了時までスペル禁止。":"自分の王の前の5マスから召喚場所を選択");render();}
+S.card=i;S.piece=null;S.kingAttackMode=false;S.teleportSource=null;delete S.teleportIdentity;S.dispelTarget=null;S.inspect=null;if(SPELL[t]&&spellsBlocked("p")){msg("封魔中：スペルの詳細は確認できますが、使用はできません。");render();return}if(d.cost>S.mana){msg(`${t}：必要マナ ${d.cost}。現在 ${S.mana}。マナが足りないため使用できません。`);render();return}msg(t==="バーサーク"?"バーサーク：敵味方のクリーチャーをタップ。カード再タップでキャンセル。":t==="マイン"?"マイン：空きマスをタップして設置。4ターン持続・踏むと5ダメージ。":t==="防御結界"?"防御結界：対象のマスをタップ。空きマス・クリーチャー配置済みのマスどちらも対象にできます。":t==="決戦"?"決戦：カードをもう一度タップするとキャンセル。全クリーチャーの攻撃力+1（2ターン）。":t==="ファイヤーボルト"?"ファイヤーボルト：クリーチャーか王をタップ。カードを再タップでキャンセル。":t==="ホープ"?"ホープ：自分か相手の王をタップして、引くプレイヤーを選択。":t==="マナ"?"マナ：自分の王をタップ、または右の「使用する」で発動。":t==="転移魔法"?"転移魔法：敵味方のクリーチャーを選択し、転移先の空きマスをタップ。":t==="解呪"?"解呪：クリーチャー・王・マスを選択、または情報欄の「盤面全体を対象にする」を押し、公開エンチャント・一時効果を選択。クリーチャーのいるマスでは対象を選び分けます。":t==="裏切り"?"裏切り：敵味方のクリーチャーをタップして支配権を変更。":t==="圧殺"?"圧殺：相手の王をタップ。自軍10体未満でもカードとマナは消費します。":t==="王の覚醒"?"王の覚醒：自分の王をタップして付ける。王を選択すると攻撃ボタンが表示されます。":t==="封魔"?"封魔：相手の王をタップして付ける。相手の次のターン終了時までスペル禁止。":"自分の王の前の5マスから召喚場所を選択","guide");render();}
 function useSelectedMana(){
  if(S.side!=="p"||S.gameOver||S.card===null||S.hand[S.card]!=="マナ")return;
  if(spellsBlocked("p")){msg("封魔：スペルを使用できません。");return}
@@ -4267,13 +4287,13 @@ function spellCastDirectMana(i){
  if(S.hand[i]!=="マナ"||!GameCore.cardAllowed("p",i,undefined))return;
  beginPlayerActionUndo();const before=S.maxManaBySide.p;if(!playCardUnified("p",i).ok){cancelPlayerActionUndo();return}
  log(`あなたはマナを使用。最大マナ ${before}→${S.maxMana}。`);
- msg(before===10?"マナ：未使用マナが1増えました。":"マナ：最大マナと未使用マナが1増えました。");render();commitPlayerActionUndo();
+ msg(before===10?"マナ：未使用マナが1増えました。":"マナ：最大マナと未使用マナが1増えました。","routine");render();commitPlayerActionUndo();
 }
 function enchantCast(k){if(S.card==null)return false;const t=S.hand[S.card];if(!ENCHANT[t])return false;const a=GameCore.selectedTargets().choices.find(a=>R13View.atCell(S,a,k));if(!a)return true;const target=a.target.kind==='creature'?{kind:'creature',ref:S.board[k]}:a.target;beginPlayerActionUndo();if(!playCardUnified('p',S.card,target).ok){cancelPlayerActionUndo();return true;}S.card=null;S.piece=null;log('あなたは'+t+'を使用。');render();commitPlayerActionUndo();return true;}
 function castTeleport(k){
  if(S.side!=='p'||S.card==null||S.hand[S.card]!=='転移魔法')return;
  const q=GameCore.selectedTargets();
- if(S.teleportSource==null){if(q.stage!=='source'||!q.choices.some(a=>R13View.atCell(S,a,k)))return;S.teleportSource=k;S.teleportIdentity=S.board[k];S.inspect=null;msg('転移先の空きマスを選んでください。');render();return;}
+ if(S.teleportSource==null){if(q.stage!=='source'||!q.choices.some(a=>R13View.atCell(S,a,k)))return;S.teleportSource=k;S.teleportIdentity=S.board[k];S.inspect=null;msg('転移先の空きマスを選んでください。',"guide");render();return;}
  const from=S.teleportIdentity!==undefined?S.board.indexOf(S.teleportIdentity):S.teleportSource;
  if(k===from){S.teleportSource=null;delete S.teleportIdentity;S.teleportIdentity=null;render();return;}
  if(from<0||!q.choices.some(a=>a.to===k)){if(from<0){S.teleportSource=null;delete S.teleportIdentity;S.teleportIdentity=null;render();}return;}
@@ -4323,7 +4343,7 @@ function castWindCard(target){
  const card=S.hand[S.card];beginPlayerActionUndo();const r=playCardUnified('p',S.card,target);
  if(!r.ok){cancelPlayerActionUndo();return false;}
  S.card=null;S.piece=null;log('あなたは'+card+'を使用。');render();
- if(S.pendingChoice?.type==='effectMove')msg('竜巻：色の付いた空きマスへ移動してください。支払い・ダメージは解決済みで取消できません。');
+ if(S.pendingChoice?.type==='effectMove')msg('竜巻：色の付いた空きマスへ移動してください。支払い・ダメージは解決済みで取消できません。','guide');
  else commitPlayerActionUndo();return true;
 }
 async function cpuWindCards(){
@@ -4331,7 +4351,7 @@ async function cpuWindCards(){
   const entry=S.cHand.map((cardId,index)=>({cardId,index})).find(x=>['突風','竜巻'].includes(x.cardId)&&GameCore.cardQuery('c',x.index).choices.length);
   if(!entry)break;
   const a=GameCore.cardQuery('c',entry.index).choices[0];
-  msg('CPU：'+entry.cardId+'を使用');render();await cpuWait();
+  msg('CPU：'+entry.cardId+'を使用','routine');render();await cpuWait();
   if(!playCardUnified('c',entry.index,a.target).ok)break;
   log('CPUが'+entry.cardId+'を使用。');render();await cpuWait();
  }
@@ -4351,16 +4371,16 @@ function spellCast(target){
    const side=target.side,who=side==="p"?"あなた":"CPU";
    log(`あなたはホープを使用。${who}が2枚引く。`);
    if(result.events.filter(e=>e.type==="card:drawn").length<2){render();commitPlayerActionUndo();return true}
-   msg(`ホープ：${who}が2枚引きました。`);render();commitPlayerActionUndo();return true;
+   msg(`ホープ：${who}が2枚引きました。`,"routine");render();commitPlayerActionUndo();return true;
  }
  if(target.kind==="piece"){
    const q=victim;log(`あなたは${t}で${q.type}に${d.damage}ダメージ。`);
    if(q.hp<=0){log(`${q.type}を撃破！`)}
-   msg(`${t}：${q.type}に${d.damage}ダメージ！`);render();flashHit(target.k);
+   msg(`${t}：${q.type}に${d.damage}ダメージ！`,"routine");render();flashHit(target.k);
  }else{
 
    log(`あなたは${t}で${target.side==="c"?"相手":"自分"}の王に${d.damage}ダメージ。`);
-   msg(`${t}：王に${d.damage}ダメージ！`);render();
+   msg(`${t}：王に${d.damage}ダメージ！`,"routine");render();
    if(S.cHp<=0)win();else if(S.pHp<=0)lose("自分の王のHPが0になりました");
  }
  commitPlayerActionUndo();return true;
@@ -4514,16 +4534,16 @@ function resolveSummonAbilities(piece,cell){
    offerBarricade(pending.side,cell);
  }
 }
-function summon(i,r,c){const k=I(r,c),t=S.hand[i];if(!GameCore.cardQuery('p',i).choices.some(a=>a.type==='summon'&&a.to===k)){msg('そこには召喚できません。');return;}beginPlayerActionUndo();const result=summonCardUnified('p',i,k);if(!result.ok){cancelPlayerActionUndo();return;}S.card=null;log('あなたは'+t+'を召喚。');render();if(S.tokenPlacement)msg('守備兵：緑色の生成先を選んでください。');else commitPlayerActionUndo();}
+function summon(i,r,c){const k=I(r,c),t=S.hand[i];if(!GameCore.cardQuery('p',i).choices.some(a=>a.type==='summon'&&a.to===k)){msg('そこには召喚できません。');return;}beginPlayerActionUndo();const result=summonCardUnified('p',i,k);if(!result.ok){cancelPlayerActionUndo();return;}S.card=null;log('あなたは'+t+'を召喚。');render();if(S.tokenPlacement)msg('守備兵：緑色の生成先を選んでください。',"guide");else commitPlayerActionUndo();}
 
 // 召喚時トークンはデッキを経由せず生成する。所有者は召喚者、墓地には送らない。
 function barricadeChoices(k){const r=Math.floor(k/5),c=k%5;return [c-1,c+1].filter(x=>IB(r,x)&&!S.board[I(r,x)]).map(x=>I(r,x));}
 function createBarricade(side,k){if(r10ResolutionBusy()||!S.pendingSummon)return false;const result=R4Command.chooseToken(S,side,k,CARD_DEFINITIONS);if(!publishCoreCommand(result))return false;log(`${side==='p'?'あなた':'CPU'}のバリケードを生成。`);render();return true;}
-function offerBarricade(side,k){const choices=barricadeChoices(k);if(!choices.length){msg("守備兵：左右が埋まっているためバリケードは生成されません。");return;}
+function offerBarricade(side,k){const choices=barricadeChoices(k);if(!choices.length){msg("守備兵：左右が埋まっているためバリケードは生成されません。","routine");return;}
  if(side==="c"){createBarricade(side,choices[Math.floor(GameCore.random()*choices.length)]);return;}
- if(choices.length===1){createBarricade(side,choices[0]);msg("守備兵の隣にバリケードを生成しました。");return;}
- S.tokenPlacement={choices,side,cell:k,sourceInstanceId:S.board[k]?.sourceInstanceId};S.piece=null;S.inspect=null;msg("守備兵：左右どちらにバリケードを生成するか、緑色のマスを選んでください。");render();}
-function beginSorcererAbility(){if(S.side!=='p'||!GameCore.abilityQuery('p','sorcerer_bolt',S.piece).length)return;S.sorcererMode=!S.sorcererMode;S.card=null;msg(S.sorcererMode?'ソーサラーの魔法：対象のクリーチャーまたは王をタップ。':'魔法の対象選択を解除しました。');render();}
+ if(choices.length===1){createBarricade(side,choices[0]);msg("守備兵の隣にバリケードを生成しました。","routine");return;}
+ S.tokenPlacement={choices,side,cell:k,sourceInstanceId:S.board[k]?.sourceInstanceId};S.piece=null;S.inspect=null;msg("守備兵：左右どちらにバリケードを生成するか、緑色のマスを選んでください。","guide");render();}
+function beginSorcererAbility(){if(S.side!=='p'||!GameCore.abilityQuery('p','sorcerer_bolt',S.piece).length)return;S.sorcererMode=!S.sorcererMode;S.card=null;msg(S.sorcererMode?'ソーサラーの魔法：対象のクリーチャーまたは王をタップ。':'魔法の対象選択を解除しました。',"guide");render();}
 // 操作方法に依存しないソーサラーの共通能力処理。対象選択と表示は呼び出し側で行う。
 function resolveSorcererBolt(side,from,target){if(!GameCore.abilityAllowed(side,'sorcerer_bolt',from,target))return null;const victim=target?.kind==='piece'?S.board[target.k]:null;const r=finishR5Command(R5Command.activate(S,side,'sorcerer_bolt',from,target,CARD_DEFINITIONS));if(!r.ok)return null;return {kind:target.kind,k:target.k,side:target.side,victim,gameOver:S.gameOver};}
 function sorcererCast(target){
@@ -4533,10 +4553,10 @@ function sorcererCast(target){
  if(!result){cancelPlayerActionUndo();return false}
  S.sorcererMode=false;
  if(result.kind==="piece"){
-  log(`ソーサラーの魔法：${result.victim.type}に2ダメージ。`);msg(`${result.victim.type}に2ダメージ！`);render();flashHit(result.k);
+  log(`ソーサラーの魔法：${result.victim.type}に2ダメージ。`);msg(`${result.victim.type}に2ダメージ！`,"routine");render();flashHit(result.k);
  }else{
   log(`ソーサラーの魔法：${result.side==="p"?"あなた":"相手"}の王に2ダメージ。`);
-  if(!S.gameOver){msg("ソーサラーの魔法：王に2ダメージ！");render();}
+  if(!S.gameOver){msg("ソーサラーの魔法：王に2ダメージ！","routine");render();}
  }
  commitPlayerActionUndo();
  return true;
@@ -4587,26 +4607,26 @@ function cancelCardSelection(){S.teleportSource=null;delete S.teleportIdentity;S
 function cardCanTargetCell(t,k,r){return S.card!==null&&S.hand[S.card]===t&&GameCore.selectedTargets().choices.some(a=>R13View.atCell(S,a,k));}
 function clickKing(side){
   if(!GameCore.combatInputAllowed())return;
-  if(S.side!=="p"||S.gameOver)return;if(S.tokenPlacement){msg("先にバリケードの生成先を選んでください。");return;}if(S.sorcererMode){sorcererCast({kind:"king",side});return;}
-  if(S.kingAttackMode){S.kingAttackMode=false;S.inspect={kind:"king",side:"p"};msg("王の攻撃をキャンセルしました。");render();return;}
+  if(S.side!=="p"||S.gameOver)return;if(S.tokenPlacement){msg("先にバリケードの生成先を選んでください。","guide");return;}if(S.sorcererMode){sorcererCast({kind:"king",side});return;}
+  if(S.kingAttackMode){S.kingAttackMode=false;S.inspect={kind:"king",side:"p"};msg("王の攻撃をキャンセルしました。","routine");render();return;}
   if(S.card!==null){
     const t=S.hand[S.card];const q=GameCore.selectedTargets();if(!(q.choices.some(a=>R13View.atKing(a,side))||t==='マナ'&&side==='p'&&q.choices.length)){cancelCardSelection();return;}
     if(t==="王の覚醒"){
       if(side!=="p"){msg("王の覚醒：自分の王を選んでください。");return}
       if(S.mana<ENCHANT[t].cost){msg("王の覚醒：マナが足りません。");return}
-      beginPlayerActionUndo();if(!playCardUnified("p",S.card,{kind:"king",side:"p"}).ok){cancelPlayerActionUndo();return}S.card=null;S.piece=null;S.inspect={kind:"king",side:"p"};log("あなたの王に王の覚醒を使用。");msg("王の覚醒！ 王を選んで「攻撃」ボタンから攻撃できます。");render();commitPlayerActionUndo();return;
+      beginPlayerActionUndo();if(!playCardUnified("p",S.card,{kind:"king",side:"p"}).ok){cancelPlayerActionUndo();return}S.card=null;S.piece=null;S.inspect={kind:"king",side:"p"};log("あなたの王に王の覚醒を使用。");msg("王の覚醒！ 王を選んで「攻撃」ボタンから攻撃できます。","routine");render();commitPlayerActionUndo();return;
     }
     if(t==="封魔"){
       if(side!=="c"){msg("封魔：相手の王を選んでください。");return}
       if(S.mana<ENCHANT.封魔.cost){msg("封魔：マナが足りません。");return}
       beginPlayerActionUndo();if(!playCardUnified("p",S.card,{kind:"king",side:"c"}).ok){cancelPlayerActionUndo();return}S.card=null;S.piece=null;
-      log("あなたは相手の王に封魔を使用。");msg("相手の王に封魔！ 次のCPUターン終了までスペル禁止。");render();commitPlayerActionUndo();return;
+      log("あなたは相手の王に封魔を使用。");msg("相手の王に封魔！ 次のCPUターン終了までスペル禁止。","routine");render();commitPlayerActionUndo();return;
     }
     if(t==="解呪"){chooseDispelKing(side);return}
     if(t==="マナ"&&side==="p"&&SPELL[t].cost<=S.mana){useSelectedMana();return}
     if((t==="ホープ"||t==="ファイヤーボルト"||(t==="圧殺"&&side==="c"))&&SPELL[t].cost<=S.mana){spellCast({kind:"king",side});return}
     cancelCardSelection();return;
-  }if(S.piece===null){S.inspect={kind:"king",side};renderInfo();return}if(side==="p"){S.piece=null;S.inspect={kind:"king",side:"p"};msg("あなたの王を選択しました。");render();return;}
+  }if(S.piece===null){S.inspect={kind:"king",side};renderInfo();return}if(side==="p"){S.piece=null;S.inspect={kind:"king",side:"p"};msg("あなたの王を選択しました。","routine");render();return;}
   const p=S.board[S.piece];
   if(!p)return;
   if(kingAtk(p,S.piece)){
@@ -4616,7 +4636,7 @@ function clickKing(side){
     const damage=hit.amount;commitPlayerActionUndo();
     log(`${p.type}が相手王を攻撃（-${damage}）。`);
     if(S.gameOver)return;
-    msg(`相手王に${damage}ダメージ！`);
+    msg(`相手王に${damage}ダメージ！`,"routine");
     if(S.cHp<=0){win();return}
     render();flashKing("c");
   }else{
@@ -4635,13 +4655,13 @@ function castBetrayal(k){
  if(S.side!=="p"||S.gameOver||S.card===null||S.hand[S.card]!=="裏切り")return;
  if(!GameCore.cardAllowed("p",S.card,{kind:"piece",k}))return;const piece=S.board[k];
  beginPlayerActionUndo();const result=resolveBetrayal("p",S.card,k);if(!result){cancelPlayerActionUndo();return}const {previous:old,next}=result;S.card=null;S.piece=null;S.inspect={kind:"piece",k};
- log(`裏切り：${piece.type}のコントローラーが${old==="p"?"あなた":"CPU"}から${next==="p"?"あなた":"CPU"}へ変更。所有者は${piece.owner==="p"?"あなた":"CPU"}のまま。`);msg(`${piece.type}が裏切った！`);render();flashBetrayal(k);commitPlayerActionUndo();
+ log(`裏切り：${piece.type}のコントローラーが${old==="p"?"あなた":"CPU"}から${next==="p"?"あなた":"CPU"}へ変更。所有者は${piece.owner==="p"?"あなた":"CPU"}のまま。`);msg(`${piece.type}が裏切った！`,"routine");render();flashBetrayal(k);commitPlayerActionUndo();
 }
 function flashBetrayal(k){const cell=$("board").children[k];if(!cell)return;const mark=document.createElement("span");mark.textContent="↩️";mark.style.cssText="position:absolute;z-index:12;left:50%;top:35%;transform:translate(-50%,-50%);font-size:30px;pointer-events:none;filter:drop-shadow(0 0 5px white)";cell.appendChild(mark);a4SetTimeout(()=>mark.remove(),650);}
-function clickCell(r,c){if(S.pendingChoice?.type==="effectMove"){if(S.side==="p"&&!S.gameOver)chooseWindDestination(I(r,c));return;}if(S.side!=="p"||S.gameOver)return;let k=I(r,c);if(S.tokenPlacement){if(S.tokenPlacement.choices.includes(k)&&!S.board[k]){if(!createBarricade("p",k))return;msg("バリケードを生成しました。");commitPlayerActionUndo();}else msg("緑色の空きマスを選んでください。");return;}if(!GameCore.combatInputAllowed())return;if(S.sorcererMode){if(S.board[k])sorcererCast({kind:"piece",k});else{S.sorcererMode=false;S.piece=null;S.inspect={kind:"cell",k};msg("対象外をタップしたため、魔法とソーサラーの選択を解除しました。");render();}return;}if(S.kingAttackMode){if(kingAbilityTargets("p","awaken_attack").includes(k)&&S.board[k]?.side==="c"){S.kingAttackMode=false;activateKingAbility("p","awaken_attack",k)}else{msg("王の攻撃：自陣1段目にいるクリーチャーを選んでください。")}return;}if(S.card!==null){const selected=S.hand[S.card];if(!GameCore.selectedTargets().choices.some(a=>R13View.atCell(S,a,k))&&!(selected==='転移魔法'&&S.board[k]===S.teleportIdentity)){cancelCardSelection();return;}if(selected==="転移魔法"){castTeleport(k);return}if(selected==="解呪"){castDispel(k);return}if(selected==="裏切り"){castBetrayal(k);return}if(!cardCanTargetCell(selected,k,r)){cancelCardSelection();return}if(ENCHANT[selected]){enchantCast(k);return}if(SPELL[selected]){spellCast({kind:"piece",k});return}summon(S.card,r,c);return}let t=S.board[k];if(S.piece===null){if(t?.side==="p"){S.piece=k;S.inspect=null;msg(`${t.type}を選択中。移動先・攻撃対象・王を選べます。`);render()}else{S.inspect=t?{kind:"piece",k}:{kind:"cell",k};renderInfo()}return}let f=S.piece,p=S.board[f];if(!p){S.piece=null;render();return}if(t?.side==="p"&&!atk(p,f).includes(k)){S.piece=k;S.inspect=null;render();return}if(rel(p,f).includes(k)){beginPlayerActionUndo();if(!GameCore.move(f,k)){cancelPlayerActionUndo();return}S.piece=S.board[k]?k:null;log(`${p.type}が移動。`);render();if(!S.board[k])S.piece=null;commitPlayerActionUndo();return}if(atk(p,f).includes(k)){beginPlayerActionUndo();const hit=GameCore.attackCreature(f,k);if(!hit){cancelPlayerActionUndo();return}log(`${p.type}が${t.type}を攻撃（-${hit.amount}）。`);if(S.gameOver)return;if(hit.defeated){log(`${t.type}を撃破！`);msg(`${t.type}を撃破！`)}else msg(`${t.type}のHPは${t.hp}。`);render();flashHit(k);commitPlayerActionUndo();return}if(kingAtk(p,f)&&r===(p.side==="p"?0:4)&&c>=1&&c<=3){beginPlayerActionUndo();const kingHit=GameCore.attackKing(f);if(!kingHit){cancelPlayerActionUndo();return}log(`${p.type}が相手王を攻撃（-${kingHit.amount}）。`);commitPlayerActionUndo();if(S.gameOver)return;if(S.cHp<=0)return win();msg(`相手王に${kingHit.amount}ダメージ！`);render();return}S.piece=null;S.inspect=t?{kind:"piece",k}:{kind:"cell",k};render();msg("移動・攻撃範囲外をタップしたため、駒の選択を解除しました。")}
+function clickCell(r,c){if(S.pendingChoice?.type==="effectMove"){if(S.side==="p"&&!S.gameOver)chooseWindDestination(I(r,c));return;}if(S.side!=="p"||S.gameOver)return;let k=I(r,c);if(S.tokenPlacement){if(S.tokenPlacement.choices.includes(k)&&!S.board[k]){if(!createBarricade("p",k))return;msg("バリケードを生成しました。","routine");commitPlayerActionUndo();}else msg("緑色の空きマスを選んでください。","guide");return;}if(!GameCore.combatInputAllowed())return;if(S.sorcererMode){if(S.board[k])sorcererCast({kind:"piece",k});else{S.sorcererMode=false;S.piece=null;S.inspect={kind:"cell",k};msg("対象外をタップしたため、魔法とソーサラーの選択を解除しました。");render();}return;}if(S.kingAttackMode){if(kingAbilityTargets("p","awaken_attack").includes(k)&&S.board[k]?.side==="c"){S.kingAttackMode=false;activateKingAbility("p","awaken_attack",k)}else{msg("王の攻撃：自陣1段目にいるクリーチャーを選んでください。")}return;}if(S.card!==null){const selected=S.hand[S.card];if(!GameCore.selectedTargets().choices.some(a=>R13View.atCell(S,a,k))&&!(selected==='転移魔法'&&S.board[k]===S.teleportIdentity)){cancelCardSelection();return;}if(selected==="転移魔法"){castTeleport(k);return}if(selected==="解呪"){castDispel(k);return}if(selected==="裏切り"){castBetrayal(k);return}if(!cardCanTargetCell(selected,k,r)){cancelCardSelection();return}if(ENCHANT[selected]){enchantCast(k);return}if(SPELL[selected]){spellCast({kind:"piece",k});return}summon(S.card,r,c);return}let t=S.board[k];if(S.piece===null){if(t?.side==="p"){S.piece=k;S.inspect=null;msg(`${t.type}を選択中。移動先・攻撃対象・王を選べます。`,"routine");render()}else{S.inspect=t?{kind:"piece",k}:{kind:"cell",k};renderInfo()}return}let f=S.piece,p=S.board[f];if(!p){S.piece=null;render();return}if(t?.side==="p"&&!atk(p,f).includes(k)){S.piece=k;S.inspect=null;render();return}if(rel(p,f).includes(k)){beginPlayerActionUndo();if(!GameCore.move(f,k)){cancelPlayerActionUndo();return}S.piece=S.board[k]?k:null;log(`${p.type}が移動。`);render();if(!S.board[k])S.piece=null;commitPlayerActionUndo();return}if(atk(p,f).includes(k)){beginPlayerActionUndo();const hit=GameCore.attackCreature(f,k);if(!hit){cancelPlayerActionUndo();return}log(`${p.type}が${t.type}を攻撃（-${hit.amount}）。`);if(S.gameOver)return;if(hit.defeated){log(`${t.type}を撃破！`);msg(`${t.type}を撃破！`,"routine")}else msg(`${t.type}のHPは${t.hp}。`,"routine");render();flashHit(k);commitPlayerActionUndo();return}if(kingAtk(p,f)&&r===(p.side==="p"?0:4)&&c>=1&&c<=3){beginPlayerActionUndo();const kingHit=GameCore.attackKing(f);if(!kingHit){cancelPlayerActionUndo();return}log(`${p.type}が相手王を攻撃（-${kingHit.amount}）。`);commitPlayerActionUndo();if(S.gameOver)return;if(S.cHp<=0)return win();msg(`相手王に${kingHit.amount}ダメージ！`,"routine");render();return}S.piece=null;S.inspect=t?{kind:"piece",k}:{kind:"cell",k};render();msg("移動・攻撃範囲外をタップしたため、駒の選択を解除しました。")}
 function endTurn(){
  if(!advanceTurnUnified('p')||S.gameOver)return;
- render();log('CPUのターン。');msg('CPUが考えています…');
+ render();log('CPUのターン。');msg('CPUが考えています…',"routine");
  a4SetTimeout(()=>{if(S.side==='c'&&!S.gameOver)(TutorialController.active?TutorialController.runCPU():cpu());},700);
 }
 // PHASE3: 攻撃型CPU。従来 cpu() のカード使用ロジックは共有し、クリーチャー行動部分だけを差し替える。
@@ -4700,23 +4720,23 @@ function strongCpuBestMoveAttack(piece,from){
 }
 async function strongCpuShowMove(piece,from,to){
   if(S.board[from]!==piece||!rel(piece,from).includes(to))return null;
-  S.cpuPreview={from,kind:"move"};msg(`CPU：${piece.type}の移動範囲`);render();await cpuWait();
+  S.cpuPreview={from,kind:"move"};msg(`CPU：${piece.type}の移動範囲`,"routine");render();await cpuWait();
   S.cpuPreview=null;
   if(!GameCore.move(from,to))return null;
-  log(`CPUの${piece.type}が移動。`);msg(`CPU：${piece.type}を移動`);render();
+  log(`CPUの${piece.type}が移動。`);msg(`CPU：${piece.type}を移動`,"routine");render();
 
   await cpuWait();return S.board[to]===piece?to:null;
 }
 async function strongCpuShowAttack(piece,from,target=null,king=false){
   if(S.board[from]!==piece||!canAttack(piece))return false;
-  S.cpuPreview={from,kind:"attack"};msg(`CPU：${piece.type}の攻撃範囲`);render();await cpuWait();S.cpuPreview=null;
+  S.cpuPreview={from,kind:"attack"};msg(`CPU：${piece.type}の攻撃範囲`,"routine");render();await cpuWait();S.cpuPreview=null;
   if(king){
     if(!kingAtk(piece,from))return false;
-    const hit=GameCore.attackKing(from);if(!hit)return false;const damage=hit.amount;log(`CPUの${piece.type}が王を攻撃（-${damage}）。`);msg(`CPU：王に${damage}ダメージ！`);render();flashKing("p");await cpuWait();return true;
+    const hit=GameCore.attackKing(from);if(!hit)return false;const damage=hit.amount;log(`CPUの${piece.type}が王を攻撃（-${damage}）。`);msg(`CPU：王に${damage}ダメージ！`,"routine");render();flashKing("p");await cpuWait();return true;
   }
   const victim=S.board[target];if(!victim||victim.side!=="p"||!atk(piece,from).includes(target))return false;
   const name=victim.type,hit=GameCore.attackCreature(from,target);if(!hit)return false;const damage=hit.amount;
-  log(`CPUの${piece.type}が${name}を攻撃（-${damage}）。`);if(hit.defeated)log(`${name}を撃破。`);msg(`CPU：${name}に${hit.amount}ダメージ！`);render();flashHit(target);await cpuWait();return true;
+  log(`CPUの${piece.type}が${name}を攻撃（-${damage}）。`);if(hit.defeated)log(`${name}を撃破。`);msg(`CPU：${name}に${hit.amount}ダメージ！`,"routine");render();flashHit(target);await cpuWait();return true;
 }
 async function strongCpuSorcererPhase(){
   for(const piece of S.board.filter(p=>p?.side==="c"&&p.type==="ソーサラー"&&canAttack(p))){
@@ -4726,8 +4746,8 @@ async function strongCpuSorcererPhase(){
     const target=targets.sort((a,b)=>((a.p.hp<=2)?-100:0)+a.p.hp-(((b.p.hp<=2)?-100:0)+b.p.hp))[0];
     const result=resolveSorcererBolt("c",from,target?{kind:"piece",k:target.i}:{kind:"king",side:"p"});
     if(!result)continue;
-    if(result.kind==="piece"){log(`CPUのソーサラーの魔法：${result.victim.type}に2ダメージ。`);msg(`CPUのソーサラー：${result.victim.type}に2ダメージ！`);render();flashHit(target.i)}
-    else if(!S.gameOver){log("CPUのソーサラーの魔法：あなたの王に2ダメージ。");msg("CPUのソーサラー：王に2ダメージ！");render();flashKing("p")}
+    if(result.kind==="piece"){log(`CPUのソーサラーの魔法：${result.victim.type}に2ダメージ。`);msg(`CPUのソーサラー：${result.victim.type}に2ダメージ！`,"routine");render();flashHit(target.i)}
+    else if(!S.gameOver){log("CPUのソーサラーの魔法：あなたの王に2ダメージ。");msg("CPUのソーサラー：王に2ダメージ！","routine");render();flashKing("p")}
     await cpuWait();
   }
 }
@@ -4809,28 +4829,28 @@ async function cpu(){if(S.side==="c"&&!S.gameOver)await cpuWindCards();
   // この検証版では、封魔を使えるならほかのカードより先に使用する。
   const sealIndex=S.cHand.indexOf("封魔");
   if(sealIndex>=0&&GameCore.cardQuery("c",sealIndex).choices.length){
-    msg("CPU：あなたの王に封魔を使用");render();await cpuWait();
+    msg("CPU：あなたの王に封魔を使用","routine");render();await cpuWait();
     if(!playCardUnified("c",sealIndex,{kind:"king",side:"p"}).ok)return;
     
-    log("CPUがあなたの王に封魔を使用。");msg("封魔！ あなたの次のターン終了までスペル禁止。");render();await cpuWait();
+    log("CPUがあなたの王に封魔を使用。");msg("封魔！ あなたの次のターン終了までスペル禁止。","routine");render();await cpuWait();
   }
   // CPUも自分の王に覚醒を付与できる。
-  while(S.cHand.includes("王の覚醒")&&GameCore.cardQuery("c",S.cHand.indexOf("王の覚醒")).choices.length){const i=S.cHand.indexOf("王の覚醒");if(!playCardUnified("c",i,{kind:"king",side:"c"}).ok)break;log("CPUが王の覚醒を使用。");msg("CPUの王が覚醒！");render();await cpuWait();}
+  while(S.cHand.includes("王の覚醒")&&GameCore.cardQuery("c",S.cHand.indexOf("王の覚醒")).choices.length){const i=S.cHand.indexOf("王の覚醒");if(!playCardUnified("c",i,{kind:"king",side:"c"}).ok)break;log("CPUが王の覚醒を使用。");msg("CPUの王が覚醒！","routine");render();await cpuWait();}
   // 裏切りの検証：CPUも敵のクリーチャーを奪える。
   while(!S.gameOver&&!spellsBlocked("c")&&S.mana>=SPELL.裏切り.cost){
     const idx=S.cHand.indexOf("裏切り");if(idx<0)break;
     const legal=GameCore.cardQuery('c',idx).choices;const k=S.board.findIndex((p,k)=>p?.side==='p'&&legal.some(a=>R13View.atCell(S,a,k)));if(k<0)break;
-    const piece=S.board[k];S.cpuPreview={from:k,kind:"enchant"};msg(`CPU：${piece.type}に裏切りを使用`);render();await cpuWait();
+    const piece=S.board[k];S.cpuPreview={from:k,kind:"enchant"};msg(`CPU：${piece.type}に裏切りを使用`,"routine");render();await cpuWait();
     S.cpuPreview=null;if(!resolveBetrayal("c",idx,k))break;
-    log(`CPUが${piece.type}を裏切らせた。`);msg(`CPUの裏切り！ ${piece.type}の支配権が変更。`);render();flashBetrayal(k);await cpuWait();
+    log(`CPUが${piece.type}を裏切らせた。`);msg(`CPUの裏切り！ ${piece.type}の支配権が変更。`,"routine");render();flashBetrayal(k);await cpuWait();
   }
   // 圧殺：CPUは自軍10体以上の場合に使用を選択する（未達でもルール上は使用可能）。
   if(!S.gameOver&&!spellsBlocked("c")&&S.mana>=SPELL.圧殺.cost&&S.cHand.includes("圧殺")&&S.board.filter(p=>p?.side==="c").length>=10){
     const i=S.cHand.indexOf("圧殺");if(!castPressureA2("c",i))return;
-    log("CPUの圧殺：クリーチャー10体以上で条件達成。");msg("CPUの圧殺！ あなたの王のHPが0に！");render();return;
+    log("CPUの圧殺：クリーチャー10体以上で条件達成。");msg("CPUの圧殺！ あなたの王のHPが0に！","routine");render();return;
   }
   // 王の能力はクリーチャーの攻撃権とは独立して実行する。
-  if(kingAbilityReady("c","awaken_attack")){const targets=kingAbilityTargets("c","awaken_attack").filter(k=>S.board[k]?.side==="p");if(targets.length){msg("CPUの王：覚醒の攻撃");render();await cpuWait();activateKingAbility("c","awaken_attack",targets[0]);await cpuWait();}}
+  if(kingAbilityReady("c","awaken_attack")){const targets=kingAbilityTargets("c","awaken_attack").filter(k=>S.board[k]?.side==="p");if(targets.length){msg("CPUの王：覚醒の攻撃","routine");render();await cpuWait();activateKingAbility("c","awaken_attack",targets[0]);await cpuWait();}}
   // 召喚を1回ずつ表示。各アクションの後に0.7秒待つ。
   while(!S.gameOver){
     const options=S.cHand.map((t,i)=>({t,i})).filter(x=>T[x.t]&&GameCore.cardQuery('c',x.i).choices.length);
@@ -4838,16 +4858,16 @@ async function cpu(){if(S.side==="c"&&!S.gameOver)await cpuWindCards();
     if(!options.length||!free.length)break;
     const x=options[Math.floor(GameCore.random()*options.length)];
     const c=free[Math.floor(GameCore.random()*free.length)],d=T[x.t];
-    if(!summonCardUnified("c",x.i,I(0,c)).ok)break;log(`CPUが${x.t}を召喚。`);msg(`CPU：${x.t}を召喚`);render();await cpuWait();
+    if(!summonCardUnified("c",x.i,I(0,c)).ok)break;log(`CPUが${x.t}を召喚。`);msg(`CPU：${x.t}を召喚`,"routine");render();await cpuWait();
   }
   if(S.gameOver)return;
   // CPUの設置型・全体型エンチャント。
   while(!S.gameOver){
     const bi=S.cHand.indexOf("決戦"),mi=S.cHand.indexOf("マイン"),di=S.cHand.indexOf("防御結界");
-    if(bi>=0&&GameCore.cardQuery("c",bi).choices.length){msg("CPU：決戦を使用");render();await cpuWait();if(!playCardUnified("c",bi,{kind:"global"}).ok)break;log("CPUが決戦を使用。全クリーチャー攻撃力+1。");render();await cpuWait();continue}
-    if(di>=0&&GameCore.cardQuery("c",di).choices.length){const own=S.board.map((p,i)=>({p,i})).filter(x=>x.p?.side==="c");const k=(own.length?own[Math.floor(GameCore.random()*own.length)].i:Math.floor(GameCore.random()*25));msg("CPU：防御結界を使用");render();await cpuWait();if(!playCardUnified("c",di,{kind:"cell",k}).ok)break;log(`CPUが${Math.floor(k/5)+1}行${k%5+1}列に防御結界を付与。`);render();await cpuWait();continue}
+    if(bi>=0&&GameCore.cardQuery("c",bi).choices.length){msg("CPU：決戦を使用","routine");render();await cpuWait();if(!playCardUnified("c",bi,{kind:"global"}).ok)break;log("CPUが決戦を使用。全クリーチャー攻撃力+1。");render();await cpuWait();continue}
+    if(di>=0&&GameCore.cardQuery("c",di).choices.length){const own=S.board.map((p,i)=>({p,i})).filter(x=>x.p?.side==="c");const k=(own.length?own[Math.floor(GameCore.random()*own.length)].i:Math.floor(GameCore.random()*25));msg("CPU：防御結界を使用","routine");render();await cpuWait();if(!playCardUnified("c",di,{kind:"cell",k}).ok)break;log(`CPUが${Math.floor(k/5)+1}行${k%5+1}列に防御結界を付与。`);render();await cpuWait();continue}
     const empty=mi<0?[]:GameCore.cardQuery('c',mi).choices.map(a=>a.target.k);
-    if(mi>=0&&empty.length){const k=empty[Math.floor(GameCore.random()*empty.length)];msg("CPU：マインを設置");render();await cpuWait();if(!playCardUnified("c",mi,{kind:"cell",k}).ok)break;log(`CPUが${Math.floor(k/5)+1}行${k%5+1}列にマインを設置。`);render();await cpuWait();continue}
+    if(mi>=0&&empty.length){const k=empty[Math.floor(GameCore.random()*empty.length)];msg("CPU：マインを設置","routine");render();await cpuWait();if(!playCardUnified("c",mi,{kind:"cell",k}).ok)break;log(`CPUが${Math.floor(k/5)+1}行${k%5+1}列にマインを設置。`);render();await cpuWait();continue}
     break;
   }
   // CPUも解呪を使用。敵のクリーチャーに付いたエンチャントを1枚解除。
@@ -4856,7 +4876,7 @@ async function cpu(){if(S.side==="c"&&!S.gameOver)await cpuWindCards();
     const legal=GameCore.cardQuery('c',ci).choices;const targets=S.board.map((p,i)=>({p,i})).filter(x=>x.p?.side==='p'&&EnchantmentZone.attachedToCreature(x.p).length&&legal.some(a=>R13View.atCell(S,a,x.i)));
     if(!targets.length)break;
     const target=targets[0],card=EnchantmentZone.attachedToCreature(target.p)[0];
-    msg(`CPU：${target.p.type}の${card.cardId}を解呪`);render();await cpuWait();
+    msg(`CPU：${target.p.type}の${card.cardId}を解呪`,"routine");render();await cpuWait();
     if(!resolveDispel("c",ci,target.i,card))break;
     log(`CPUが${target.p.type}の${card.cardId}を解呪。`);render();await cpuWait();
   }
@@ -4866,7 +4886,7 @@ async function cpu(){if(S.side==="c"&&!S.gameOver)await cpuWindCards();
     const legal=GameCore.cardQuery('c',ci).choices;const own=S.board.map((p,i)=>({p,i})).filter(x=>x.p?.side==='c'&&!(x.p.berserk>0)&&legal.some(a=>R13View.atCell(S,a,x.i)));
     const target=own.find(x=>kingAtk(x.p,x.i))||own[0];
     if(!target)break;
-    S.cpuPreview={from:target.i,kind:"enchant"};msg(`CPU：${target.p.type}にバーサークを使用`);render();await cpuWait();
+    S.cpuPreview={from:target.i,kind:"enchant"};msg(`CPU：${target.p.type}にバーサークを使用`,"routine");render();await cpuWait();
     S.cpuPreview=null;if(!playCardUnified("c",ci,{kind:"creature",ref:target.p}).ok)break;
     log(`CPUが${target.p.type}にバーサークを使用。`);render();await cpuWait();
   }
@@ -4875,12 +4895,12 @@ async function cpu(){if(S.side==="c"&&!S.gameOver)await cpuWindCards();
   while(!S.gameOver){
     const mi=S.cHand.indexOf("マナ"),hi=S.cHand.indexOf("ホープ");
     if(mi>=0&&GameCore.cardQuery("c",mi).choices.length&&S.maxMana<10){
-      msg("CPU：マナを使用");render();await cpuWait();
+      msg("CPU：マナを使用","routine");render();await cpuWait();
       const old=S.maxManaBySide.c;if(!playCardUnified("c",mi).ok)break;
       log(`CPUがマナを使用。最大マナ ${old}→${S.maxMana}。`);render();await cpuWait();continue;
     }
     if(hi>=0&&GameCore.cardQuery("c",hi).choices.length){
-      msg("CPU：ホープを使用（CPUが2枚引く）");render();await cpuWait();
+      msg("CPU：ホープを使用（CPUが2枚引く）","routine");render();await cpuWait();
       const hope=playCardUnified("c",hi,{kind:"player",side:"c"});if(!hope.ok)break;log("CPUがホープを使用。CPUが2枚引く。");
       if(hope.events.filter(e=>e.type==="card:drawn").length<2)return
       render();await cpuWait();continue;
@@ -4894,10 +4914,10 @@ async function cpu(){if(S.side==="c"&&!S.gameOver)await cpuWindCards();
     const idx=S.cHand.indexOf("ファイヤーボルト");if(idx<0)break;
     const legal=GameCore.cardQuery('c',idx).choices;const enemy=S.board.map((p,i)=>({p,i})).filter(x=>x.p?.side==='p'&&legal.some(a=>R13View.atCell(S,a,x.i)));
     const target=enemy.length&&S.pHp>2?enemy[Math.floor(GameCore.random()*enemy.length)]:null;
-    msg(`CPU：ファイヤーボルトの対象を選択`);render();await cpuWait();
+    msg(`CPU：ファイヤーボルトの対象を選択`,"routine");render();await cpuWait();
     const pieceTarget=target&&S.board[target.i]===target.p;if(!playCardUnified("c",idx,pieceTarget?{kind:"piece",k:target.i}:{kind:"king",side:"p"}).ok)break;
-    if(pieceTarget){log(`CPUがファイヤーボルトで${target.p.type}に2ダメージ。`);if(target.p.hp<=0){log(`${target.p.type}を撃破。`)}msg(`CPU：${target.p.type}に2ダメージ！`);render();flashHit(target.i)}
-    else{log("CPUがファイヤーボルトであなたの王に2ダメージ。");msg("CPU：王に2ダメージ！");render();}
+    if(pieceTarget){log(`CPUがファイヤーボルトで${target.p.type}に2ダメージ。`);if(target.p.hp<=0){log(`${target.p.type}を撃破。`)}msg(`CPU：${target.p.type}に2ダメージ！`,"routine");render();flashHit(target.i)}
+    else{log("CPUがファイヤーボルトであなたの王に2ダメージ。");msg("CPU：王に2ダメージ！","routine");render();}
     await cpuWait();if(S.pHp<=0){lose("あなたの王が倒されました");return}
   }
   if(S.gameOver)return;
@@ -4912,10 +4932,10 @@ async function cpu(){if(S.side==="c"&&!S.gameOver)await cpuWindCards();
   const movers=S.board.map((p,i)=>({p,i})).filter(x=>x.p?.side==="c"&&!x.p.m&&rel(x.p,x.i).length);
   if(movers.length){
     const x=movers[Math.floor(GameCore.random()*movers.length)];
-    S.cpuPreview={from:x.i,kind:"move"};msg(`CPU：${x.p.type}の移動範囲`);render();await cpuWait();
+    S.cpuPreview={from:x.i,kind:"move"};msg(`CPU：${x.p.type}の移動範囲`,"routine");render();await cpuWait();
     const choices=rel(x.p,x.i);
     S.cpuPreview=null;
-    if(choices.length){const k=choices[Math.floor(GameCore.random()*choices.length)];if(GameCore.move(x.i,k)){log(`CPUの${x.p.type}が移動。`);msg(`CPU：${x.p.type}を移動`);render();await cpuWait()}}
+    if(choices.length){const k=choices[Math.floor(GameCore.random()*choices.length)];if(GameCore.move(x.i,k)){log(`CPUの${x.p.type}が移動。`);msg(`CPU：${x.p.type}を移動`,"routine");render();await cpuWait()}}
   }
   if(S.gameOver)return;
   // ソーサラーの魔法は通常攻撃権を消費。CPUは敵クリーチャー、いなければ相手王を狙う。
@@ -4925,10 +4945,10 @@ async function cpu(){if(S.side==="c"&&!S.gameOver)await cpuWindCards();
     const result=resolveSorcererBolt("c",x.i,target>=0?{kind:"piece",k:target}:{kind:"king",side:"p"});
     if(!result)continue;
     if(result.kind==="piece"){
-      log(`CPUのソーサラーの魔法：${result.victim.type}に2ダメージ。`);msg(`CPUのソーサラー：${result.victim.type}に2ダメージ！`);render();flashHit(target);
+      log(`CPUのソーサラーの魔法：${result.victim.type}に2ダメージ。`);msg(`CPUのソーサラー：${result.victim.type}に2ダメージ！`,"routine");render();flashHit(target);
     }else{
       log("CPUのソーサラーの魔法：あなたの王に2ダメージ。");
-      if(!S.gameOver){msg("CPUのソーサラー：王に2ダメージ！");render();}
+      if(!S.gameOver){msg("CPUのソーサラー：王に2ダメージ！","routine");render();}
     }
     if(S.gameOver)return;
     await cpuWait();
@@ -4940,10 +4960,10 @@ async function cpu(){if(S.side==="c"&&!S.gameOver)await cpuWindCards();
   let target=null;
   if(!x){for(const candidate of ps){const targets=atk(candidate.p,candidate.i).filter(k=>S.board[k]?.side==="p");if(targets.length){x=candidate;target=targets[0];break}}}
   if(x){
-    S.cpuPreview={from:x.i,kind:"attack"};msg(`CPU：${x.p.type}の攻撃範囲`);render();await cpuWait();
+    S.cpuPreview={from:x.i,kind:"attack"};msg(`CPU：${x.p.type}の攻撃範囲`,"routine");render();await cpuWait();
     S.cpuPreview=null;
-    if(target===null){const hit=GameCore.attackKing(x.i);if(!hit)continue;log(`CPUの${x.p.type}が王を攻撃（-${hit.amount}）。`);msg(`CPU：王に${hit.amount}ダメージ！`);render();}
-    else {const q=S.board[target];if(q?.side==="p"){const hit=GameCore.attackCreature(x.i,target);if(!hit)continue;log(`CPUの${x.p.type}が${q.type}を攻撃（-${hit.amount}）。`);if(q.hp<=0){log(`${q.type}を撃破。`)}msg(`CPU：${q.type}に${hit.amount}ダメージ！`);render();flashHit(target)}}
+    if(target===null){const hit=GameCore.attackKing(x.i);if(!hit)continue;log(`CPUの${x.p.type}が王を攻撃（-${hit.amount}）。`);msg(`CPU：王に${hit.amount}ダメージ！`,"routine");render();}
+    else {const q=S.board[target];if(q?.side==="p"){const hit=GameCore.attackCreature(x.i,target);if(!hit)continue;log(`CPUの${x.p.type}が${q.type}を攻撃（-${hit.amount}）。`);if(q.hp<=0){log(`${q.type}を撃破。`)}msg(`CPU：${q.type}に${hit.amount}ダメージ！`,"routine");render();flashHit(target)}}
     if(S.gameOver)return;
     await cpuWait();
   }
