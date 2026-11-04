@@ -3,7 +3,8 @@
 // Consumes public/owner-view data and callbacks; never owns or executes game rules.
 (()=>{
  const $=id=>document.getElementById(id);let current=null;
- const redraw=()=>{if(current){renderPieces(current);current.redrawInfo?.();}};
+ // Rebuild detail first so the final piece pass decorates current tutorial targets.
+ const redraw=()=>{if(current){current.redrawInfo?.();renderPieces(current);}};
 // One fixed projection draws and clips the same 25 native cell elements.
 // Screen-space artwork follows their foot markers; there is no point-to-cell converter.
 let presentationView='current',layoutFrame=0;
@@ -29,6 +30,26 @@ function arrangeLandscapeInfo(landscape,app,column,wrap){
  for(const node of [turn,enemyDock,effects]){if(landscape)moveLayoutNode(node,dock);else restoreLayoutNode(node);}
  for(const kind of ['enemy','player']){let group=wrap.querySelector('.royalGrave.'+kind);if(!group){group=document.createElement('span');group.className='royalGrave '+kind;group.setAttribute('aria-label',kind==='enemy'?'相手の墓地':'自分の墓地');wrap.append(group);}const button=column.querySelector('.kingZone.'+kind+' .graveButton')||group.querySelector('.graveButton');if(landscape)moveLayoutNode(button,group);else restoreLayoutNode(button);}
  return dock;
+}
+// Reparent the same live nodes; preserve listeners, selections and scroll position.
+function arrangeBattleStrip(active,app){
+ const strip=app.querySelector('.battleStrip');if(!strip)return;
+ const hand=app.querySelector('.handScroller'),scroll=$('hand')?.scrollLeft||0;
+ const nodes=[[app.querySelector('.layoutLog'),strip.querySelector('.stripLeft')],[app.querySelector('.manaDock'),strip.querySelector('.stripLeft')],[hand,strip]];
+ for(const id of ['undoOne','newGame','surrenderGame','onlineUndo','onlineSurrender'])nodes.push([$(id),strip.querySelector('.stripButtons')]);
+ nodes.push([$('endTurn'),strip.querySelector('.stripEnd')]);
+ for(const [node,parent]of nodes)if(active)moveLayoutNode(node,parent);else restoreLayoutNode(node);
+ if($('hand'))$('hand').scrollLeft=scroll;
+}
+let noticeScope=null;
+function setNotice(text,scope){const message=$('message');if(message){message.textContent=text;noticeScope=scope;}}
+function renderSelectionStatus({operation='',guide='',choice='',paused='',scope=''}){
+ const label=$('selectionContext'),message=$('message');if(!label)return;
+ const viewing=$('infoContent')?.querySelector('.infoName')?.textContent||'';
+ const live=choice?'必須選択：'+choice:paused?paused:operation?'操作対象：'+operation+(guide?' — '+guide:''):'対象を選択してください。';
+ label.textContent=live+(viewing&&(!operation||!viewing.startsWith(operation))?' ／ 閲覧：'+viewing:'');
+ label.dataset.operation=operation;label.dataset.viewing=viewing;
+ if(message&&noticeScope!==scope){message.textContent='';noticeScope=null;}
 }
 function restoreNativePlane(board,wrap){
  // Release all presentation-owned projection state before any geometry reads.
@@ -98,13 +119,14 @@ function syncLayout(){
  const board=$('board');if(!projected)restoreNativePlane(board,wrap);
  wrap.dataset.renderMode=projected?'projected':'native';
  const infoDock=arrangeLandscapeInfo(landscape,app,column,wrap);
- if(landscape){const viewport=visualViewport?.height||innerHeight,top=app.getBoundingClientRect().top+scrollY,safe=parseFloat(getComputedStyle(document.body).paddingBottom)||0;app.style.setProperty('--play-height',Math.max(340,Math.floor(viewport-top-safe-4))+'px');}else app.style.removeProperty('--play-height');
+ arrangeBattleStrip(landscape&&presentationView==='left',app);
+ if(landscape){const viewport=visualViewport?.height||innerHeight,top=app.getBoundingClientRect().top+scrollY,safe=parseFloat(getComputedStyle(document.body).paddingBottom)||0;app.style.setProperty('--play-height',Math.max(presentationView==='left'?260:340,Math.floor(viewport-top-safe-4))+'px');}else app.style.removeProperty('--play-height');
  const mana=column?.querySelector('.kingZone.player .manaStat')||app.querySelector('.manaDock .manaStat'),dock=app.querySelector('.manaDock'),zone=column?.querySelector('.kingZone.player');
  if(mana&&dock&&zone)(landscape?dock:zone).append(mana);
  const enemyZone=column?.querySelector(".kingZone.enemy"),enemyDock=app.querySelector(".enemyManaDock"),enemyMana=enemyZone?.querySelector(".manaStat")||enemyDock?.querySelector(".manaStat");
  if(enemyMana&&enemyDock&&enemyZone)(landscape?enemyDock:enemyZone).append(enemyMana);
  const message=$('message'),panel=$('infoPanel'),area=app.querySelector('.playArea');
- if(message&&panel&&area){if(landscape)panel.insertBefore(message,$('infoContent'));else app.insertBefore(message,area);}
+ if(message&&panel&&area){if(landscape)panel.append(message);else app.insertBefore(message,area);}
  if(projected)fitProjection(wrap,infoDock);
 }
 function screenPoint(element,relative){const r=element.getBoundingClientRect(),o=relative.getBoundingClientRect();return {x:r.left-o.left,y:r.top-o.top};}
@@ -121,7 +143,7 @@ landscapeQuery.addEventListener('change',queuePresentation);
 window.visualViewport?.addEventListener('resize',queuePresentation);
 function bindPresentation(){
  bindHandScroll();
- const log=document.querySelector('.layoutLog');if(log){log.open=false;log.addEventListener('toggle',()=>{positionBattleLog();queueTutorialPresentation();});}
+ const log=document.querySelector('.layoutLog');if(log){log.open=false;log.addEventListener('toggle',()=>{positionBattleLog();queueTutorialPresentation();});if(typeof ResizeObserver!=='undefined')new ResizeObserver(positionBattleLog).observe(log.querySelector('.logPanel'));}
  const wrap=$('board')?.closest('.boardWrap');if(wrap&&typeof ResizeObserver!=='undefined')new ResizeObserver(queuePresentation).observe(wrap);
  syncLayout();
 }
@@ -130,7 +152,7 @@ function positionBattleLog(){
  const log=document.querySelector('.layoutLog'),panel=log?.querySelector('.logPanel');if(!panel)return;
  // Portrait is ordinary document flow. Never retain popup geometry, even closed.
  if(!landscapeQuery.matches||!log.open){for(const k of ['width','left','top','max-height','--log-space'])panel.style.removeProperty(k);return;}
- const r=log.querySelector('summary').getBoundingClientRect(),width=Math.min(360,innerWidth-16);panel.style.width=width+'px';panel.style.left=Math.max(8,Math.min(r.right-width,innerWidth-width-8))+'px';const space=Math.max(64,Math.min(190,r.top-16));panel.style.maxHeight=space+'px';panel.style.setProperty('--log-space',space+'px');panel.style.top=Math.max(8,r.top-panel.offsetHeight-6)+'px';
+ const r=log.querySelector('summary').getBoundingClientRect(),width=Math.min(360,innerWidth-16);panel.style.width=width+'px';panel.style.left=Math.max(8,Math.min(document.body.classList.contains('view-left')?r.left:r.right-width,innerWidth-width-8))+'px';const space=Math.max(64,Math.min(190,r.top-16));panel.style.maxHeight=space+'px';panel.style.setProperty('--log-space',space+'px');panel.style.top=Math.max(8,r.top-panel.offsetHeight-6)+'px';
 }
 window.addEventListener('resize',positionBattleLog);window.visualViewport?.addEventListener('resize',positionBattleLog);window.addEventListener('scroll',positionBattleLog,{passive:true});
 function tutorialSelectors(selectors){return selectors.map(selector=>{
@@ -174,6 +196,7 @@ function positionTutorialExplanation(){
   if(tutorialLogScrollPending){tutorialLogScrollPending=false;coach.scrollIntoView({block:'start',behavior:'instant'});}return;
  }
  restoreLayoutNode(coach);coach.classList.remove('tutorialAtLog');
+ if(landscapeQuery.matches&&presentationView==='left'&&logTarget){const r=document.querySelector('.boardColumn').getBoundingClientRect(),log=document.querySelector('.logPanel').getBoundingClientRect(),left=Math.max(r.left+6,log.right+8);coach.style.left=left+'px';coach.style.width=Math.max(160,r.right-left-6)+'px';coach.style.top=Math.max(r.top+4,r.bottom-coach.offsetHeight-6)+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';return;}
  if(landscapeQuery.matches){const host=(infoTarget||logTarget)?document.querySelector('.boardColumn'):panel,r=host.getBoundingClientRect();coach.style.left=Math.max(4,r.left+6)+'px';coach.style.width=Math.max(logTarget?160:195,Math.min(infoTarget||logTarget?350:r.width-12,logTarget?Math.max(160,document.querySelector('.logPanel').getBoundingClientRect().left-r.left-18):r.width-12))+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';coach.style.top=Math.max(4,r.bottom-coach.offsetHeight-6)+'px';}
 
  else{for(const k of ['left','top','width','max-height','bottom','right','overflow-y','transform'])coach.style.removeProperty(k);}
@@ -444,5 +467,5 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderSelectionStatus,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();
