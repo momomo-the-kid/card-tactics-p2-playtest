@@ -43,15 +43,17 @@ function arrangeBattleStrip(active,app){
  for(const [node,parent]of nodes)if(active)moveLayoutNode(node,parent);else restoreLayoutNode(node);
  if($('hand'))$('hand').scrollLeft=scroll;
 }
-let noticeScope=null;
-function setNotice(text,scope){const message=$('message');if(message){message.textContent=text;noticeScope=scope;}}
+let noticeScope=null,noticeKind=null;
+function syncTutorialNotice(){const message=$('message');if(message)message.classList.toggle('tutorialTurnNoticeHidden',document.body.classList.contains('tutorial-mode')&&tutorialExplanation?.step===4&&tutorialExplanation.glow?.includes('#log')&&noticeKind==='turn');}
+function setNotice(text,scope,kind='general'){const message=$('message');if(message){message.textContent=text;noticeScope=scope;noticeKind=kind;syncTutorialNotice();}}
 function renderSelectionStatus({operation='',guide='',choice='',paused='',scope=''}){
  const label=$('selectionContext'),message=$('message');if(!label)return;
  const viewing=$('infoContent')?.querySelector('.infoName')?.textContent||'';
  const live=choice?'必須選択：'+choice:paused?paused:operation?'操作対象：'+operation+(guide?' — '+guide:''):'対象を選択してください。';
  label.textContent=live+(viewing&&(!operation||!viewing.startsWith(operation))?' ／ 閲覧：'+viewing:'');
  label.dataset.operation=operation;label.dataset.viewing=viewing;
- if(message&&noticeScope!==scope){message.textContent='';noticeScope=null;}
+ if(message&&noticeScope!==scope){message.textContent='';noticeScope=null;noticeKind=null;}
+ syncTutorialNotice();
 }
 function restoreNativePlane(board,wrap){
  // Release all presentation-owned projection state before any geometry reads.
@@ -167,7 +169,7 @@ function positionBattleLog(){
  const log=document.querySelector('.layoutLog'),panel=log?.querySelector('.logPanel');if(!panel)return;
  // Portrait is ordinary document flow. Never retain popup geometry, even closed.
  if(!landscapeQuery.matches||!log.open){for(const k of ['width','left','top','max-height','--log-space'])panel.style.removeProperty(k);return;}
- const r=log.querySelector('summary').getBoundingClientRect(),width=Math.min(360,innerWidth-16);panel.style.width=width+'px';panel.style.left=Math.max(8,Math.min(r.left,innerWidth-width-8))+'px';const space=Math.max(64,Math.min(190,r.top-16));panel.style.maxHeight=space+'px';panel.style.setProperty('--log-space',space+'px');panel.style.top=Math.max(8,r.top-panel.offsetHeight-6)+'px';
+ const r=log.querySelector('summary').getBoundingClientRect(),width=Math.min(360,innerWidth-16,document.body.classList.contains('tutorial-mode')&&tutorialExplanation?.step===4&&tutorialExplanation.glow?.includes('#log')?tutorialLogWidthCap??Infinity:Infinity);panel.style.width=width+'px';panel.style.left=Math.max(8,Math.min(r.left,innerWidth-width-8))+'px';const explaining=document.body.classList.contains('tutorial-mode')&&tutorialExplanation?.step===4&&tutorialExplanation.glow?.includes('#log');let space=Math.max(64,Math.min(190,r.top-16));if(tutorialLogHeightCap!==null&&explaining)space=Math.min(space,tutorialLogHeightCap);panel.style.maxHeight=space+'px';panel.style.setProperty('--log-space',space+'px');panel.style.top=Math.max(8,Math.min(r.top-6,explaining&&tutorialLogBottomLimit!==null?tutorialLogBottomLimit:Infinity)-panel.offsetHeight)+'px';
 }
 window.addEventListener('resize',positionBattleLog);window.visualViewport?.addEventListener('resize',positionBattleLog);window.addEventListener('scroll',positionBattleLog,{passive:true});
 function tutorialSelectors(selectors){return selectors.map(selector=>{
@@ -180,7 +182,7 @@ function tutorialSelectors(selectors){return selectors.map(selector=>{
  if(selector==='.status .statusButton'&&landscapeQuery.matches)return '.battleInfoDock .statusButton';
  return selector;
 });}
-let tutorialExplanation=null,tutorialPresentationFrame=0,previousLogExplanation=false,tutorialLogScrollPending=false;
+let tutorialExplanation=null,tutorialPresentationFrame=0,previousLogExplanation=false,tutorialLogScrollPending=false,tutorialLogHeightCap=null,tutorialLogBottomLimit=null,tutorialLogWidthCap=null;
 function refreshTutorialGeometry(){
  const board=$('board'),wrap=board?.closest('.boardWrap');if(!wrap)return;
  let svg=wrap.querySelector('.tutorialGrid');if(!svg){svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.classList.add('tutorialGrid');svg.setAttribute('aria-hidden','true');wrap.append(svg);}
@@ -188,12 +190,36 @@ function refreshTutorialGeometry(){
  for(const cell of board.querySelectorAll('.cell.tutorialGlow')){const e=document.createElementNS('http://www.w3.org/2000/svg','polygon');e.dataset.tutorialCell=cell.dataset.cell;e.setAttribute('points',['nw','ne','se','sw'].map(name=>{const p=screenPoint(cell.querySelector('[data-plane-point='+name+']'),wrap);return p.x+','+p.y;}).join(' '));svg.append(e);}
 }
 function presentTutorial(explanation){
- tutorialExplanation=explanation;
+ tutorialExplanation=explanation;syncTutorialNotice();
  const log=explanation?.glow?.includes('#log')||false,details=$('log')?.closest('details');
  if(log!==previousLogExplanation&&details){details.open=log;if(log)tutorialLogScrollPending=true;}previousLogExplanation=log;
  queueTutorialPresentation();
 }
-function queueTutorialPresentation(){if(tutorialPresentationFrame)return;tutorialPresentationFrame=requestAnimationFrame(()=>{tutorialPresentationFrame=0;positionBattleLog();positionTutorialExplanation();refreshTutorialGeometry();});}
+function queueTutorialPresentation(){if(tutorialPresentationFrame)return;tutorialPresentationFrame=requestAnimationFrame(()=>{tutorialPresentationFrame=0;tutorialLogHeightCap=null;tutorialLogBottomLimit=null;tutorialLogWidthCap=null;positionBattleLog();positionTutorialExplanation();refreshTutorialGeometry();});}
+function positionLogExplanation(coach){
+ const column=document.querySelector('.boardColumn'),panel=document.querySelector('.logPanel');if(!column||!panel)return;
+ const vr=window.visualViewport,area=column.getBoundingClientRect(),gap=8,left=Math.max(area.left+6,vr?.offsetLeft||0),right=Math.min(area.right-6,(vr?.offsetLeft||0)+(vr?.width||innerWidth)),top=Math.max(area.top+4,vr?.offsetTop||0),bottom=Math.min(area.bottom-4,(vr?.offsetTop||0)+(vr?.height||innerHeight));
+ const rect=e=>e.getBoundingClientRect(),intersects=(a,b)=>a.left<b.right+gap&&a.right>b.left-gap&&a.top<b.bottom+gap&&a.bottom>b.top-gap;
+ const obstacles=[...document.querySelectorAll('#infoPanel,.royalPedestal,.royalHP,.royalGrave')].filter(e=>e.getClientRects().length).map(rect);
+ // In direction A the log itself can cross the near king. Keep its bottom
+ // above any own royal HUD sharing its horizontal span, reserving coach space.
+ coach.style.width=Math.min(360,right-left)+'px';coach.style.maxHeight=Math.max(80,bottom-top)+'px';const initialLog=rect(panel),own=[...document.querySelectorAll('#playerPedestal,.royalHP.player,.royalGrave.player')].map(rect).filter(r=>r.left<initialLog.right+gap&&r.right>initialLog.left-gap&&intersects(initialLog,r));
+ if(own.length&&Math.min(...own.map(r=>r.left))-gap-initialLog.left>=240){tutorialLogWidthCap=Math.min(...own.map(r=>r.left))-gap-initialLog.left;positionBattleLog();}
+ else if(own.length){tutorialLogBottomLimit=Math.min(...own.map(r=>r.top-gap));tutorialLogHeightCap=Math.max(60,Math.min(initialLog.height,tutorialLogBottomLimit-top-coach.offsetHeight-gap));positionBattleLog();}
+ // Measure after assigning each readable width. Prefer the space above the
+ // log to a narrow side strip; keep the actual royal HUDs as obstacles.
+ let best=null;
+ for(const width of [...new Set([Math.min(360,right-left),Math.min(300,right-left),Math.min(260,right-left),Math.min(220,right-left)])]){
+  coach.style.width=width+'px';coach.style.maxHeight=Math.max(80,bottom-top)+'px';const height=coach.offsetHeight,log=rect(panel);
+  const xs=[left,Math.min(right-width,log.left),right-width,log.right+gap,...obstacles.flatMap(r=>[r.right+gap,r.left-width-gap])];
+  const ys=[log.top-height-gap,top,log.top,...obstacles.flatMap(r=>[r.bottom+gap,r.top-height-gap])];
+  for(const x of xs)for(const y of ys){const box={left:x,top:y,right:x+width,bottom:y+height};if(x<left||box.right>right||y<top||box.bottom>bottom||intersects(box,log)||obstacles.some(r=>intersects(box,r)))continue;const score=(box.bottom<=log.top-gap?0:1000)+(360-width)+Math.abs(x-log.left)*.05+Math.abs(box.bottom-log.top);if(!best||score<best.score)best={...box,width,height,score};}
+ }
+ // Short viewports use a stack above the same log entry, reducing only the
+ // log's internal viewport in this explanation, never the match layout.
+ if(!best){const width=Math.min(360,right-left);coach.style.width=width+'px';const height=coach.offsetHeight,entry=document.querySelector('.layoutLog summary').getBoundingClientRect(),budget=Math.max(60,Math.min(tutorialLogHeightCap??190,entry.top-top-height-gap*2));tutorialLogHeightCap=budget;positionBattleLog();const log=rect(panel);best={left,top:Math.max(top,log.top-height-gap),width};}
+ coach.style.left=best.left+'px';coach.style.top=best.top+'px';coach.style.width=best.width+'px';coach.style.bottom='auto';coach.style.right='auto';
+}
 function positionTutorialExplanation(){
  const coach=$('tutorialCoach');if(!coach)return;if(!document.body.classList.contains('tutorial-mode')){restoreLayoutNode(coach);coach.classList.remove('tutorialAtLog');return;}
  const step=tutorialExplanation;if(!step)return;
@@ -211,7 +237,7 @@ function positionTutorialExplanation(){
   if(tutorialLogScrollPending){tutorialLogScrollPending=false;coach.scrollIntoView({block:'start',behavior:'instant'});}return;
  }
  restoreLayoutNode(coach);coach.classList.remove('tutorialAtLog');
- if(landscapeQuery.matches&&logTarget){const r=document.querySelector('.boardColumn').getBoundingClientRect(),log=document.querySelector('.logPanel').getBoundingClientRect(),left=Math.max(r.left+6,log.right+8);coach.style.left=left+'px';coach.style.width=Math.max(160,r.right-left-6)+'px';coach.style.top=Math.max(r.top+4,r.bottom-coach.offsetHeight-6)+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';return;}
+ if(landscapeQuery.matches&&logTarget&&step.step===4){positionLogExplanation(coach);return;}
  if(landscapeQuery.matches){const host=(infoTarget||logTarget)?document.querySelector('.boardColumn'):panel,r=host.getBoundingClientRect();coach.style.left=Math.max(4,r.left+6)+'px';coach.style.width=Math.max(logTarget?160:195,Math.min(infoTarget||logTarget?350:r.width-12,logTarget?Math.max(160,document.querySelector('.logPanel').getBoundingClientRect().left-r.left-18):r.width-12))+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';coach.style.top=Math.max(4,r.bottom-coach.offsetHeight-6)+'px';}
 
  else{for(const k of ['left','top','width','max-height','bottom','right','overflow-y','transform'])coach.style.removeProperty(k);}

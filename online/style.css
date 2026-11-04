@@ -899,6 +899,7 @@ body.layout-landscape .stripLeft .layoutLog summary{min-height:36px;padding:8px 
 #selectionContext{font-size:11px;line-height:1.35;padding:4px 8px;border-bottom:1px solid #475363;flex:0 0 auto;max-height:48px;overflow:auto;background:#18212c}
 body.layout-landscape #message:empty{display:none}
 #message:not(:empty)::before{content:'通知：';font-weight:700}
+#message.tutorialTurnNoticeHidden{display:none!important}
 body.layout-landscape #message{border-top:1px solid #5d6270;max-height:48px;flex:0 0 auto}
 
 /* Compact, fixed-width current/max mana; the same live values in all views. */
