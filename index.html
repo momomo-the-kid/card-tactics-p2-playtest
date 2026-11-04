@@ -1019,7 +1019,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-wind-spells-version-v19">ver p3-wind-spells-version-v19</div>
+  <div class="titleVersion" data-build="p3-tutorial-double-berserk-v20">ver p3-tutorial-double-berserk-v20</div>
   <div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -3441,7 +3441,7 @@ const TutorialController={
  start(){
   this.epoch++;this.running=false;this.error=null;this.active=true;this.index=0;this.historyViewing=false;this.steps=tutorialSteps();
    msg('説明を読んで「次へ」を押して下さい。');
-  delete S.cardIdentities;delete S.coreBridge;delete S.pendingCardTransfers;delete S.pendingSummon;delete S.pendingEntry;delete S.pendingChoice;delete S.pendingEntryHtml;Object.assign(S,{turn:1,side:'p',manaBySide:{p:1,c:2},maxManaBySide:{p:1,c:2},manaBonus:{p:0,c:0},pHp:20,cHp:20,board:Array(25).fill(null),hand:['歩兵','歩兵','銀級兵','銀級兵','金級兵'],deck:[...Array(31).fill('歩兵'),'バーサーク','チャリオット','ファイヤーボルト','マナ'],cHand:['歩兵','踊り子','金級兵','チャリオット','銀級兵'],cDeck:Array(35).fill('歩兵'),card:null,piece:null,inspect:null,gameOver:false,mines:Array(25).fill(null),enchantments:[],battles:[],graveyards:{p:[],c:[]},nextCardInstanceId:1,kingAction:{p:{},c:{}},kingAttackMode:false,sorcererMode:false,tokenPlacement:null,teleportSource:null,dispelTarget:null,cpuPreview:null});
+  delete S.cardIdentities;delete S.coreBridge;delete S.pendingCardTransfers;delete S.pendingSummon;delete S.pendingEntry;delete S.pendingChoice;delete S.pendingEntryHtml;Object.assign(S,{turn:1,side:'p',manaBySide:{p:1,c:2},maxManaBySide:{p:1,c:2},manaBonus:{p:0,c:0},pHp:20,cHp:20,board:Array(25).fill(null),hand:['歩兵','歩兵','銀級兵','銀級兵','バーサーク'],deck:[...Array(31).fill('歩兵'),'バーサーク','チャリオット','ファイヤーボルト','マナ'],cHand:['歩兵','踊り子','金級兵','チャリオット','銀級兵'],cDeck:Array(35).fill('歩兵'),card:null,piece:null,inspect:null,gameOver:false,mines:Array(25).fill(null),enchantments:[],battles:[],graveyards:{p:[],c:[]},nextCardInstanceId:1,kingAction:{p:{},c:{}},kingAttackMode:false,sorcererMode:false,tokenPlacement:null,teleportSource:null,dispelTarget:null,cpuPreview:null});
   $('log').innerHTML='';clearOneStepUndo();document.body.classList.add('tutorial-mode');startGameScreen();this.show();
  },
  clearGlow(){document.querySelectorAll('.tutorialGlow,.tutorialZoom').forEach(e=>e.classList.remove('tutorialGlow','tutorialZoom'));NormalGameUI.refreshTutorialGeometry()},
@@ -3451,8 +3451,9 @@ const TutorialController={
  next(){if(!this.active)return;if(this.historyViewing){this.showCurrentExplanation();return}if(this.current.finish){this.finish();return}if(this.current.action){this.blockedMessage();return}this.advance()},
  advance(){if(this.index+1<this.steps.length){this.index++;this.show()}},
  blockedMessage(){msg(this.current?.action?'今は案内で光っている対象を操作してください。':'説明を読んで「次へ」を押してください。')},
- allows(kind,value){if(!this.active)return true;const a=this.current?.action;return !!a&&a.kind===kind&&a.value===value&&S.side==='p'},
- decorate(){if(!this.active)return;this.clearGlow();const s=this.historyViewing?this.steps[this.index-1]:this.current;if(!s)return;let selectors=NormalGameUI.tutorialSelectors([...(s.glow||[])]);const a=s.action;if(a?.kind==='card'){const i=S.hand.indexOf(a.value);selectors.push(`#hand .card:nth-child(${i+1})`)}if(a?.kind==='cell')selectors.push(`#board .cell[data-cell="${a.value}"]`);if(a?.kind==='king')selectors.push('#enemyPedestal');if(a?.kind==='end')selectors.push('#endTurn');if(a?.kind==='use')selectors.push('#infoContent .useCardButton');
+ cardIndex(a){return a?.last?S.hand.lastIndexOf(a.value):S.hand.indexOf(a.value)},
+ allows(kind,value,index){if(!this.active)return true;const a=this.current?.action;return !!a&&a.kind===kind&&a.value===value&&S.side==='p'&&(kind!=='card'||!a.last||index===this.cardIndex(a))},
+ decorate(){if(!this.active)return;this.clearGlow();const s=this.historyViewing?this.steps[this.index-1]:this.current;if(!s)return;let selectors=NormalGameUI.tutorialSelectors([...(s.glow||[])]);const a=s.action;if(a?.kind==='card'){const i=this.cardIndex(a);selectors.push(`#hand .card:nth-child(${i+1})`)}if(a?.kind==='cell')selectors.push(`#board .cell[data-cell="${a.value}"]`);if(a?.kind==='king')selectors.push('#enemyPedestal');if(a?.kind==='end')selectors.push('#endTurn');if(a?.kind==='use')selectors.push('#infoContent .useCardButton');
   selectors=selectors.flatMap(selector=>{const m=selector.match(/^#board \.cell\[data-cell="(\d+)"\] \.(pieceHudStats|actionDot)$/);if(!m)return [selector];const root=`#pieceOverlay [data-cell="${Number(m[1])}"]`;return m[2]==='actionDot'?[`${root} .actionBadge:not(.none)`,`${root} .creatureATK`]:[`${root} .creatureHealth`,`${root} .creatureATK`];});
   for(const selector of selectors)document.querySelectorAll(selector).forEach(e=>{e.classList.add('tutorialGlow');if(!e.matches('.cell,.rangePair,.infoEffect,.actionDot,.actionBadge,.creatureHealth,.creatureATK,.overlayStatsLayer'))e.classList.add('tutorialZoom')});
   if(s.color)document.querySelectorAll('#board .cell').forEach(e=>{if(s.color==='move'){e.classList.remove('attackTarget');if(e.classList.contains('bothTarget')){e.classList.remove('bothTarget');e.classList.add('moveTarget')}}if(s.color==='attack'){e.classList.remove('moveTarget');if(e.classList.contains('bothTarget')){e.classList.remove('bothTarget');e.classList.add('attackTarget')}}});
@@ -3481,7 +3482,7 @@ const TutorialController={
 function tutorialSteps(){
  const out=[];let step=0;const add=(id,text,extra={})=>out.push({id:`TUT_S${String(step).padStart(2,'0')}_${id}`,step,text,...extra});
  const cell=(id,k,text,extra={})=>add(id,text,{action:{kind:'cell',value:k},...extra});
- const card=(id,name,text)=>add(id,text,{action:{kind:'card',value:name}});
+ const card=(id,name,text,extra={})=>add(id,text,{action:{kind:'card',value:name,...extra}});
  const end=(id)=>add(id,'ここを押してターンを終了し、相手にターンを渡そう。',{action:{kind:'end',value:null}});
  add('01','このゲームは、クリーチャーやスペルなど様々なカードを駆使して、相手の王を倒すゲームです。');
  add('02_KING','相手の王のHPを0にすれば、あなたの勝利。',{glow:['#enemyPedestal']});
@@ -3543,13 +3544,15 @@ function tutorialSteps(){
  cell('03_SUMMON',24,'チャリオットを光っているマスに召喚しよう。');cell('03_SELECT',24,'チャリオットをタップしよう。');cell('03_MOVE',14,'光っているマスまで進もう。');end('04');
  add('CPU4','相手の金級兵とチャリオットが前進するよ。',{action:{kind:'cpu'}});
   step=10;cell('01_SELECT',8,'あと少し。このターンで決めちゃおう！ 銀級兵をタップしてね。');cell('01_MOVE',2,'銀級兵を光っているマスへ進めよう。');
- card('02_CARD','バーサーク','最後にエンチャントカードの説明をするね。「バーサーク」をタップしよう。');
+ card('02_CARD','バーサーク','最後にエンチャントカードの説明をするね。引いてきた方の「バーサーク」をタップしよう。',{last:true});
  cell('02_CAST',2,'基本ATKを1.5倍（端数切り上げ）にする強力なカード。ただし移動・攻撃範囲が前方1マスだけになるよ。銀級兵に付与しよう。');
- add('02_RESULT','銀級兵のATKが6まで上がった。強力な攻撃を相手の王に叩き込もう！',{select:2,glow:['#infoContent .creatureBasics']});
+ add('02_RESULT','銀級兵のATKが6まで上がった。6マナから3マナを使い、残りは3マナ。相手の王に攻撃しよう！',{select:2,glow:['#infoContent .creatureBasics']});
  add('02_ATTACK','相手の王をタップして、銀級兵で攻撃しよう。',{action:{kind:'king',value:'c'}});
  add('03_DURATION','エンチャントは、一定ターン効果が続くカードが基本だよ。');
  add('03_TYPES','クリーチャーに付与するものだけでなく、マスや王に付与するものもある。組み合わせ次第で、かなりトリッキーな戦い方もできるよ。');
- step=11;cell('01_SELECT',3,'さぁ、いよいよ最後だ。歩兵をタップし、相手の王を倒して勝利を勝ち取ろう！');
+ step=11;card('01_CARD','バーサーク','歩兵にもバーサークを使って、攻撃を続けよう！ 初期手札から残していた「バーサーク」をタップしてね。');
+ cell('01_SELECT',3,'歩兵をタップしてバーサークを付けよう。歩兵の基本ATK3は1.5倍を切り上げて5になるよ。');
+ add('01_RESULT','歩兵のATKは5。バーサーク2枚に6マナを使い、残りは0マナだ。銀級兵に続いて歩兵で攻撃しよう！',{select:3,glow:['#infoContent .creatureBasics','.kingZone.player .manaStat']});
  add('01_ATTACK','歩兵で相手の王を攻撃しよう。',{action:{kind:'king',value:'c'}});
  add('02_INTRO','王への攻撃には、少し特殊なルールがあるよ。');
  add('02_CENTER','歩兵のように正面しか攻撃できないクリーチャーは、中央3列から王を狙える。',{glow:['#board .cell[data-cell="1"]','#board .cell[data-cell="2"]','#board .cell[data-cell="3"]']});
@@ -3558,11 +3561,7 @@ function tutorialSteps(){
  cell('03_SELECT',14,'チャリオットで見てみよう。チャリオットをタップして。');
  cell('03_MOVE',4,'光ってるマスに進めてみよう。');
  add('03_EDGE','チャリオットは斜め攻撃ができるから、端からでも王に攻撃が届く！',{glow:['#enemyPedestal']});
- add('04_FINISH','このままチャリオットで相手の王を攻撃しよう。',{action:{kind:'king',value:'c'}});
- add('04_REMAINS','相手の王は残りHP2。ターンを渡し、次の手番で最後の攻撃をしよう。');end('04_END');
- add('CPU5','相手はこのターンを終えるよ。次の手番で攻撃権が戻る。',{action:{kind:'cpu'}});
- cell('04_LAST_SELECT',2,'銀級兵をタップしよう。');
- add('04_LAST_ATTACK','相手の王を攻撃してフィニッシュだ！',{action:{kind:'king',value:'c'}});
+ add('04_FINISH','銀級兵6点、歩兵5点に続いて、チャリオットの6点でフィニッシュだ！ 相手の王を攻撃しよう。',{action:{kind:'king',value:'c'}});
  add('05_WIN','勝利おめでとう‼️🎉');add('05_BEGIN','でも、ここからが本番！');
  add('05_COMBINATIONS','クリーチャー、スペル、エンチャント――組み合わせ次第で戦い方は大きく広がる。');
  add('05_DECK','お気に入りのカードを組み合わせて、キミだけの戦術と最強のデッキを作ってみよう！');
@@ -4913,7 +4912,7 @@ if(sessionStorage.getItem("cardTacticsStartInGame")==="1"){
 }
 </script><script>
 // Gate before existing handlers: disallowed taps cannot even change selection/inspection.
-function tutorialWrap(name,kind,valueOf){const original=window[name];window[name]=function(...args){if(!TutorialController.active)return original.apply(this,args);const value=valueOf(...args);if(!TutorialController.allows(kind,value)){TutorialController.blockedMessage();return}const index=TutorialController.index;const before=JSON.stringify(S);const result=original.apply(this,args);if(index===TutorialController.index&&JSON.stringify(S)!==before)TutorialController.advance();return result;};}
+function tutorialWrap(name,kind,valueOf){const original=window[name];window[name]=function(...args){if(!TutorialController.active)return original.apply(this,args);const value=valueOf(...args);if(!TutorialController.allows(kind,value,args[0])){TutorialController.blockedMessage();return}const index=TutorialController.index;const before=JSON.stringify(S);const result=original.apply(this,args);if(index===TutorialController.index&&JSON.stringify(S)!==before)TutorialController.advance();return result;};}
 tutorialWrap('pickCard','card',i=>S.hand[i]);
 tutorialWrap('clickCell','cell',(r,c)=>I(r,c));
 tutorialWrap('clickKing','king',side=>side);
