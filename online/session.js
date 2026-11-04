@@ -44,7 +44,7 @@ return {INVITE_PREFIX,PROTOCOL,randomCode,roomToken,parseInvite,versions,sameVer
 (function(root,factory){const api=factory(typeof module==='object'&&module.exports?require('../p2-b2/session.js'):root.B2Protocol,typeof module==='object'&&module.exports?require('../../core/deck-validation.cjs').create:root.B2Runtime.deckValidationFactory);if(typeof module==='object'&&module.exports)module.exports=api;else root.B2Protocol=root.B4Match=api;})(globalThis,function(Invite,DeckFactory){
 'use strict';
 const PROTOCOL='card-tactics-b4-match-v1',INVITE_PREFIX='card-tactics-b4-v1-',clone=x=>JSON.parse(JSON.stringify(x)),plain=x=>!!x&&typeof x==='object'&&!Array.isArray(x)&&Object.getPrototypeOf(x)===Object.prototype,exact=(x,keys)=>plain(x)&&Object.keys(x).length===keys.length&&keys.every(k=>Object.hasOwn(x,k)),id=x=>typeof x==='string'&&/^[A-Za-z0-9._:-]{1,100}$/.test(x);
-const ACTIONS=['summon','move','attack_creature','attack_king','play_spell','play_enchant','end_turn','chooseTokenCell','choosePromotion','activate_ability','surrender'];
+const ACTIONS=['summon','move','attack_creature','attack_king','play_spell','play_enchant','end_turn','chooseTokenCell','choosePromotion','chooseEffectCell','activate_ability','surrender'];
 function normalGame({Core,definitions,random,seed,matchId,coin,decks,hostDeck,guestDeck}){
  const holder={rngState:seed>>>0};const hostSide=(coin??(random(holder)<.5))?'p':'c';
  const standard=Object.entries(definitions).filter(([,d])=>(d.deckType||'normal')==='normal').flatMap(([name,d])=>Array(d.deckCount||0).fill(name));if(standard.length!==40)throw Error('STANDARD_DECK_SIZE');
@@ -56,7 +56,8 @@ function choices(Core,state,side,defs){
  if(state.server.gameOver)return [];
  let out=[];const add=a=>{if(a&&ACTIONS.includes(a.type))out.push(a);};
  const pc=state.server.pendingChoice,ps=state.server.pendingSummon;
- if(pc){if(pc.side===side)for(const accept of [true,false])add({type:'choosePromotion',side,accept});}
+ if(pc?.type==='effectMove'){Core.queryEffectChoices(state,side).forEach(add);}
+ else if(pc){if(pc.side===side)for(const accept of [true,false])add({type:'choosePromotion',side,accept});}
  else if(ps){if(ps.side===side)for(const to of ps.choices)add({type:'chooseTokenCell',side,to});}
  else if(Core.combatInputAllowed(state,side)){
   Core.legalCombatActions(state,side,defs).forEach(add);
@@ -79,7 +80,7 @@ function createHost({Core,definitions,versions,state:config}){
  function options(side){maps[side].clear();return choices(Core,state,side,definitions).map((a,i)=>{const choiceId='r'+state.revision+':'+side+':'+i;maps[side].set(choiceId,a);return {choiceId,action:safeAction(a)};});}
  function view(role='host'){
   if(!state)return null;const side=assignment[role],v=Core.getPlayerView(state,side),choice=state.server.pendingChoice,tokenChoice=state.server.pendingSummon;
-  return {...v,surrenderPending:!!state.server.pendingSurrenders?.some(q=>q.side===side),power:state.board.map(p=>p?Core.powerForPiece(state,p,definitions)?.total:null),viewer:side,assignment:{...assignment},options:options(side),choice:choice?.side===side?{kind:'promotion',cell:choice.cell,from:choice.from,to:choice.to}:tokenChoice?.side===side?{kind:'token',cells:tokenChoice.choices.slice()}:null,outcome:state.server.gameOver?{winner:state.server.winner??null,draw:!!state.server.draw,reason:outcomes.findLast(e=>e.type==='game:over')?.reason||'GAME_OVER'}:null};
+  return {...v,surrenderPending:!!state.server.pendingSurrenders?.some(q=>q.side===side),power:state.board.map(p=>p?Core.powerForPiece(state,p,definitions)?.total:null),viewer:side,assignment:{...assignment},options:options(side),choice:choice?.side===side?(choice.type==='effectMove'?{kind:'effectMove',cells:Core.queryEffectChoices(state,side).map(a=>a.to),cardId:choice.cardId}:{kind:'promotion',cell:choice.cell,from:choice.from,to:choice.to}):tokenChoice?.side===side?{kind:'token',cells:tokenChoice.choices.slice()}:null,outcome:state.server.gameOver?{winner:state.server.winner??null,draw:!!state.server.draw,reason:outcomes.findLast(e=>e.type==='game:over')?.reason||'GAME_OVER'}:null};
  }
  const snapshot=(events=[],actionId=null)=>({type:'snapshot',matchId:state.server.matchId,view:view('guest'),events:Core.projectEvents(events,assignment.guest),actionId});
  function hello(key,v){let bytes;try{bytes=JSON.stringify(v).length;}catch{return reject('MALFORMED',v);}if(bytes>16384)return reject('MALFORMED',v);if(stopped)return reject('SESSION_STOPPED',v);if(v?.type==='hello'&&Invite.versions(v.versions)&&!Invite.sameVersions(v.versions,versions))return reject('VERSION_MISMATCH',v);if(!exact(v,['type','versions','roomToken','deck'])||v.type!=='hello'||!Invite.versions(v.versions)||(v.roomToken!==null&&!/^[a-f0-9]{32}$/.test(v.roomToken)))return reject('MALFORMED',v);if(!Array.isArray(v.deck)||v.deck.length!==40||v.deck.some(c=>typeof c!=='string'||!rules.defaultCounts().hasOwnProperty(c))||!rules.valid(Object.fromEntries([...new Set(v.deck)].map(c=>[c,v.deck.filter(x=>x===c).length]))))return reject('INVALID_DECK',v);if(v.roomToken!==null&&v.roomToken!==token)return reject('INVITE_EXPIRED',v);if(bound)return reject(bound===key?'ALREADY_CONNECTED':'ROOM_FULL',v);if(pending.has(key))return reject('ALREADY_PENDING',v);if(pending.size>=2)return reject('QUEUE_FULL',v);pending.set(key,{expires:Date.now()+60000,deck:clone(v.deck)});return {type:'pending',expiresIn:60000};}
@@ -95,7 +96,7 @@ function validView(v){
  if(!exact(v.assignment,['host','guest','first'])||!['p','c'].includes(v.assignment.host)||v.assignment.guest!==(v.assignment.host==='p'?'c':'p')||v.assignment.first!=='p')return false;
  for(const side of ['p','c'])if(!plain(v.players[side])||!['kingHp','mana','maxMana','handCount','deckCount'].every(k=>Number.isSafeInteger(v.players[side][k]))||!Array.isArray(v.players[side].graveyard)||!Array.isArray(v.hands[side])||v.hands[side].some(c=>!plain(c)||!id(c.instanceId)||typeof c.faceUp!=='boolean'||c.faceUp&&typeof c.cardId!=='string'||!c.faceUp&&Object.hasOwn(c,'cardId')))return false;
  if(v.ownHand.some(c=>!plain(c)||!id(c.instanceId)||typeof c.cardId!=='string')||v.board.some(c=>c!==null&&(!plain(c)||!['p','c'].includes(c.side)||typeof c.type!=='string'||!Number.isInteger(c.hp))))return false;
- if(v.choice!==null&&(!plain(v.choice)||!['promotion','token'].includes(v.choice.kind)))return false;
+ if(v.choice!==null&&(!plain(v.choice)||!['promotion','token','effectMove'].includes(v.choice.kind)))return false;
  if(v.outcome!==null&&(!exact(v.outcome,['winner','draw','reason'])||!['p','c',null].includes(v.outcome.winner)||typeof v.outcome.draw!=='boolean'||typeof v.outcome.reason!=='string'||!/^[A-Z_]{1,60}$/.test(v.outcome.reason)))return false;
  return Array.isArray(v.options)&&v.options.length<=20000&&v.options.every(x=>exact(x,['choiceId','action'])&&id(x.choiceId)&&plain(x.action)&&ACTIONS.includes(x.action.type)&&Object.keys(x.action).every(k=>['type','cardId','instanceId','from','to','abilityId','sourceInstanceId','accept','effectId','target'].includes(k))&&(!x.action.target||plain(x.action.target)&&Object.keys(x.action.target).every(k=>['kind','side','instanceId','k'].includes(k))));
 }

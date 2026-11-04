@@ -104,7 +104,7 @@ function legalCombatActions(state,actor,definitions,runtime){
 }
 const targets=require("./target-queries.cjs");
 const powerQuery=require('./power-query.cjs');
-module.exports={initializeLegacyMatch,normalizeRules:require('./match-rules.cjs').normalize,attackLimit:combat.attackLimit,finishBoundary,effectiveAbilities:require('./effective-rules.js').abilities,createGame,queryPower:powerQuery.query,powerForPiece:powerQuery.forPiece,spellsBlocked:targets.sealed,queryCard:targets.queryCard,queryAbility:targets.queryAbility,VERSION,execute,getPlayerView,projectEvents,legalCombatActions,queryCombat,previewCombat,planCombat,combatPattern,combatRights,combatPathClear,combatInputAllowed};
+module.exports={initializeLegacyMatch,normalizeRules:require('./match-rules.cjs').normalize,attackLimit:combat.attackLimit,finishBoundary,effectiveAbilities:require('./effective-rules.js').abilities,createGame,queryPower:powerQuery.query,powerForPiece:powerQuery.forPiece,spellsBlocked:targets.sealed,queryCard:targets.queryCard,queryEffectChoices:require('./wind-spells.cjs').choices,queryAbility:targets.queryAbility,VERSION,execute,getPlayerView,projectEvents,legalCombatActions,queryCombat,previewCombat,planCombat,combatPattern,combatRights,combatPathClear,combatInputAllowed};
 
 },
 "./game-state.cjs":function(module,exports,require){
@@ -152,7 +152,7 @@ module.exports={assertState,createState,publicSnapshot,playerSnapshot,serverSnap
 /** First server-facing boundary: validates transport/action shape only.
  * This is NOT yet an authoritative rules engine. No UI, DOM or globals. */
 const SIDES = Object.freeze(['p','c']);
-const ACTION_TYPES = Object.freeze(['summon','move','attack_creature','attack_king','play_spell','play_enchant','end_turn','chooseTokenCell','choosePromotion','activate_ability','surrender']);
+const ACTION_TYPES = Object.freeze(['summon','move','attack_creature','attack_king','play_spell','play_enchant','end_turn','chooseTokenCell','choosePromotion','chooseEffectCell','activate_ability','surrender']);
 const CELL_MAX=24;
 const isCell=n=>Number.isInteger(n)&&n>=0&&n<=CELL_MAX;
 const isSide=s=>SIDES.includes(s);
@@ -167,7 +167,7 @@ function validateAction(action){
  case 'move':case 'attack_creature':valid=isCell(action.from)&&isCell(action.to);break;
  case 'attack_king':valid=isCell(action.from);break;
  case 'play_spell':case 'play_enchant':valid=isCard(action.cardId);break;
- case 'chooseTokenCell':valid=isCell(action.to);break;
+ case 'chooseEffectCell':case 'chooseTokenCell':valid=isCell(action.to);break;
  case 'choosePromotion':valid=typeof action.accept==='boolean';break;
  case 'end_turn':case 'surrender':valid=true;break;
  case 'activate_ability':valid=['sorcerer_bolt','awaken_attack'].includes(action.abilityId);break;
@@ -743,6 +743,7 @@ function cardValid(s,a,defs){
  if(d.type!=='spell')return false;
  const i=creature(s,t),king=t?.kind==='king'&&side(t.side);
  switch(a.cardId){
+ case '突風':case '竜巻':return require('./wind-spells.cjs').valid(s,a);
  case 'マナ':return t==null;
  case 'ホープ':return t?.kind==='player'&&side(t.side);
  case '圧殺':return king&&t.side!==a.side;
@@ -885,11 +886,11 @@ function calculate(state,p,from,defs,mode){
  const related=all.filter(e=>e.cardId==='バーサーク'&&e.target?.kind==='creature'&&(e.target.ref===p||identity(p)!=null&&(e.target.instanceId??identity(e.target.ref))!=null&&String(e.target.instanceId??identity(e.target.ref))===String(identity(p))));
  // Old low-level fixtures/state may carry only the derived berserk duration, without card records.
  const berserk=E.berserkActive(state,p);
- const base=Number.isFinite(p.atk)?p.atk:Number.isFinite(defs[p.type]?.atk)?defs[p.type].atk:0,multiplier=berserk?2:1;
+ const base=Number.isFinite(p.atk)?p.atk:Number.isFinite(defs[p.type]?.atk)?defs[p.type].atk:0,multiplier=berserk?1.5:1;
  const allies=board.filter((q,k)=>q&&k!==from&&q.side===p.side),dancer=allies.filter(q=>has(q,'dancer_aura')).length,pack=has(p,'war_wolf_pack')?allies.length:0;
  const battles=all.filter(e=>e.cardId==='決戦'&&active(e)&&E.enabled(state,p,'battle_bonus','modifier',e.instanceId));
- const modifiers=(state.modifiers||[]).filter(m=>(m.subjectId==null||String(m.subjectId)===String(identity(p)))&&(m.sourceId==null||board.some(q=>q&&String(identity(q))===String(m.sourceId))||all.some(e=>String(e.instanceId)===String(m.sourceId)&&active(e)))&&E.enabled(state,p,m.abilityId||'atk_modifier','modifier',m.sourceId));const total=E.numeric(base,multiplier,battles.length+dancer+pack,modifiers);
- return {mode,base,multiplier,multipliedBase:base*multiplier,battle:battles.length,dancer,pack,total,battleTurns:battles.map(e=>e.remainingTurns??null)};
+ const modifiers=(state.modifiers||[]).filter(m=>(m.subjectId==null||String(m.subjectId)===String(identity(p)))&&(m.sourceId==null||board.some(q=>q&&String(identity(q))===String(m.sourceId))||all.some(e=>String(e.instanceId)===String(m.sourceId)&&active(e)))&&E.enabled(state,p,m.abilityId||'atk_modifier','modifier',m.sourceId));const multipliedBase=berserk?Math.ceil(base*multiplier):base,total=E.numeric(multipliedBase,1,battles.length+dancer+pack,modifiers);
+ return {mode,base,multiplier,multipliedBase,battle:battles.length,dancer,pack,total,battleTurns:battles.map(e=>e.remainingTurns??null)};
 }
 function query(state,selection,defs){
  if(!Array.isArray(state?.board)||state.board.length!==25)return null;
@@ -988,6 +989,31 @@ function awaken(port,side,target){
 }
 return {bolt,awaken,canBolt,canAwaken};
 });
+
+},
+"./wind-spells.cjs":function(module,exports,require){
+'use strict';
+const cell=k=>Number.isInteger(k)&&k>=0&&k<25;
+function destinations(state,from,side,cardId){
+ if(!cell(from)||!state.board[from])return [];
+ const row=Math.floor(from/5),col=from%5,steps=cardId==='突風'?[[side==='p'?-1:1,0]]:[[-1,0],[1,0],[0,-1],[0,1]];
+ return steps.flatMap(([dr,dc])=>{const r=row+dr,c=col+dc,to=r*5+c;return r>=0&&r<5&&c>=0&&c<5&&!state.board[to]?[to]:[];});
+}
+function valid(state,action){const i=action.target?.kind==='creature'?state.board.findIndex(p=>p?.sourceInstanceId===action.target.instanceId):-1;return i>=0&&(action.cardId==='竜巻'||destinations(state,i,action.side,action.cardId).length>0);}
+// Effect relocation preserves all rights/history. Entry effects use the teleport route.
+function relocate(state,from,to,defs,events){state.board[to]=state.board[from];state.board[from]=null;events.push({type:'creature:moved',from,to,bySpell:true});require('./a5-entry.cjs').begin(state,to,defs,events);}
+function resolve(state,action,defs,events){
+ let from=state.board.findIndex(p=>p?.sourceInstanceId===action.target.instanceId);
+ if(action.cardId==='突風'){relocate(state,from,destinations(state,from,action.side,action.cardId)[0],defs,events);return;}
+ const unit=require('./resolution-boundary.cjs').resolveEffectUnit(state,{unitId:'tornado-damage',mode:'sequential',targetPolicy:'valid-only',operations:[{kind:'damage',amount:1}]},{side:action.side,targets:[action.target]},defs);events.push(...unit.events);
+ if(state.server.gameOver)return;
+ from=state.board.findIndex(p=>p?.sourceInstanceId===action.target.instanceId);if(from<0)return;
+ const choices=destinations(state,from,action.side,'竜巻');
+ if(choices.length)state.server.pendingChoice={type:'effectMove',side:action.side,cardId:'竜巻',instanceId:action.target.instanceId,cell:from,choices};
+}
+function choices(state,side){const q=state.server.pendingChoice;if(q?.type!=='effectMove'||q.side!==side||state.server.gameOver)return [];const from=state.board.findIndex(p=>p?.sourceInstanceId===q.instanceId);return destinations(state,from,side,q.cardId).filter(k=>q.choices.includes(k)).map(to=>({type:'chooseEffectCell',side,to}));}
+function choose(state,action,defs,events){const q=state.server.pendingChoice;if(!choices(state,action.side).some(a=>a.to===action.to))return {ok:false,code:'INVALID_EFFECT_DESTINATION'};const from=state.board.findIndex(p=>p?.sourceInstanceId===q.instanceId);delete state.server.pendingChoice;relocate(state,from,action.to,defs,events);return {ok:true};}
+module.exports={destinations,valid,resolve,choices,choose,relocate};
 
 },
 "./a3-actions.cjs":function(module,exports,require){
@@ -1175,6 +1201,12 @@ function applyAction(state,envelope,authenticatedSide,definitions){
  if(action.side!==state.activeSide&&!(state.server.pendingChoice&&action.type==='choosePromotion'&&action.side===state.server.pendingChoice.side))return reject('NOT_YOUR_TURN');
  if(state.server.gameOver)return reject('GAME_OVER');
  if(state.server.processingDepth||state.server.pendingTriggerCount||state.server.resolving)return reject('RESOLUTION_PENDING');
+ if(state.server.pendingChoice?.type==='effectMove'){
+  if(action.type!=='chooseEffectCell')return reject('EFFECT_CHOICE_PENDING');
+  const next=clone(state),events=[],result=require('./wind-spells.cjs').choose(next,action,definitions,events);
+  if(!result.ok)return reject(result.code);next.revision++;assertState(next);
+  return {ok:true,...makeResult({revision:next.revision,events,state:next,gameOver:!!next.server.gameOver})};
+ }
  if(state.server.pendingChoice){
   if(action.type!=='choosePromotion')return reject('PROMOTION_CHOICE_PENDING');
   const choice=state.server.pendingChoice;
@@ -1318,7 +1350,7 @@ const {makePort}=require('./a1-port.cjs');
 const cell=k=>Number.isInteger(k)&&k>=0&&k<25;
 function cast(state,action,defs){
  const {side,cardId,target}=action,d=defs[cardId];
- if(!d?.effectUnit&&!['ファイヤーボルト','転移魔法','ホープ','裏切り'].includes(cardId))return require('./a2-spells.cjs').cast(state,action,defs);
+ if(!d?.effectUnit&&!['ファイヤーボルト','転移魔法','ホープ','裏切り','突風','竜巻'].includes(cardId))return require('./a2-spells.cjs').cast(state,action,defs);
  if(!d||d.type!=='spell')return {ok:false,code:'INVALID_SPELL'};
  if(state.server.gameOver)return {ok:false,code:'GAME_OVER'};
  if(side!==state.activeSide)return {ok:false,code:'NOT_YOUR_TURN'};
@@ -1333,11 +1365,10 @@ function cast(state,action,defs){
  if(!card)return {ok:false,code:'CARD_NOT_IN_HAND'};
  playCard(state,side,card.instanceId);state.players[side].mana-=d.cost;
  const events=[{type:'card:played',side,cardId,instanceId:card.instanceId}];
+ if(['突風','竜巻'].includes(cardId)){require('./wind-spells.cjs').resolve(state,action,defs,events);return {ok:true,events};}
  if(d.effectUnit||cardId==='ファイヤーボルト'||cardId==='ホープ'||cardId==='裏切り'){const descriptor=d.effectUnit||{unitId:cardId,mode:'sequential',targetPolicy:'valid-only',operations:cardId==='ホープ'?[{kind:'draw',count:2,reason:'hope'}]:cardId==='裏切り'?[{kind:'betrayal'}]:[{kind:'damage',amount:2}]};const unit=require('./resolution-boundary.cjs').resolveEffectUnit(state,descriptor,{side,targets:action.targets||(target?[target]:[])},defs);events.push(...unit.events);return {ok:true,events};}
  if(cardId==='転移魔法'){
-  state.board[action.to]=state.board[index];state.board[index]=null;
-  events.push({type:'creature:moved',from:index,to:action.to,bySpell:true});
-  require('./a5-entry.cjs').begin(state,action.to,defs,events);
+  require('./wind-spells.cjs').relocate(state,index,action.to,defs,events);
  }
  return {ok:true,events};
 }
@@ -1515,4 +1546,122 @@ function create(definitions){
 }
 module.exports={create};
 
-}};const cache={};function load(id){if(cache[id])return cache[id].exports;const m=cache[id]={exports:{}};modules[id](m,m.exports,load);return m.exports;}globalThis.B2Runtime={Core:load('./game-core.cjs'),random:load('./a3-rules.js').random,deckValidationFactory:load('./deck-validation.cjs').create,definitions:{"歩兵":{"type":"creature","cost":1,"atk":3,"hp":6,"move":[[-1,0]],"deckCount":2,"description":"能力なし。"},"銀級兵":{"type":"creature","cost":2,"atk":4,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[1,-1],[1,1]],"deckCount":3,"description":"能力なし。"},"金級兵":{"type":"creature","cost":3,"atk":5,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"deckCount":2,"description":"能力なし。"},"チャリオット":{"type":"creature","cost":5,"atk":6,"hp":6,"move":[[-1,0],[-2,0]],"attack":[[-1,-1],[-1,0],[-1,1]],"deckCount":1,"description":"移動：前方1〜2マス（途中の駒は飛び越えない）。"},"アーチャー":{"type":"creature","cost":3,"atk":4,"hp":3,"move":[[-1,0]],"attack":[[-2,0]],"deckCount":1,"description":"間の駒を越えて攻撃できる。"},"盗賊":{"type":"creature","cost":2,"atk":2,"hp":5,"move":[[-1,0]],"attack":[[-1,-1],[-1,0],[-1,1]],"deckCount":1,"abilities":["thief_attack_mana"],"description":"通常攻撃成立後、自分の最大マナと未使用マナをそれぞれ1増やす（それぞれ上限10）。"},"サラマンダー":{"type":"creature","cost":3,"atk":4,"hp":6,"move":[[-1,-1],[-1,0],[-1,1]],"attack":[[-1,0]],"deckCount":2,"abilities":["salamander_counter"],"description":"敵クリーチャーから攻撃された時、攻撃してきたクリーチャーに3ダメージを与える。"},"踊り子":{"type":"creature","cost":3,"atk":1,"hp":2,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[],"deckCount":2,"abilities":["dancer_aura"],"description":"このクリーチャーが戦場にいる間、他の味方クリーチャーの攻撃力+1。複数体の効果は重複する。"},"戦狼":{"type":"creature","cost":4,"atk":2,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["war_wolf_pack"],"description":"このクリーチャーの攻撃力は、戦場にいるほかの味方クリーチャー1体につき+1される。"},"ディアブロ":{"type":"creature","cost":6,"atk":6,"hp":9,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"deckCount":1,"abilities":["diablo_turn_start"],"description":"あなたのターン開始時に、あなたの王に2点のダメージを与える。"},"オルトロス":{"type":"creature","cost":4,"atk":2,"hp":7,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"attack":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"deckCount":2,"abilities":["orthros_double_attack","orthros_self_damage"],"description":"このクリーチャーは1ターンに2回攻撃できる。攻撃時、あなたの王に1点のダメージ。"},"隠密":{"jump":true,"movement":{"jump":true},"type":"creature","cost":3,"atk":3,"hp":5,"move":[[-2,-1],[-2,1]],"attack":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"deckCount":2,"abilities":["promote_assassin"],"description":"敵陣最奥列に到達時、暗殺者に変身できる。"},"ソーサラー":{"type":"creature","cost":4,"atk":2,"hp":2,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["sorcerer_bolt"],"description":"攻撃権とマナ2を支払い、盤上の任意のクリーチャー/王に2点のダメージを与える。"},"守備兵":{"type":"creature","cost":4,"atk":3,"hp":6,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["guard_barricade"],"description":"召喚時、左右の空きマスのどちらかにバリケードを1体生成する。両方埋まっている場合は生成しない。"},"バリケード":{"type":"creature","deckType":"token","cost":0,"atk":0,"hp":3,"move":[],"attack":[],"deckCount":0,"token":true,"description":"移動・攻撃できないトークン。倒されると消滅し、墓地には入らない。"},"暗殺者":{"type":"creature","deckType":"transform","cost":4,"atk":6,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"attack":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"deckCount":0,"description":"隠密が変身した姿。"},"ファイヤーボルト":{"type":"spell","cost":2,"damage":2,"deckCount":2,"description":"クリーチャーまたは王を選び、2ダメージ。敵味方どちらも対象にできる。"},"圧殺":{"type":"spell","cost":7,"deckCount":0,"description":"相手の王を選ぶ。使用時、あなたがクリーチャーを10体以上コントロールしていたら相手の王のHPを0にする。条件を満たさない場合もコストとカードを消費し、何も起きない。"},"裏切り":{"type":"spell","cost":10,"deckCount":0,"description":"盤上の敵味方いずれかのクリーチャー1体を選び、コントローラーを相手側に変更する。所有者・位置・HP・付属エンチャントは変わらない。使用したターン、対象クリーチャーは移動も攻撃も出来ない。"},"転移魔法":{"type":"spell","cost":5,"deckCount":0,"description":"敵味方のクリーチャー1体を選び、戦場の空きマスへ転移させる。通常の移動権は消費しない。"},"解呪":{"type":"spell","cost":2,"deckCount":1,"description":"クリーチャー・王・マス・盤面全体の公開エンチャントまたは公開一時効果を1つ解除。公開対象がなければ非公開エンチャントをランダムに1枚解除。対象なしでもカードとコストを消費。"},"ホープ":{"type":"spell","cost":1,"draw":2,"deckCount":4,"description":"自分または相手の王を選ぶ。対象のプレイヤーはカードを2枚引く。"},"マナ":{"type":"spell","cost":2,"gainMana":1,"deckCount":3,"description":"自分の最大マナと未使用マナを1増やす（最大10）。"},"バーサーク":{"type":"enchant","cost":2,"duration":3,"deckCount":2,"visual":{"auraColor":"#b985ff"},"description":"敵味方のクリーチャー1体。3ターン基本攻撃力2倍、移動・攻撃は前方1マスのみ。複数枚の期間は独立し、効果は重複しない。"},"マイン":{"type":"enchant","cost":2,"duration":4,"deckCount":0,"description":"空きマスに設置。4ターン以内に駒が入ると5ダメージを与えて消滅。敵味方どちらにも発動。"},"防御結界":{"type":"enchant","cost":2,"duration":3,"deckCount":2,"description":"3ターンの間、対象のマスに配置されたクリーチャーが受けるダメージを1減らす。"},"封魔":{"type":"enchant","cost":4,"duration":1,"deckCount":0,"description":"相手の王に付ける。付いている王のコントローラーはスペルを使用できない。相手の次のターン終了時まで。"},"王の覚醒":{"type":"enchant","cost":2,"duration":3,"deckCount":0,"description":"あなたの王に付ける。3ターンの間、王は自陣1段目の任意のマスに攻撃力5で攻撃できる。1ターンに1回。敵軍クリーチャーのみ対象。このカードの能力は重複しない。"},"決戦":{"type":"enchant","cost":4,"duration":2,"deckCount":1,"description":"2ターンの間、敵味方すべてのクリーチャーの攻撃力+1。後から召喚された駒も対象。重ねがけ可能。"}},versions:{"protocol":"card-tactics-b4-match-v1","core":"71a0805a21fa33a70ed3d956fc9405d920edbfcc5990943c4a3023e1bf2c4bc9","cards":"2dc2577a2e5ab8c3f6e8a9c2542cf104159862d83fcfa36b905fa8c2410a50c8"}};})();
+},
+"./r3-command-pilot.cjs":function(module,exports,require){
+'use strict';
+// Small vertical slice: only moves with no entry effect. All other routes remain explicit legacy routes.
+const A=require('./legacy-adapter.cjs'),G=require('./game-core.cjs'),A3=require('./a3-rules.js'),A5=require('./a5-rules.js');
+function move(S,from,to,definitions,busy=false){
+ const piece=S.board[from];
+ if(!piece||busy||S.tokenPlacement||S.pendingEntryHtml||S.pendingChoice||S.pendingSummon||S.pendingEntry||S.effectQueue?.length||Object.keys(S.pendingCardTransfers||{}).length)return {handled:false};
+ if(A5.entryJobs(piece,to,A3.mines(S.enchantments||[],to,S.side),S.side).length)return {handled:false};
+ const core=A.fromLegacyState(S),revision=core.revision;
+ const result=G.execute(core,{matchId:core.server.matchId||'html-local',actionId:'html-move-'+revision,expectedRevision:revision,action:{type:'move',side:S.side,from,to}},S.side,definitions);
+ if(!result.ok)return {handled:true,piece:null,code:result.code};
+ if(result.events.length!==1||result.events[0].type!=='creature:moved')throw Error('UNEXPECTED_PILOT_MOVE_EFFECT');
+ const out=A.toLegacyState(result.state);
+ // Keep live piece identity so UI/CPU locals and attached target.ref remain valid.
+ Object.assign(piece,out.board[to]);S.board[from]=null;S.board[to]=piece;
+ for(const key of ['revision','coreBridge','cardIdentities','nextCardIdentity'])if(out[key]!==undefined)S[key]=out[key];
+ return {handled:true,piece,events:result.events};
+}
+module.exports={move,stateAdapter:A};
+
+},
+"./r5-command-bridge.cjs":function(module,exports,require){
+'use strict';
+const B=require('./r4-command-bridge.cjs'),I=require('./legacy-card-identities.js');
+function target(S,staged,t,cardId){
+ if(!t)return undefined;
+ if(cardId==='ホープ'&&t.kind==='king')return {kind:'player',side:t.side};
+ if(t.kind==='piece'||t.kind==='creature'){
+  const k=t.ref?S.board.indexOf(t.ref):t.k??t.cell??S.board.findIndex(p=>p&&String(p.sourceInstanceId)===String(t.instanceId));
+  return {kind:'creature',instanceId:staged.board[k]?.sourceInstanceId||'missing-target'};
+ }
+ return structuredClone(t);
+}
+function play(S,side,index,t,defs,extra={}){
+ const cardId=(side==='p'?S.hand:S.cHand)?.[index],d=defs[cardId];
+ if(!d||!['spell','enchant'].includes(d.type))return {ok:false,code:'INVALID_CARD'};
+ const staged=structuredClone(S);I.ensure(staged);
+ const r=B.execute(staged,{type:d.type==='spell'?'play_spell':'play_enchant',side,cardId,instanceId:staged.cardIdentities[side].hand[index].instanceId,target:target(S,staged,t,cardId),...extra},defs);
+ if(r.ok)B.commit(S,r.state,r.events);return r;
+}
+function activate(S,side,abilityId,from,t,defs){
+ const staged=structuredClone(S);I.ensure(staged);
+ const r=B.execute(staged,{type:'activate_ability',side,abilityId,sourceInstanceId:staged.board[from]?.sourceInstanceId,target:target(S,staged,t)},defs);
+ if(r.ok)B.commit(S,r.state,r.events);return r;
+}
+function choosePromotion(S,accept,defs){const q=S.pendingChoice;if(!q)return {ok:false,code:'NO_CHOICE'};return B.execute(S,{type:'choosePromotion',side:q.side,accept},defs);}
+module.exports={play,activate,choosePromotion};
+
+},
+"./resolution-exchange.cjs":function(module,exports,require){
+'use strict';
+// Integration boundary, not a disk save feature. Caller must supply the live runtime.
+const A=require('./legacy-adapter.cjs');
+function assertIdle(runtime){
+ if(!runtime||typeof runtime.resolving!=='boolean'||!Array.isArray(runtime.queue)||!Array.isArray(runtime.summonQueue))throw Error('RUNTIME_CONTEXT_REQUIRED');
+ if(runtime.resolving||runtime.queue.length||runtime.summonQueue.length)throw Error('RUNTIME_RESOLUTION_PENDING');
+}
+function assertSupported(server){if(server.effectQueue?.length||server.processingDepth||server.pendingTriggerCount||server.resolving)throw Error('UNSUPPORTED_EFFECT_QUEUE_RESUME');}
+function exportState(S,runtime){assertIdle(runtime);const core=A.fromLegacyState(S);assertSupported(core.server);return core;}
+function importState(core,runtime){assertIdle(runtime);assertSupported(core.server);return A.toLegacyState(core);}
+module.exports={exportState,importState};
+
+},
+"./surrender-bridge.cjs":function(module,exports,require){
+'use strict';
+// Internal UI adapter. Authoritative acceptance/order/outcome remain in game-core.
+const A=require('./legacy-adapter.cjs'),G=require('./game-core.cjs'),B=require('./r4-command-bridge.cjs');
+function validRuntime(r){return !!r&&typeof r.resolving==='boolean'&&Array.isArray(r.queue)&&Array.isArray(r.summonQueue);}
+function accept(S,side,actionId,definitions,runtime){
+ if(!validRuntime(runtime))return {ok:false,code:'RUNTIME_CONTEXT_REQUIRED'};
+ let core;try{core=A.fromLegacyState(S);}catch(e){return {ok:false,code:e.message};}
+ // Opaque HTML work is not serializable. Mark only this acceptance call as busy,
+ // then remove that adapter-owned marker; the real runtime guards boundary flush.
+ const busy=runtime.resolving||runtime.queue.length>0||runtime.summonQueue.length>0,previous=core.server.resolving;
+ if(busy)core.server.resolving=true;
+ const result=G.execute(core,{matchId:core.server.matchId||'html-local',expectedRevision:core.revision,actionId,action:{type:'surrender',side}},side,definitions);
+ if(!result.ok)return result;
+ if(busy){if(previous===undefined)delete result.state.server.resolving;else result.state.server.resolving=previous;}
+ B.commit(S,result.state,result.events);return result;
+}
+function flush(S,runtime){
+ if(!validRuntime(runtime))return {ok:false,code:'RUNTIME_CONTEXT_REQUIRED'};
+ if(runtime.resolving||runtime.queue.length||runtime.summonQueue.length)return {ok:false,code:'RUNTIME_RESOLUTION_PENDING'};
+ let core;try{core=A.fromLegacyState(S);}catch(e){return {ok:false,code:e.message};}
+ if(!core.server.pendingSurrenders?.length)return {ok:true,status:'idle',events:[]};
+ const result=G.finishBoundary(core,runtime);if(result.ok&&(result.events.length||result.status==='applied'))B.commit(S,result.state,result.events);return result;
+}
+module.exports={accept,flush};
+
+},
+"./target-query-view.cjs":function(module,exports,require){
+'use strict';
+// Lightweight read-only HTML view. Missing IDs use ephemeral coordinate labels;
+// this never calls identities.ensure, clones a deck, allocates IDs or advances RNG.
+const id=(p,k)=>p?.sourceInstanceId??'query-cell-'+k;
+function target(S,t,cardId){
+ if(!t)return undefined;
+ if(cardId==='ホープ'&&t.kind==='king')return {kind:'player',side:t.side};
+ if(t.kind==='piece'||t.kind==='creature'){
+  const k=t.ref?S.board.indexOf(t.ref):t.k??t.cell??S.board.findIndex(p=>p?.sourceInstanceId===t.instanceId);
+  return {kind:'creature',instanceId:k>=0&&S.board[k]?id(S.board[k],k):'missing-target'};
+ }
+ return {...t};
+}
+function view(S,actor){
+ const board=S.board.map((p,k)=>p?.sourceInstanceId?p:p?{...p,sourceInstanceId:id(p,k)}:null);
+ const players={p:{mana:S.manaBySide.p},c:{mana:S.manaBySide.c}};
+ const hand=(actor==='p'?S.hand:S.cHand)||[],saved=S.cardIdentities?.[actor]?.hand;
+ const cards=hand.map((c,i)=>({cardId:typeof c==='string'?c:c.cardId,instanceId:saved?.[i]?.cardId===(typeof c==='string'?c:c.cardId)?saved[i].instanceId:'query-hand-'+actor+'-'+i}));
+ return {abilityControls:S.abilityControls,modifiers:S.modifiers,board,players,private:{[actor]:{hand:cards}},activeSide:S.side,enchantments:(S.enchantments||[]).map(e=>({...e,target:target(S,e.target)})),temporaryEffects:(S.temporaryEffects||[]).map(e=>({...e,target:target(S,e.target)})),server:{gameOver:S.gameOver,kingAction:S.kingAction,pendingChoice:S.pendingChoice,pendingSummon:S.pendingSummon||S.tokenPlacement,pendingEntry:S.pendingEntry||S.pendingEntryHtml,effectQueue:S.effectQueue,pendingCardTransfers:S.pendingCardTransfers}};
+}
+function selection(S,side,index,extra={}){const value=(side==='p'?S.hand:S.cHand)?.[index],cardId=typeof value==='string'?value:value?.cardId,saved=S.cardIdentities?.[side]?.hand?.[index];return {cardId,instanceId:saved?.cardId===cardId?saved.instanceId:'query-hand-'+side+'-'+index,...extra};}
+function atCell(S,a,k){return a.to===k||a.target?.kind==='cell'&&a.target.k===k||a.target?.kind==='creature'&&S.board[k]&&a.target.instanceId===id(S.board[k],k);}
+function atKing(a,side){return ['king','player'].includes(a.target?.kind)&&a.target.side===side;}
+function same(a,b){return JSON.stringify(a)===JSON.stringify(b);}
+module.exports={id,target,view,selection,atCell,atKing,same};
+
+}};const cache={};function load(id){if(cache[id])return cache[id].exports;const m=cache[id]={exports:{}};modules[id](m,m.exports,load);return m.exports;}globalThis.B2Runtime={Core:load('./game-core.cjs'),random:load('./a3-rules.js').random,deckValidationFactory:load('./deck-validation.cjs').create,definitions:{"歩兵":{"type":"creature","cost":1,"atk":3,"hp":6,"move":[[-1,0]],"deckCount":2,"description":"能力なし。"},"銀級兵":{"type":"creature","cost":2,"atk":4,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[1,-1],[1,1]],"deckCount":3,"description":"能力なし。"},"金級兵":{"type":"creature","cost":3,"atk":5,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"deckCount":2,"description":"能力なし。"},"チャリオット":{"type":"creature","cost":5,"atk":6,"hp":6,"move":[[-1,0],[-2,0]],"attack":[[-1,-1],[-1,0],[-1,1]],"deckCount":1,"description":"移動：前方1〜2マス（途中の駒は飛び越えない）。"},"アーチャー":{"type":"creature","cost":3,"atk":4,"hp":3,"move":[[-1,0]],"attack":[[-2,0]],"deckCount":1,"description":"間の駒を越えて攻撃できる。"},"盗賊":{"type":"creature","cost":2,"atk":2,"hp":5,"move":[[-1,0]],"attack":[[-1,-1],[-1,0],[-1,1]],"deckCount":1,"abilities":["thief_attack_mana"],"description":"通常攻撃成立後、自分の最大マナと未使用マナをそれぞれ1増やす（それぞれ上限10）。"},"サラマンダー":{"type":"creature","cost":3,"atk":4,"hp":6,"move":[[-1,-1],[-1,0],[-1,1]],"attack":[[-1,0]],"deckCount":2,"abilities":["salamander_counter"],"description":"敵クリーチャーから攻撃された時、攻撃してきたクリーチャーに3ダメージを与える。"},"踊り子":{"type":"creature","cost":3,"atk":1,"hp":2,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[],"deckCount":2,"abilities":["dancer_aura"],"description":"このクリーチャーが戦場にいる間、他の味方クリーチャーの攻撃力+1。複数体の効果は重複する。"},"戦狼":{"type":"creature","cost":4,"atk":2,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["war_wolf_pack"],"description":"このクリーチャーの攻撃力は、戦場にいるほかの味方クリーチャー1体につき+1される。"},"ディアブロ":{"type":"creature","cost":6,"atk":6,"hp":9,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"deckCount":1,"abilities":["diablo_turn_start"],"description":"あなたのターン開始時に、あなたの王に2点のダメージを与える。"},"オルトロス":{"type":"creature","cost":4,"atk":2,"hp":7,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"attack":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"deckCount":2,"abilities":["orthros_double_attack","orthros_self_damage"],"description":"このクリーチャーは1ターンに2回攻撃できる。攻撃時、あなたの王に1点のダメージ。"},"隠密":{"jump":true,"movement":{"jump":true},"type":"creature","cost":3,"atk":3,"hp":5,"move":[[-2,-1],[-2,1]],"attack":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"deckCount":2,"abilities":["promote_assassin"],"description":"敵陣最奥列に到達時、暗殺者に変身できる。"},"ソーサラー":{"type":"creature","cost":4,"atk":2,"hp":2,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["sorcerer_bolt"],"description":"攻撃権とマナ2を支払い、盤上の任意のクリーチャー/王に2点のダメージを与える。"},"守備兵":{"type":"creature","cost":4,"atk":3,"hp":6,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["guard_barricade"],"description":"召喚時、左右の空きマスのどちらかにバリケードを1体生成する。両方埋まっている場合は生成しない。"},"バリケード":{"type":"creature","deckType":"token","cost":0,"atk":0,"hp":3,"move":[],"attack":[],"deckCount":0,"token":true,"description":"移動・攻撃できないトークン。倒されると消滅し、墓地には入らない。"},"暗殺者":{"type":"creature","deckType":"transform","cost":4,"atk":6,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"attack":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"deckCount":0,"description":"隠密が変身した姿。"},"ファイヤーボルト":{"type":"spell","cost":2,"damage":2,"deckCount":2,"description":"クリーチャーまたは王を選び、2ダメージ。敵味方どちらも対象にできる。"},"圧殺":{"type":"spell","cost":7,"deckCount":0,"description":"相手の王を選ぶ。使用時、あなたがクリーチャーを10体以上コントロールしていたら相手の王のHPを0にする。条件を満たさない場合もコストとカードを消費し、何も起きない。"},"裏切り":{"type":"spell","cost":10,"deckCount":0,"description":"盤上の敵味方いずれかのクリーチャー1体を選び、コントローラーを相手側に変更する。所有者・位置・HP・付属エンチャントは変わらない。使用したターン、対象クリーチャーは移動も攻撃も出来ない。"},"転移魔法":{"type":"spell","cost":5,"deckCount":0,"description":"敵味方のクリーチャー1体を選び、戦場の空きマスへ転移させる。通常の移動権は消費しない。"},"解呪":{"type":"spell","cost":2,"deckCount":1,"description":"クリーチャー・王・マス・盤面全体の公開エンチャントまたは公開一時効果を1つ解除。公開対象がなければ非公開エンチャントをランダムに1枚解除。対象なしでもカードとコストを消費。"},"ホープ":{"type":"spell","cost":1,"draw":2,"deckCount":4,"description":"自分または相手の王を選ぶ。対象のプレイヤーはカードを2枚引く。"},"マナ":{"type":"spell","cost":2,"gainMana":1,"deckCount":3,"description":"自分の最大マナと未使用マナを1増やす（最大10）。"},"バーサーク":{"type":"enchant","cost":3,"duration":3,"deckCount":2,"visual":{"auraColor":"#b985ff"},"description":"敵味方のクリーチャー1体。3ターン基本攻撃力を1.5倍（端数切り上げ）にし、移動・攻撃は前方1マスのみ。複数枚の期間は独立し、効果は重複しない。"},"マイン":{"type":"enchant","cost":2,"duration":4,"deckCount":0,"description":"空きマスに設置。4ターン以内に駒が入ると5ダメージを与えて消滅。敵味方どちらにも発動。"},"防御結界":{"type":"enchant","cost":2,"duration":3,"deckCount":2,"description":"3ターンの間、対象のマスに配置されたクリーチャーが受けるダメージを1減らす。"},"封魔":{"type":"enchant","cost":4,"duration":1,"deckCount":0,"description":"相手の王に付ける。付いている王のコントローラーはスペルを使用できない。相手の次のターン終了時まで。"},"王の覚醒":{"type":"enchant","cost":2,"duration":3,"deckCount":0,"description":"あなたの王に付ける。3ターンの間、王は自陣1段目の任意のマスに攻撃力5で攻撃できる。1ターンに1回。敵軍クリーチャーのみ対象。このカードの能力は重複しない。"},"決戦":{"type":"enchant","cost":4,"duration":2,"deckCount":1,"description":"2ターンの間、敵味方すべてのクリーチャーの攻撃力+1。後から召喚された駒も対象。重ねがけ可能。"},"突風":{"type":"spell","deckType":"normal","cost":2,"deckCount":0,"description":"クリーチャーを1体選び、あなたから見て敵陣方向へ1マス動かす。敵味方どちらも対象にできる。移動権は消費しない。移動先が盤外または占有済みの対象は選べない。"},"竜巻":{"type":"spell","deckType":"normal","cost":3,"deckCount":0,"description":"対象のクリーチャーに1点のダメージ。その後、対象クリーチャーを上下左右いずれかの方向に1マス動かす。上下左右に空きマスがない場合、位置は変わらず効果は終了する。敵味方どちらも対象にできる。移動権は消費しない。"}},versions:{"protocol":"card-tactics-b4-match-v1","core":"c84175db9e72a872b82578035ae9fe83c2eee2586dec7ea79a32213f70a5ea21","cards":"e38b7a62a6e10b5d2014ab91b6f77169ea2f5fa9ed2228c42bb8db111bfe93f5"}};})();

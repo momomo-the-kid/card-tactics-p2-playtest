@@ -1019,7 +1019,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion">ver phase3_strong_cpu_v1.html</div>
+  <div class="titleVersion" data-build="p3-wind-spells-version-v19">ver p3-wind-spells-version-v19</div>
   <div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -1585,7 +1585,7 @@ function bindHandScroll(){
 const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const infoLine=x=>`<div class="infoLine">${escape(x)}</div>`;
  function attackStatus(piece,limit){const remaining=Math.max(0,limit-(piece.attacksUsed??(piece.a?limit:0)));return limit>1?(remaining?`攻撃 残${remaining}`:'攻撃 済'):(remaining?'攻撃 可':'攻撃 済');}
- function creatureInfoHTML({piece:p,viewer,definition:d,power:current,display,range,abilityHTML='',description='',berserkDescription='基本攻撃力2倍、移動・攻撃は前方1マスのみ。',cellEffects=[]}){
+ function creatureInfoHTML({piece:p,viewer,definition:d,power:current,display,range,abilityHTML='',description='',berserkDescription='基本攻撃力1.5倍（端数切り上げ）、移動・攻撃は前方1マスのみ。',cellEffects=[]}){
   return `<div class="infoName creatureInfoName">${escape(p.type)}</div><div class="creatureBasics">`+infoLine(`${p.side===viewer?'自軍':'敵軍'} / コスト ${d.cost}`)+infoLine(`HP ${p.hp} / ${d.hp}　ATK ${current.total}（基本 ${current.base}${current.dancer?` / 踊り子 +${current.dancer}`:''}${current.pack?` / 味方 +${current.pack}`:''}）`)+infoLine(`${display.move.label} / ${display.attack.label}`)+range+'</div>'+abilityHTML+(d.abilities?.length?`<div class="infoEffect">${escape(description)}</div>`:'')+(p.berserk>0?`<div class="infoEffect">バーサーク：残り${p.berserk}ターン<br>${escape(berserkDescription)}</div>`:'')+(current.battle?`<div class="infoEffect">決戦：${current.battleTurns.map(t=>t+'T').join('・')} / ATK +${current.battle}</div>`:'')+cellEffects.map(e=>`<div class="infoEffect">このマス：${escape(e.cardId)} 残り${e.remainingTurns}ターン<br>${escape(e.description||'')}</div>`).join('');
  }
  function graveyardHTML(cards,label){const counts=new Map();for(const c of cards)counts.set(c.cardId,(counts.get(c.cardId)||0)+1);return `<div class="infoName">${escape(label)}の墓地 🪦${cards.length}</div>`+(cards.length?[...counts].map(([id,n])=>infoLine(`${id} ×${n}`)).join(''):infoLine('墓地は空です。'))+infoLine('カードは元の持ち主の墓地に入ります。');}
@@ -1596,115 +1596,112 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 globalThis.NormalGameUI=Object.freeze({setNotice,renderSelectionStatus,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();
 </script><script>
-(function(){const modules={"./effective-rules.js":function(module,exports,require){
-(function(root,f){if(typeof module==='object'&&module.exports)module.exports=f();else root.EffectiveRules=f();})(globalThis,function(){
+(function(){const modules={"./game-core.cjs":function(module,exports,require){
 'use strict';
-const identity=p=>p?.sourceInstanceId??p?.instanceId;
-const KINDS={dancer_aura:'continuous',war_wolf_pack:'continuous',thief_attack_mana:'triggered',orthros_self_damage:'triggered',salamander_counter:'triggered',diablo_turn_start:'triggered',sorcerer_bolt:'activated',promote_assassin:'triggered',guard_barricade:'triggered',orthros_double_attack:'continuous'};
-function enabled(state,subject,id,kind,sourceId=identity(subject)){
- const controls=[...(state?.abilityControls||[]),...(subject?.abilityControls||[])];
- return !controls.some(c=>c&&c.disabled===true&&c.active!==false&&(c.targetId==null||String(c.targetId)===String(identity(subject)))&&(c.abilityId==null||c.abilityId===id)&&(c.kind==null||c.kind===kind)&&(c.sourceId==null||String(c.sourceId)===String(sourceId))&&(c.targetId!=null||c.abilityId!=null||c.kind!=null||c.sourceId!=null));
+/** Command boundary. Local one-action Undo is provided by a4-session.cjs; unsupported actions remain explicit. */
+const {createState,playerSnapshot}=require('./game-state.cjs');
+const {applyAction}=require('./action-bridge.cjs');
+const combat=require('./combat-engine.cjs');
+const clone=x=>JSON.parse(JSON.stringify(x));
+const VERSION='a5.2';
+function createGame(config){
+ const input={...config},events=[];
+ if(config.decks){input.board||=Array(25).fill(null);input.players||=Object.fromEntries(['p','c'].map(side=>[side,{kingHp:20,maxMana:1,mana:1,graveyard:[]}]));input.privateData=Object.fromEntries(['p','c'].map(side=>[side,{hand:[],deck:config.decks[side]}]));}
+ const s=createState(input);require('./match-rules.cjs').attach(s,config.rules??s.server.rules);
+ if(config.lossConditions){if(!config.lossRegistryId)throw Error('LOSS_REGISTRY_ID_REQUIRED');require('./outcome-registry.cjs').register(config.lossRegistryId,config.lossConditions);s.server.lossRegistry=config.lossRegistryId;}
+ s.server.coreVersion=VERSION;s.server.processedActionIds=[];
+ if(config.decks)require('./match-rules.cjs').initialize(s,s.server.rules,events);return s;
 }
-function abilities(piece,defs,state){return (defs[piece?.type]?.abilities||[]).filter(id=>enabled(state,piece,id,defs[piece.type].abilityKinds?.[id]||KINDS[id]||((defs[piece.type].triggers||[]).some(t=>t.id===id)?'triggered':'continuous')));}
-function berserkActive(state,p){const related=(state?.enchantments||[]).filter(e=>e.cardId==='バーサーク'&&e.target?.kind==='creature'&&(e.target.ref===p||identity(p)!=null&&String(e.target.instanceId??identity(e.target.ref))===String(identity(p))));return related.length?related.some(e=>(!e.zone||e.zone==='attached')&&(e.remainingTurns==null||Number.isInteger(e.remainingTurns)&&e.remainingTurns>0)&&enabled(state,p,'berserk_effect','modifier',e.instanceId)):p.berserk>0&&enabled(state,p,'berserk_effect','modifier');}
-function numeric(base,multiplier,add,modifiers=[]){
- const live=modifiers.filter(m=>m.active!==false),rep=live.filter(m=>m.mode==='replace'),mul=live.filter(m=>m.mode==='multiply');
- if(rep.length>1||rep.length&&mul.length)throw Error('MODIFIER_ORDER_REQUIRES_DECISION');
- for(const m of live)if(!['replace','multiply','add','bounds'].includes(m.mode)||m.mode!=='bounds'&&!Number.isFinite(m.value)||m.mode==='bounds'&&(m.min!=null&&!Number.isFinite(m.min)||m.max!=null&&!Number.isFinite(m.max)||m.min!=null&&m.max!=null&&m.min>m.max))throw Error('INVALID_MODIFIER');
- let value=rep.length?rep[0].value:base*multiplier*mul.reduce((n,m)=>n*m.value,1);
- value+=add+live.filter(m=>m.mode==='add').reduce((n,m)=>n+m.value,0);
- const bounds=live.filter(m=>m.mode==='bounds'),min=Math.max(-Infinity,...bounds.map(m=>m.min??-Infinity)),max=Math.min(Infinity,...bounds.map(m=>m.max??Infinity));if(min>max)throw Error('MODIFIER_BOUNDS_REQUIRES_DECISION');
- return Math.min(max,Math.max(min,value));
+function execute(state,request,actor,definitions){
+ if(typeof request?.actionId!=='string'||!request.actionId||request.actionId.length>100)return {ok:false,code:'INVALID_ACTION_ID'};
+ if(!['p','c'].includes(actor)||request.action?.side!==actor)return {ok:false,code:'UNAUTHORIZED_SIDE'};
+ if(state.server.matchId&&state.server.matchId!==request.matchId)return {ok:false,code:'WRONG_MATCH'};
+ if(state.server.processedActionIds?.includes(actor+':'+request.actionId))return {ok:false,code:'DUPLICATE_ACTION'};
+ const shape=require('./core-contract.cjs').validateRequest(request,actor,state.revision);if(!shape.ok)return shape;
+ try{require('./game-state.cjs').assertState(state);}catch{return {ok:false,code:'INVALID_STATE'};}
+ if(state.server.gameOver)return {ok:false,code:'GAME_OVER'};
+ if(request.action.type!=='surrender'&&state.server.pendingSurrenders?.length&&!state.server.processingDepth&&!state.server.pendingTriggerCount&&!state.server.resolving&&!state.server.effectQueue?.length&&!state.server.pendingChoice&&!state.server.pendingEntry&&!state.server.pendingSummon)return {ok:false,code:'PENDING_SURRENDER_BOUNDARY_REQUIRED'};
+ let result;
+ if(request.action.type==='surrender'){
+   const next=clone(state),order=(next.server.surrenderSequence||0)+1;
+  const receipt={side:actor,actionId:request.actionId,order,acceptedRevision:state.revision+1};
+  next.server.surrenderSequence=order;next.server.pendingSurrenders||=[];next.server.pendingSurrenders.push(receipt);
+  result={ok:true,status:'deferred',receipt:clone(receipt),state:next,events:[{type:'surrender:accepted',...receipt}]};
+  next.revision++;
+ }else {try{result=applyAction(state,request,actor,definitions);}catch(e){return {ok:false,code:e.message};}if(!result.ok)return result;}
+ result.state.server.processedActionIds||=[];result.state.server.processedActionIds.push(actor+':'+request.actionId);
+ result.state.server.coreVersion=VERSION;
+ const boundary=require('./resolution-boundary.cjs').settleBoundary(result.state,result.events);
+ if(request.action.type==='surrender'){const own=e=>e.side===actor&&e.actionId===request.actionId;result.status=result.events.some(e=>e.type==='surrender:applied'&&own(e))?'applied':result.events.some(e=>e.type==='surrender:unapplied'&&own(e))?'unapplied':'deferred';}result.gameOver=!!result.state.server.gameOver;return result;
 }
-return {abilities,enabled,numeric,berserkActive,KINDS};
-});
-
-},
-"./r3-command-pilot.cjs":function(module,exports,require){
-'use strict';
-// Small vertical slice: only moves with no entry effect. All other routes remain explicit legacy routes.
-const A=require('./legacy-adapter.cjs'),G=require('./game-core.cjs'),A3=require('./a3-rules.js'),A5=require('./a5-rules.js');
-function move(S,from,to,definitions,busy=false){
- const piece=S.board[from];
- if(!piece||busy||S.tokenPlacement||S.pendingEntryHtml||S.pendingChoice||S.pendingSummon||S.pendingEntry||S.effectQueue?.length||Object.keys(S.pendingCardTransfers||{}).length)return {handled:false};
- if(A5.entryJobs(piece,to,A3.mines(S.enchantments||[],to,S.side),S.side).length)return {handled:false};
- const core=A.fromLegacyState(S),revision=core.revision;
- const result=G.execute(core,{matchId:core.server.matchId||'html-local',actionId:'html-move-'+revision,expectedRevision:revision,action:{type:'move',side:S.side,from,to}},S.side,definitions);
- if(!result.ok)return {handled:true,piece:null,code:result.code};
- if(result.events.length!==1||result.events[0].type!=='creature:moved')throw Error('UNEXPECTED_PILOT_MOVE_EFFECT');
- const out=A.toLegacyState(result.state);
- // Keep live piece identity so UI/CPU locals and attached target.ref remain valid.
- Object.assign(piece,out.board[to]);S.board[from]=null;S.board[to]=piece;
- for(const key of ['revision','coreBridge','cardIdentities','nextCardIdentity'])if(out[key]!==undefined)S[key]=out[key];
- return {handled:true,piece,events:result.events};
+function finishBoundary(state,runtime){
+ if(!runtime||typeof runtime.resolving!=='boolean'||!Array.isArray(runtime.queue)||!Array.isArray(runtime.summonQueue))return {ok:false,code:'RUNTIME_CONTEXT_REQUIRED'};
+ if(runtime.resolving||runtime.queue.length||runtime.summonQueue.length)return {ok:false,code:'RUNTIME_RESOLUTION_PENDING'};
+ try{require('./game-state.cjs').assertState(state);}catch{return {ok:false,code:'INVALID_STATE'};}
+ const next=clone(state),events=[],before=next.revision;next.revision++;const r=require('./resolution-boundary.cjs').settleBoundary(next,events);if(r.status!=='applied')next.revision=before;
+ return {ok:true,status:r.status,state:next,events};
 }
-module.exports={move,stateAdapter:A};
-
-},
-"./legacy-adapter.cjs":function(module,exports,require){
-'use strict';
-/** HTML deck top=last; Core deck top=first. Reference targets become stable IDs. */
-const {createState}=require('./game-state.cjs');
-const identities=require('./legacy-card-identities.js');
-const copy=x=>structuredClone(x);
-function fromLegacyState(S){
- if(!S||!Array.isArray(S.board)||S.board.length!==25)throw new TypeError('Invalid legacy board');
- S=copy(S);
- if(Object.keys(S.pendingCardTransfers||{}).length)throw Error('CARD_TRANSFER_PENDING');
- identities.ensure(S);identities.validate(S);
- const board=copy(S.board),players={},privateData={},metadata=S.coreBridge;
- function cards(list,side,zone){
-  if(!Array.isArray(list))throw new TypeError('Missing legacy cards');
-  const saved=zone==='graveyard'?null:S.cardIdentities[side][zone];
-  if(saved&&(saved.length!==list.length||saved.some((c,i)=>(typeof c==='string'?c:c.cardId)!==(typeof list[i]==='string'?list[i]:list[i].cardId))))throw new Error('STALE_BRIDGE_CARD_IDENTITIES');
-  return list.map((c,i)=>saved?copy(saved[i]):typeof c==='string'?(zone==='hand'?{instanceId:side+'-initial-'+i,cardId:c}:c):({cardId:c.cardId,instanceId:String(c.instanceId)}));
+function initializeLegacyMatch(S,rules){const core=require('./legacy-adapter.cjs').fromLegacyState(S),events=[];require('./match-rules.cjs').initialize(core,rules,events);core.server.coreVersion=VERSION;core.server.processedActionIds=[];require('./r4-command-bridge.cjs').commit(S,core,events);return {ok:true,state:core,events};}
+function getPlayerView(state,viewer){
+ const view=playerSnapshot(state,viewer);
+ return {...view,coreVersion:VERSION,gameOver:!!state.server.gameOver,winner:state.server.winner??null};
+}
+// Fail closed for unknown events. Internal snapshots, target coordinates and RNG never copied wholesale.
+function projectEvents(events,viewer){
+ if(!['p','c'].includes(viewer))throw new TypeError('Invalid viewer');
+ const out=[];
+ for(const e of events){
+  if(e.type==='card:played'){out.push({type:e.type,side:e.side,cardId:e.cardId});continue;}
+  if(e.type==='dispel:resolved'){out.push({type:e.type,side:e.side,removed:e.removed});continue;}
+  if(e.type==='card:drawn'){out.push({type:e.type,side:e.side,...(e.side===viewer?{instanceId:e.instanceId}:{})});continue;}
+  if(['king:attack-targeted','king:ability-used'].includes(e.type)){out.push({type:e.type,side:e.side,abilityId:e.abilityId,cell:e.cell});continue;}
+  if(e.type==='creature:ability-used'){out.push({type:e.type,side:e.side,abilityId:e.abilityId,from:e.from});continue;}
+  if(e.type==='game:over'){out.push({type:e.type,winner:e.winner,reason:e.reason});continue;}
+  if(e.type==='turn:started'||e.type==='turn:ended'){out.push({type:e.type,side:e.side});continue;}
+  if(e.type==='king:hp-set'){out.push({type:e.type,side:e.side,before:e.before,after:e.after,reason:e.reason});continue;}
+  if(e.type==='mana:gained'){out.push({type:e.type,side:e.side,before:{maxMana:e.before.maxMana,mana:e.before.mana},after:{maxMana:e.after.maxMana,mana:e.after.mana}});continue;}
+  if(e.type==='pressure:resolved'){out.push({type:e.type,side:e.side,countAtCommit:e.countAtCommit,success:e.success,target:e.target});continue;}
+  if(e.type==='king:damaged'){out.push({type:e.type,side:e.side,amount:e.amount,hp:e.hp});continue;}
+  if(e.type==='creature:moved'){out.push({type:e.type,from:e.from,to:e.to});continue;}
+  if(['creature:attacked','creature:attack-resolved'].includes(e.type)){out.push({type:e.type,from:e.from,to:e.to,targetKind:e.targetKind,amount:e.amount});continue;}
  }
- for(const side of ['p','c']){
-  players[side]={kingHp:S[side+'Hp'],mana:S.manaBySide?.[side],maxMana:S.maxManaBySide?.[side],graveyard:cards(S.graveyards?.[side]||[],side,'graveyard')};
-  privateData[side]={hand:cards(S[side==='p'?'hand':'cHand'],side,'hand'),deck:cards(S[side==='p'?'deck':'cDeck'],side,'deck').reverse()};
- }
- function target(t){if(t?.kind!=='creature')return copy(t);const index=t.ref?S.board.indexOf(t.ref):S.board.findIndex(p=>p&&String(p.sourceInstanceId)===String(t.instanceId));if(index<0)throw new Error('UNRESOLVED_CREATURE_REFERENCE');board[index].sourceInstanceId??='adapter-board-'+index;return {kind:'creature',instanceId:String(board[index].sourceInstanceId)};}
- const enchantments=(S.enchantments||[]).map(e=>({...copy(e),instanceId:String(e.instanceId),target:target(e.target)}));
- const serverData={...copy(metadata?.server||{}),legacyAdapter:true,gameOver:!!S.gameOver};if(S.rules!==undefined)serverData.rules=require('./match-rules.cjs').normalize(S.rules);if(serverData.rules!==undefined)serverData.rules=require('./match-rules.cjs').normalize(serverData.rules);
- // Top-level HTML resolution fields are authoritative; cleared work must not revive.
- for(const key of ['pendingChoice','pendingSummon','pendingEntry','effectQueue'])delete serverData[key];
- for(const viewer of ['p','c'])if(serverData.revealedTo?.[viewer]){const hand=new Set(privateData[viewer==='p'?'c':'p'].hand.map(c=>c.instanceId));serverData.revealedTo[viewer]=serverData.revealedTo[viewer].filter(id=>hand.has(id));}
- for(const key of ['winner','draw','rngState','manaBonus','kingAction','eventHistory','pendingChoice','pendingSummon','pendingEntry','effectQueue','nextCreatureId','nextCardIdentity'])if(S[key]!==undefined)serverData[key]=copy(S[key]);
- const temporaryEffects=S.temporaryEffects?.map(e=>({...copy(e),...(e.target?{target:target(e.target)}:{})}));
- if(S.tokenPlacement){
-  const t=S.tokenPlacement;if(!t.side||!Number.isInteger(t.cell)||!t.sourceInstanceId)throw new Error('UNSUPPORTED_LEGACY_PENDING_CHOICE');
-  serverData.pendingSummon={side:t.side,cell:t.cell,sourceInstanceId:t.sourceInstanceId,choices:copy(t.choices)};
- }
- if(S.pendingEntryHtml){const q=S.pendingEntryHtml;serverData.pendingEntry={cell:q.k,instanceId:q.p.sourceInstanceId,jobs:copy(q.jobs).map(j=>({...j,...(j.instanceId!==undefined?{instanceId:String(j.instanceId)}:{})}))};}
- const result=createState({board,players,privateData,activeSide:S.side,turn:S.turn||1,revision:S.revision??metadata?.revision??0,enchantments,serverData});
- for(const key of ['abilityControls','modifiers'])if(S[key]!==undefined)result[key]=copy(S[key]);
- if(temporaryEffects)result.temporaryEffects=temporaryEffects;
- return result;
+ return clone(out);
 }
-function toLegacyState(core){
- require('./game-state.cjs').assertState(core);core=copy(core);require('./card-zones.cjs').ensureInstances(core);
- const s={board:copy(core.board),side:core.activeSide,turn:core.turn,revision:core.revision,gameOver:!!core.server.gameOver,graveyards:{},manaBySide:{},maxManaBySide:{},enchantments:[],mines:Array(25).fill(null),battles:[],card:null,piece:null,nextCardInstanceId:1,coreBridge:{revision:core.revision,server:copy(core.server),zones:{}}};
- s.cardIdentities={p:{},c:{}};
- for(const side of ['p','c']){
-  const p=core.players[side],priv=core.private[side],hand=copy(priv.hand),deck=copy(priv.deck).reverse();
-  s[side+'Hp']=p.kingHp;s.manaBySide[side]=p.mana;s.maxManaBySide[side]=p.maxMana;s.graveyards[side]=copy(p.graveyard);
-  s[side==='p'?'hand':'cHand']=hand.map(c=>typeof c==='string'?c:c.cardId);s[side==='p'?'deck':'cDeck']=deck.map(c=>typeof c==='string'?c:c.cardId);
-  s.coreBridge.zones[side]={hand,deck,graveyard:copy(p.graveyard)};
-  s.cardIdentities[side]={hand:copy(hand),deck:copy(deck)};
- }
- function target(t){if(t?.kind!=='creature')return copy(t);const ref=s.board.find(p=>p&&String(p.sourceInstanceId)===String(t.instanceId));if(!ref)throw new Error('UNRESOLVED_CREATURE_REFERENCE');return {kind:'creature',ref};}
- s.enchantments=core.enchantments.map(e=>({...copy(e),target:target(e.target)}));
- if(core.temporaryEffects)s.temporaryEffects=core.temporaryEffects.map(e=>({...copy(e),...(e.target?{target:target(e.target)}:{})}));
- for(const e of s.enchantments){if(e.target?.kind==='cell'&&e.cardId==='マイン'){const k=e.target.k;s.mines[k]||={side:e.owner,turns:e.remainingTurns,card:e,cards:[]};s.mines[k].cards.push(e);s.mines[k].turns=Math.max(s.mines[k].turns,e.remainingTurns);}if(e.cardId==='決戦')s.battles.push({turns:e.remainingTurns,card:e});}
- for(const key of ['winner','draw','rngState','manaBonus','kingAction','eventHistory','pendingChoice','pendingSummon','pendingEntry','effectQueue','nextCreatureId','nextCardIdentity'])if(core.server[key]!==undefined)s[key]=copy(core.server[key]);
- if(core.server.pendingSummon)s.tokenPlacement=copy(core.server.pendingSummon);
- if(core.server.pendingEntry){const q=core.server.pendingEntry;s.pendingEntryHtml={k:q.cell,p:s.board.find(p=>p&&String(p.sourceInstanceId)===String(q.instanceId))||{sourceInstanceId:q.instanceId},jobs:copy(q.jobs)};}
- if(core.server.rules!==undefined)s.rules=require('./match-rules.cjs').normalize(core.server.rules);for(const key of ['abilityControls','modifiers'])if(core[key]!==undefined)s[key]=copy(core[key]);
- s.nextCardInstanceId=1+Math.max(0,...[...s.enchantments,...s.graveyards.p,...s.graveyards.c].map(e=>Number(e.instanceId)).filter(Number.isSafeInteger));
- s.kingAction||={p:{},c:{}};s.manaBonus||={p:0,c:0};
- return s;
+const emptyCombat=()=>({moves:[],targets:[],attackRange:[],king:false});
+function combatBlocked(state,actor,runtime){
+ const s=state.server||{};
+ return !['p','c'].includes(actor)||actor!==state.activeSide||s.gameOver||s.pendingChoice||s.pendingSummon||s.pendingEntry||s.effectQueue?.length||Object.keys(s.pendingCardTransfers||{}).length||runtime?.resolving||runtime?.queue?.length||runtime?.summonQueue?.length;
 }
-module.exports={fromLegacyState,toLegacyState};
+function combatInputAllowed(state,actor,runtime){return !combatBlocked(state,actor,runtime);}
+// Preview ignores turn/runtime locks; it is never an executable command list.
+function previewCombat(state,from,definitions){
+ return {moves:combat.squares(state,from,definitions,'move'),targets:combat.squares(state,from,definitions,'attack'),attackRange:combat.attackRange(state,from,definitions),king:combat.kingReachable(state,from,definitions)};
+}
+function queryCombat(state,from,actor,definitions,runtime){
+ if(combatBlocked(state,actor,runtime)||state.board[from]?.side!==actor)return emptyCombat();
+ return previewCombat(state,from,definitions);
+}
+// Geometric post-move forecast only: entry effects/promotion are not simulated.
+// Revalidate the actual command after the real move. Never mutate the live board.
+function planCombat(state,from,to,actor,definitions,runtime){
+ if(!queryCombat(state,from,actor,definitions,runtime).moves.includes(to))return emptyCombat();
+ const board=state.board.slice();board[to]={...board[from],m:true};board[from]=null;
+ return previewCombat({...state,board},to,definitions);
+}
+function combatPattern(piece,definitions,kind='move',state){return piece?combat.pattern(piece,definitions,kind,state).map(v=>v.slice()):[];}
+function combatRights(piece,definitions,state){return combat.rights(piece,definitions,state);}
+function combatPathClear(state,from,dr,dc,piece,definitions){return combat.pathClear(state,from,dr,dc,piece,definitions);}
+function legalCombatActions(state,actor,definitions,runtime){
+ if(combatBlocked(state,actor,runtime))return [];
+ const out=[];state.board.forEach((p,from)=>{if(!p||p.side!==actor)return;
+  for(const to of combat.squares(state,from,definitions,'move'))out.push({type:'move',side:actor,from,to});
+  for(const to of combat.squares(state,from,definitions,'attack'))out.push({type:'attack_creature',side:actor,from,to});
+  if(combat.kingReachable(state,from,definitions))out.push({type:'attack_king',side:actor,from});
+ });return out;
+}
+const targets=require("./target-queries.cjs");
+const powerQuery=require('./power-query.cjs');
+module.exports={initializeLegacyMatch,normalizeRules:require('./match-rules.cjs').normalize,attackLimit:combat.attackLimit,finishBoundary,effectiveAbilities:require('./effective-rules.js').abilities,createGame,queryPower:powerQuery.query,powerForPiece:powerQuery.forPiece,spellsBlocked:targets.sealed,queryCard:targets.queryCard,queryEffectChoices:require('./wind-spells.cjs').choices,queryAbility:targets.queryAbility,VERSION,execute,getPlayerView,projectEvents,legalCombatActions,queryCombat,previewCombat,planCombat,combatPattern,combatRights,combatPathClear,combatInputAllowed};
 
 },
 "./game-state.cjs":function(module,exports,require){
@@ -1752,7 +1749,7 @@ module.exports={assertState,createState,publicSnapshot,playerSnapshot,serverSnap
 /** First server-facing boundary: validates transport/action shape only.
  * This is NOT yet an authoritative rules engine. No UI, DOM or globals. */
 const SIDES = Object.freeze(['p','c']);
-const ACTION_TYPES = Object.freeze(['summon','move','attack_creature','attack_king','play_spell','play_enchant','end_turn','chooseTokenCell','choosePromotion','activate_ability','surrender']);
+const ACTION_TYPES = Object.freeze(['summon','move','attack_creature','attack_king','play_spell','play_enchant','end_turn','chooseTokenCell','choosePromotion','chooseEffectCell','activate_ability','surrender']);
 const CELL_MAX=24;
 const isCell=n=>Number.isInteger(n)&&n>=0&&n<=CELL_MAX;
 const isSide=s=>SIDES.includes(s);
@@ -1767,7 +1764,7 @@ function validateAction(action){
  case 'move':case 'attack_creature':valid=isCell(action.from)&&isCell(action.to);break;
  case 'attack_king':valid=isCell(action.from);break;
  case 'play_spell':case 'play_enchant':valid=isCard(action.cardId);break;
- case 'chooseTokenCell':valid=isCell(action.to);break;
+ case 'chooseEffectCell':case 'chooseTokenCell':valid=isCell(action.to);break;
  case 'choosePromotion':valid=typeof action.accept==='boolean';break;
  case 'end_turn':case 'surrender':valid=true;break;
  case 'activate_ability':valid=['sorcerer_bolt','awaken_attack'].includes(action.abilityId);break;
@@ -2004,6 +2001,30 @@ function attack(port,from,to){
 // Explicit group boundary: apply all simultaneous changes, then determine draw/winner once.
 function settleLosses(losses){const sides=[...new Set(losses)];return sides.length===2?{gameOver:true,winner:null,draw:true}:sides.length?{gameOver:true,winner:other(sides[0]),draw:false}:{gameOver:false};}
 return {sortTriggers,changeController,transform,blocked,restrict,expireRestrictions,collect,resolve,attack,settleLosses};
+});
+
+},
+"./effective-rules.js":function(module,exports,require){
+(function(root,f){if(typeof module==='object'&&module.exports)module.exports=f();else root.EffectiveRules=f();})(globalThis,function(){
+'use strict';
+const identity=p=>p?.sourceInstanceId??p?.instanceId;
+const KINDS={dancer_aura:'continuous',war_wolf_pack:'continuous',thief_attack_mana:'triggered',orthros_self_damage:'triggered',salamander_counter:'triggered',diablo_turn_start:'triggered',sorcerer_bolt:'activated',promote_assassin:'triggered',guard_barricade:'triggered',orthros_double_attack:'continuous'};
+function enabled(state,subject,id,kind,sourceId=identity(subject)){
+ const controls=[...(state?.abilityControls||[]),...(subject?.abilityControls||[])];
+ return !controls.some(c=>c&&c.disabled===true&&c.active!==false&&(c.targetId==null||String(c.targetId)===String(identity(subject)))&&(c.abilityId==null||c.abilityId===id)&&(c.kind==null||c.kind===kind)&&(c.sourceId==null||String(c.sourceId)===String(sourceId))&&(c.targetId!=null||c.abilityId!=null||c.kind!=null||c.sourceId!=null));
+}
+function abilities(piece,defs,state){return (defs[piece?.type]?.abilities||[]).filter(id=>enabled(state,piece,id,defs[piece.type].abilityKinds?.[id]||KINDS[id]||((defs[piece.type].triggers||[]).some(t=>t.id===id)?'triggered':'continuous')));}
+function berserkActive(state,p){const related=(state?.enchantments||[]).filter(e=>e.cardId==='バーサーク'&&e.target?.kind==='creature'&&(e.target.ref===p||identity(p)!=null&&String(e.target.instanceId??identity(e.target.ref))===String(identity(p))));return related.length?related.some(e=>(!e.zone||e.zone==='attached')&&(e.remainingTurns==null||Number.isInteger(e.remainingTurns)&&e.remainingTurns>0)&&enabled(state,p,'berserk_effect','modifier',e.instanceId)):p.berserk>0&&enabled(state,p,'berserk_effect','modifier');}
+function numeric(base,multiplier,add,modifiers=[]){
+ const live=modifiers.filter(m=>m.active!==false),rep=live.filter(m=>m.mode==='replace'),mul=live.filter(m=>m.mode==='multiply');
+ if(rep.length>1||rep.length&&mul.length)throw Error('MODIFIER_ORDER_REQUIRES_DECISION');
+ for(const m of live)if(!['replace','multiply','add','bounds'].includes(m.mode)||m.mode!=='bounds'&&!Number.isFinite(m.value)||m.mode==='bounds'&&(m.min!=null&&!Number.isFinite(m.min)||m.max!=null&&!Number.isFinite(m.max)||m.min!=null&&m.max!=null&&m.min>m.max))throw Error('INVALID_MODIFIER');
+ let value=rep.length?rep[0].value:base*multiplier*mul.reduce((n,m)=>n*m.value,1);
+ value+=add+live.filter(m=>m.mode==='add').reduce((n,m)=>n+m.value,0);
+ const bounds=live.filter(m=>m.mode==='bounds'),min=Math.max(-Infinity,...bounds.map(m=>m.min??-Infinity)),max=Math.min(Infinity,...bounds.map(m=>m.max??Infinity));if(min>max)throw Error('MODIFIER_BOUNDS_REQUIRES_DECISION');
+ return Math.min(max,Math.max(min,value));
+}
+return {abilities,enabled,numeric,berserkActive,KINDS};
 });
 
 },
@@ -2319,6 +2340,7 @@ function cardValid(s,a,defs){
  if(d.type!=='spell')return false;
  const i=creature(s,t),king=t?.kind==='king'&&side(t.side);
  switch(a.cardId){
+ case '突風':case '竜巻':return require('./wind-spells.cjs').valid(s,a);
  case 'マナ':return t==null;
  case 'ホープ':return t?.kind==='player'&&side(t.side);
  case '圧殺':return king&&t.side!==a.side;
@@ -2461,11 +2483,11 @@ function calculate(state,p,from,defs,mode){
  const related=all.filter(e=>e.cardId==='バーサーク'&&e.target?.kind==='creature'&&(e.target.ref===p||identity(p)!=null&&(e.target.instanceId??identity(e.target.ref))!=null&&String(e.target.instanceId??identity(e.target.ref))===String(identity(p))));
  // Old low-level fixtures/state may carry only the derived berserk duration, without card records.
  const berserk=E.berserkActive(state,p);
- const base=Number.isFinite(p.atk)?p.atk:Number.isFinite(defs[p.type]?.atk)?defs[p.type].atk:0,multiplier=berserk?2:1;
+ const base=Number.isFinite(p.atk)?p.atk:Number.isFinite(defs[p.type]?.atk)?defs[p.type].atk:0,multiplier=berserk?1.5:1;
  const allies=board.filter((q,k)=>q&&k!==from&&q.side===p.side),dancer=allies.filter(q=>has(q,'dancer_aura')).length,pack=has(p,'war_wolf_pack')?allies.length:0;
  const battles=all.filter(e=>e.cardId==='決戦'&&active(e)&&E.enabled(state,p,'battle_bonus','modifier',e.instanceId));
- const modifiers=(state.modifiers||[]).filter(m=>(m.subjectId==null||String(m.subjectId)===String(identity(p)))&&(m.sourceId==null||board.some(q=>q&&String(identity(q))===String(m.sourceId))||all.some(e=>String(e.instanceId)===String(m.sourceId)&&active(e)))&&E.enabled(state,p,m.abilityId||'atk_modifier','modifier',m.sourceId));const total=E.numeric(base,multiplier,battles.length+dancer+pack,modifiers);
- return {mode,base,multiplier,multipliedBase:base*multiplier,battle:battles.length,dancer,pack,total,battleTurns:battles.map(e=>e.remainingTurns??null)};
+ const modifiers=(state.modifiers||[]).filter(m=>(m.subjectId==null||String(m.subjectId)===String(identity(p)))&&(m.sourceId==null||board.some(q=>q&&String(identity(q))===String(m.sourceId))||all.some(e=>String(e.instanceId)===String(m.sourceId)&&active(e)))&&E.enabled(state,p,m.abilityId||'atk_modifier','modifier',m.sourceId));const multipliedBase=berserk?Math.ceil(base*multiplier):base,total=E.numeric(multipliedBase,1,battles.length+dancer+pack,modifiers);
+ return {mode,base,multiplier,multipliedBase,battle:battles.length,dancer,pack,total,battleTurns:battles.map(e=>e.remainingTurns??null)};
 }
 function query(state,selection,defs){
  if(!Array.isArray(state?.board)||state.board.length!==25)return null;
@@ -2564,6 +2586,31 @@ function awaken(port,side,target){
 }
 return {bolt,awaken,canBolt,canAwaken};
 });
+
+},
+"./wind-spells.cjs":function(module,exports,require){
+'use strict';
+const cell=k=>Number.isInteger(k)&&k>=0&&k<25;
+function destinations(state,from,side,cardId){
+ if(!cell(from)||!state.board[from])return [];
+ const row=Math.floor(from/5),col=from%5,steps=cardId==='突風'?[[side==='p'?-1:1,0]]:[[-1,0],[1,0],[0,-1],[0,1]];
+ return steps.flatMap(([dr,dc])=>{const r=row+dr,c=col+dc,to=r*5+c;return r>=0&&r<5&&c>=0&&c<5&&!state.board[to]?[to]:[];});
+}
+function valid(state,action){const i=action.target?.kind==='creature'?state.board.findIndex(p=>p?.sourceInstanceId===action.target.instanceId):-1;return i>=0&&(action.cardId==='竜巻'||destinations(state,i,action.side,action.cardId).length>0);}
+// Effect relocation preserves all rights/history. Entry effects use the teleport route.
+function relocate(state,from,to,defs,events){state.board[to]=state.board[from];state.board[from]=null;events.push({type:'creature:moved',from,to,bySpell:true});require('./a5-entry.cjs').begin(state,to,defs,events);}
+function resolve(state,action,defs,events){
+ let from=state.board.findIndex(p=>p?.sourceInstanceId===action.target.instanceId);
+ if(action.cardId==='突風'){relocate(state,from,destinations(state,from,action.side,action.cardId)[0],defs,events);return;}
+ const unit=require('./resolution-boundary.cjs').resolveEffectUnit(state,{unitId:'tornado-damage',mode:'sequential',targetPolicy:'valid-only',operations:[{kind:'damage',amount:1}]},{side:action.side,targets:[action.target]},defs);events.push(...unit.events);
+ if(state.server.gameOver)return;
+ from=state.board.findIndex(p=>p?.sourceInstanceId===action.target.instanceId);if(from<0)return;
+ const choices=destinations(state,from,action.side,'竜巻');
+ if(choices.length)state.server.pendingChoice={type:'effectMove',side:action.side,cardId:'竜巻',instanceId:action.target.instanceId,cell:from,choices};
+}
+function choices(state,side){const q=state.server.pendingChoice;if(q?.type!=='effectMove'||q.side!==side||state.server.gameOver)return [];const from=state.board.findIndex(p=>p?.sourceInstanceId===q.instanceId);return destinations(state,from,side,q.cardId).filter(k=>q.choices.includes(k)).map(to=>({type:'chooseEffectCell',side,to}));}
+function choose(state,action,defs,events){const q=state.server.pendingChoice;if(!choices(state,action.side).some(a=>a.to===action.to))return {ok:false,code:'INVALID_EFFECT_DESTINATION'};const from=state.board.findIndex(p=>p?.sourceInstanceId===q.instanceId);delete state.server.pendingChoice;relocate(state,from,action.to,defs,events);return {ok:true};}
+module.exports={destinations,valid,resolve,choices,choose,relocate};
 
 },
 "./a3-actions.cjs":function(module,exports,require){
@@ -2730,152 +2777,6 @@ function finishChange(state,cell,event,defs,events){
 module.exports={changeController,applyBetrayalEffect,promote};
 
 },
-"./legacy-card-identities.js":function(module,exports,require){
-(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.R3Cards=factory();})(globalThis,function(){
-'use strict';
-const sides=['p','c'],copy=x=>structuredClone(x),name=c=>typeof c==='string'?c:c.cardId;
-function list(s,side,zone){return zone==='graveyard'?(s.graveyards?.[side]||[]):s[side==='p'?zone:zone==='hand'?'cHand':'cDeck'];}
-function used(s){return new Set([
- ...sides.flatMap(side=>['hand','deck'].flatMap(z=>(list(s,side,z)||[]).filter(c=>typeof c==='object').map(c=>c.instanceId))),
- ...sides.flatMap(side=>['hand','deck'].flatMap(z=>(s.coreBridge?.zones?.[side]?.[z]||[]).map(c=>c.instanceId))),
- ...(s.board||[]).filter(Boolean).map(p=>p.sourceInstanceId),
- ...(s.enchantments||[]).map(e=>e.instanceId),
- ...sides.flatMap(side=>(s.graveyards?.[side]||[]).map(c=>c.instanceId)),
- ...sides.flatMap(side=>['hand','deck'].flatMap(z=>(s.cardIdentities?.[side]?.[z]||[]).map(c=>c.instanceId))),
- ...Object.values(s.pendingCardTransfers||{}).map(c=>c.instanceId)
- ].filter(x=>x!==undefined).map(String));}
-function allocate(s){const ids=used(s);s.nextCardIdentity=Math.max(1,s.nextCardIdentity||1);let id;do{id='html-card-'+s.nextCardIdentity++;}while(ids.has(id));return id;}
-function ensure(s){
- if(!s.cardIdentities){
-  const saved=s.coreBridge?.zones;
-  for(const side of sides)for(const zone of ['hand','deck']){const a=list(s,side,zone)||[],old=saved?.[side]?.[zone];if(old&&(old.length!==a.length||old.some((c,i)=>name(c)!==name(a[i]))))throw Error('STALE_BRIDGE_CARD_IDENTITIES');}
-  s.cardIdentities={p:{hand:[],deck:[]},c:{hand:[],deck:[]}};
-  for(const side of sides)for(const zone of ['hand','deck']){
-   const a=list(s,side,zone)||[],old=saved?.[side]?.[zone];
-   if(old&&(old.length!==a.length||old.some((c,i)=>name(c)!==name(a[i]))))throw Error('STALE_BRIDGE_CARD_IDENTITIES');
-   s.cardIdentities[side][zone]=a.map((c,i)=>{const prior=old?.[i]||c;return {cardId:name(c),instanceId:typeof prior==='object'?String(prior.instanceId):allocate(s)};});
-  }
- }
- for(const side of sides)for(const zone of ['hand','deck']){const a=list(s,side,zone)||[],m=s.cardIdentities[side]?.[zone];if(!m||m.length!==a.length||m.some((c,i)=>c.cardId!==name(a[i])))throw Error('STALE_BRIDGE_CARD_IDENTITIES');}
- return s.cardIdentities;
-}
-function drawIdentity(s,side){ensure(s);const deck=list(s,side,'deck'),hand=list(s,side,'hand');if(!deck.length)return null;const c=s.cardIdentities[side].deck.pop();deck.pop();hand.push(c.cardId);s.cardIdentities[side].hand.push(c);return copy(c);}
-function take(s,side,index){ensure(s);const hand=list(s,side,'hand');if(!Number.isInteger(index)||index<0||index>=hand.length)throw Error('INVALID_CARD_INDEX');hand.splice(index,1);const card=s.cardIdentities[side].hand.splice(index,1)[0];for(const viewer of sides){const known=s.coreBridge?.server?.revealedTo?.[viewer];if(known)s.coreBridge.server.revealedTo[viewer]=known.filter(id=>id!==card.instanceId);}return card;}
-function stage(s,side,index){if(s.pendingCardTransfers?.[side])throw Error('CARD_TRANSFER_PENDING');const c=take(s,side,index);(s.pendingCardTransfers||={})[side]=c;return c;}
-function finish(s,side,cardId){const c=s.pendingCardTransfers?.[side];if(!c)return null;if(c.cardId!==cardId)throw Error('CARD_TRANSFER_MISMATCH');delete s.pendingCardTransfers[side];return c.instanceId;}
-function validate(s){ensure(s);const all=[];for(const side of sides)for(const zone of ['hand','deck'])for(const c of s.cardIdentities[side][zone])all.push(c.instanceId);for(const side of sides)for(const c of s.graveyards?.[side]||[])all.push(c.instanceId);for(const p of s.board||[])if(p?.sourceInstanceId!==undefined)all.push(p.sourceInstanceId);for(const e of s.enchantments||[])all.push(e.instanceId);const ids=all.map(String);if(new Set(ids).size!==ids.length)throw Error('DUPLICATE_PHYSICAL_ID');return true;}
-return {ensure,allocate,draw:drawIdentity,take,stage,finish,validate};
-});
-
-},
-"./game-core.cjs":function(module,exports,require){
-'use strict';
-/** Command boundary. Local one-action Undo is provided by a4-session.cjs; unsupported actions remain explicit. */
-const {createState,playerSnapshot}=require('./game-state.cjs');
-const {applyAction}=require('./action-bridge.cjs');
-const combat=require('./combat-engine.cjs');
-const clone=x=>JSON.parse(JSON.stringify(x));
-const VERSION='a5.2';
-function createGame(config){
- const input={...config},events=[];
- if(config.decks){input.board||=Array(25).fill(null);input.players||=Object.fromEntries(['p','c'].map(side=>[side,{kingHp:20,maxMana:1,mana:1,graveyard:[]}]));input.privateData=Object.fromEntries(['p','c'].map(side=>[side,{hand:[],deck:config.decks[side]}]));}
- const s=createState(input);require('./match-rules.cjs').attach(s,config.rules??s.server.rules);
- if(config.lossConditions){if(!config.lossRegistryId)throw Error('LOSS_REGISTRY_ID_REQUIRED');require('./outcome-registry.cjs').register(config.lossRegistryId,config.lossConditions);s.server.lossRegistry=config.lossRegistryId;}
- s.server.coreVersion=VERSION;s.server.processedActionIds=[];
- if(config.decks)require('./match-rules.cjs').initialize(s,s.server.rules,events);return s;
-}
-function execute(state,request,actor,definitions){
- if(typeof request?.actionId!=='string'||!request.actionId||request.actionId.length>100)return {ok:false,code:'INVALID_ACTION_ID'};
- if(!['p','c'].includes(actor)||request.action?.side!==actor)return {ok:false,code:'UNAUTHORIZED_SIDE'};
- if(state.server.matchId&&state.server.matchId!==request.matchId)return {ok:false,code:'WRONG_MATCH'};
- if(state.server.processedActionIds?.includes(actor+':'+request.actionId))return {ok:false,code:'DUPLICATE_ACTION'};
- const shape=require('./core-contract.cjs').validateRequest(request,actor,state.revision);if(!shape.ok)return shape;
- try{require('./game-state.cjs').assertState(state);}catch{return {ok:false,code:'INVALID_STATE'};}
- if(state.server.gameOver)return {ok:false,code:'GAME_OVER'};
- if(request.action.type!=='surrender'&&state.server.pendingSurrenders?.length&&!state.server.processingDepth&&!state.server.pendingTriggerCount&&!state.server.resolving&&!state.server.effectQueue?.length&&!state.server.pendingChoice&&!state.server.pendingEntry&&!state.server.pendingSummon)return {ok:false,code:'PENDING_SURRENDER_BOUNDARY_REQUIRED'};
- let result;
- if(request.action.type==='surrender'){
-   const next=clone(state),order=(next.server.surrenderSequence||0)+1;
-  const receipt={side:actor,actionId:request.actionId,order,acceptedRevision:state.revision+1};
-  next.server.surrenderSequence=order;next.server.pendingSurrenders||=[];next.server.pendingSurrenders.push(receipt);
-  result={ok:true,status:'deferred',receipt:clone(receipt),state:next,events:[{type:'surrender:accepted',...receipt}]};
-  next.revision++;
- }else {try{result=applyAction(state,request,actor,definitions);}catch(e){return {ok:false,code:e.message};}if(!result.ok)return result;}
- result.state.server.processedActionIds||=[];result.state.server.processedActionIds.push(actor+':'+request.actionId);
- result.state.server.coreVersion=VERSION;
- const boundary=require('./resolution-boundary.cjs').settleBoundary(result.state,result.events);
- if(request.action.type==='surrender'){const own=e=>e.side===actor&&e.actionId===request.actionId;result.status=result.events.some(e=>e.type==='surrender:applied'&&own(e))?'applied':result.events.some(e=>e.type==='surrender:unapplied'&&own(e))?'unapplied':'deferred';}result.gameOver=!!result.state.server.gameOver;return result;
-}
-function finishBoundary(state,runtime){
- if(!runtime||typeof runtime.resolving!=='boolean'||!Array.isArray(runtime.queue)||!Array.isArray(runtime.summonQueue))return {ok:false,code:'RUNTIME_CONTEXT_REQUIRED'};
- if(runtime.resolving||runtime.queue.length||runtime.summonQueue.length)return {ok:false,code:'RUNTIME_RESOLUTION_PENDING'};
- try{require('./game-state.cjs').assertState(state);}catch{return {ok:false,code:'INVALID_STATE'};}
- const next=clone(state),events=[],before=next.revision;next.revision++;const r=require('./resolution-boundary.cjs').settleBoundary(next,events);if(r.status!=='applied')next.revision=before;
- return {ok:true,status:r.status,state:next,events};
-}
-function initializeLegacyMatch(S,rules){const core=require('./legacy-adapter.cjs').fromLegacyState(S),events=[];require('./match-rules.cjs').initialize(core,rules,events);core.server.coreVersion=VERSION;core.server.processedActionIds=[];require('./r4-command-bridge.cjs').commit(S,core,events);return {ok:true,state:core,events};}
-function getPlayerView(state,viewer){
- const view=playerSnapshot(state,viewer);
- return {...view,coreVersion:VERSION,gameOver:!!state.server.gameOver,winner:state.server.winner??null};
-}
-// Fail closed for unknown events. Internal snapshots, target coordinates and RNG never copied wholesale.
-function projectEvents(events,viewer){
- if(!['p','c'].includes(viewer))throw new TypeError('Invalid viewer');
- const out=[];
- for(const e of events){
-  if(e.type==='card:played'){out.push({type:e.type,side:e.side,cardId:e.cardId});continue;}
-  if(e.type==='dispel:resolved'){out.push({type:e.type,side:e.side,removed:e.removed});continue;}
-  if(e.type==='card:drawn'){out.push({type:e.type,side:e.side,...(e.side===viewer?{instanceId:e.instanceId}:{})});continue;}
-  if(['king:attack-targeted','king:ability-used'].includes(e.type)){out.push({type:e.type,side:e.side,abilityId:e.abilityId,cell:e.cell});continue;}
-  if(e.type==='creature:ability-used'){out.push({type:e.type,side:e.side,abilityId:e.abilityId,from:e.from});continue;}
-  if(e.type==='game:over'){out.push({type:e.type,winner:e.winner,reason:e.reason});continue;}
-  if(e.type==='turn:started'||e.type==='turn:ended'){out.push({type:e.type,side:e.side});continue;}
-  if(e.type==='king:hp-set'){out.push({type:e.type,side:e.side,before:e.before,after:e.after,reason:e.reason});continue;}
-  if(e.type==='mana:gained'){out.push({type:e.type,side:e.side,before:{maxMana:e.before.maxMana,mana:e.before.mana},after:{maxMana:e.after.maxMana,mana:e.after.mana}});continue;}
-  if(e.type==='pressure:resolved'){out.push({type:e.type,side:e.side,countAtCommit:e.countAtCommit,success:e.success,target:e.target});continue;}
-  if(e.type==='king:damaged'){out.push({type:e.type,side:e.side,amount:e.amount,hp:e.hp});continue;}
-  if(e.type==='creature:moved'){out.push({type:e.type,from:e.from,to:e.to});continue;}
-  if(['creature:attacked','creature:attack-resolved'].includes(e.type)){out.push({type:e.type,from:e.from,to:e.to,targetKind:e.targetKind,amount:e.amount});continue;}
- }
- return clone(out);
-}
-const emptyCombat=()=>({moves:[],targets:[],attackRange:[],king:false});
-function combatBlocked(state,actor,runtime){
- const s=state.server||{};
- return !['p','c'].includes(actor)||actor!==state.activeSide||s.gameOver||s.pendingChoice||s.pendingSummon||s.pendingEntry||s.effectQueue?.length||Object.keys(s.pendingCardTransfers||{}).length||runtime?.resolving||runtime?.queue?.length||runtime?.summonQueue?.length;
-}
-function combatInputAllowed(state,actor,runtime){return !combatBlocked(state,actor,runtime);}
-// Preview ignores turn/runtime locks; it is never an executable command list.
-function previewCombat(state,from,definitions){
- return {moves:combat.squares(state,from,definitions,'move'),targets:combat.squares(state,from,definitions,'attack'),attackRange:combat.attackRange(state,from,definitions),king:combat.kingReachable(state,from,definitions)};
-}
-function queryCombat(state,from,actor,definitions,runtime){
- if(combatBlocked(state,actor,runtime)||state.board[from]?.side!==actor)return emptyCombat();
- return previewCombat(state,from,definitions);
-}
-// Geometric post-move forecast only: entry effects/promotion are not simulated.
-// Revalidate the actual command after the real move. Never mutate the live board.
-function planCombat(state,from,to,actor,definitions,runtime){
- if(!queryCombat(state,from,actor,definitions,runtime).moves.includes(to))return emptyCombat();
- const board=state.board.slice();board[to]={...board[from],m:true};board[from]=null;
- return previewCombat({...state,board},to,definitions);
-}
-function combatPattern(piece,definitions,kind='move',state){return piece?combat.pattern(piece,definitions,kind,state).map(v=>v.slice()):[];}
-function combatRights(piece,definitions,state){return combat.rights(piece,definitions,state);}
-function combatPathClear(state,from,dr,dc,piece,definitions){return combat.pathClear(state,from,dr,dc,piece,definitions);}
-function legalCombatActions(state,actor,definitions,runtime){
- if(combatBlocked(state,actor,runtime))return [];
- const out=[];state.board.forEach((p,from)=>{if(!p||p.side!==actor)return;
-  for(const to of combat.squares(state,from,definitions,'move'))out.push({type:'move',side:actor,from,to});
-  for(const to of combat.squares(state,from,definitions,'attack'))out.push({type:'attack_creature',side:actor,from,to});
-  if(combat.kingReachable(state,from,definitions))out.push({type:'attack_king',side:actor,from});
- });return out;
-}
-const targets=require("./target-queries.cjs");
-const powerQuery=require('./power-query.cjs');
-module.exports={initializeLegacyMatch,normalizeRules:require('./match-rules.cjs').normalize,attackLimit:combat.attackLimit,finishBoundary,effectiveAbilities:require('./effective-rules.js').abilities,createGame,queryPower:powerQuery.query,powerForPiece:powerQuery.forPiece,spellsBlocked:targets.sealed,queryCard:targets.queryCard,queryAbility:targets.queryAbility,VERSION,execute,getPlayerView,projectEvents,legalCombatActions,queryCombat,previewCombat,planCombat,combatPattern,combatRights,combatPathClear,combatInputAllowed};
-
-},
 "./action-bridge.cjs":function(module,exports,require){
  'use strict';
 /** Experimental server-side reducer for basic summons only. No DOM, no globals.
@@ -2897,6 +2798,12 @@ function applyAction(state,envelope,authenticatedSide,definitions){
  if(action.side!==state.activeSide&&!(state.server.pendingChoice&&action.type==='choosePromotion'&&action.side===state.server.pendingChoice.side))return reject('NOT_YOUR_TURN');
  if(state.server.gameOver)return reject('GAME_OVER');
  if(state.server.processingDepth||state.server.pendingTriggerCount||state.server.resolving)return reject('RESOLUTION_PENDING');
+ if(state.server.pendingChoice?.type==='effectMove'){
+  if(action.type!=='chooseEffectCell')return reject('EFFECT_CHOICE_PENDING');
+  const next=clone(state),events=[],result=require('./wind-spells.cjs').choose(next,action,definitions,events);
+  if(!result.ok)return reject(result.code);next.revision++;assertState(next);
+  return {ok:true,...makeResult({revision:next.revision,events,state:next,gameOver:!!next.server.gameOver})};
+ }
  if(state.server.pendingChoice){
   if(action.type!=='choosePromotion')return reject('PROMOTION_CHOICE_PENDING');
   const choice=state.server.pendingChoice;
@@ -3040,7 +2947,7 @@ const {makePort}=require('./a1-port.cjs');
 const cell=k=>Number.isInteger(k)&&k>=0&&k<25;
 function cast(state,action,defs){
  const {side,cardId,target}=action,d=defs[cardId];
- if(!d?.effectUnit&&!['ファイヤーボルト','転移魔法','ホープ','裏切り'].includes(cardId))return require('./a2-spells.cjs').cast(state,action,defs);
+ if(!d?.effectUnit&&!['ファイヤーボルト','転移魔法','ホープ','裏切り','突風','竜巻'].includes(cardId))return require('./a2-spells.cjs').cast(state,action,defs);
  if(!d||d.type!=='spell')return {ok:false,code:'INVALID_SPELL'};
  if(state.server.gameOver)return {ok:false,code:'GAME_OVER'};
  if(side!==state.activeSide)return {ok:false,code:'NOT_YOUR_TURN'};
@@ -3055,15 +2962,118 @@ function cast(state,action,defs){
  if(!card)return {ok:false,code:'CARD_NOT_IN_HAND'};
  playCard(state,side,card.instanceId);state.players[side].mana-=d.cost;
  const events=[{type:'card:played',side,cardId,instanceId:card.instanceId}];
+ if(['突風','竜巻'].includes(cardId)){require('./wind-spells.cjs').resolve(state,action,defs,events);return {ok:true,events};}
  if(d.effectUnit||cardId==='ファイヤーボルト'||cardId==='ホープ'||cardId==='裏切り'){const descriptor=d.effectUnit||{unitId:cardId,mode:'sequential',targetPolicy:'valid-only',operations:cardId==='ホープ'?[{kind:'draw',count:2,reason:'hope'}]:cardId==='裏切り'?[{kind:'betrayal'}]:[{kind:'damage',amount:2}]};const unit=require('./resolution-boundary.cjs').resolveEffectUnit(state,descriptor,{side,targets:action.targets||(target?[target]:[])},defs);events.push(...unit.events);return {ok:true,events};}
  if(cardId==='転移魔法'){
-  state.board[action.to]=state.board[index];state.board[index]=null;
-  events.push({type:'creature:moved',from:index,to:action.to,bySpell:true});
-  require('./a5-entry.cjs').begin(state,action.to,defs,events);
+  require('./wind-spells.cjs').relocate(state,index,action.to,defs,events);
  }
  return {ok:true,events};
 }
 module.exports={cast};
+
+},
+"./legacy-adapter.cjs":function(module,exports,require){
+'use strict';
+/** HTML deck top=last; Core deck top=first. Reference targets become stable IDs. */
+const {createState}=require('./game-state.cjs');
+const identities=require('./legacy-card-identities.js');
+const copy=x=>structuredClone(x);
+function fromLegacyState(S){
+ if(!S||!Array.isArray(S.board)||S.board.length!==25)throw new TypeError('Invalid legacy board');
+ S=copy(S);
+ if(Object.keys(S.pendingCardTransfers||{}).length)throw Error('CARD_TRANSFER_PENDING');
+ identities.ensure(S);identities.validate(S);
+ const board=copy(S.board),players={},privateData={},metadata=S.coreBridge;
+ function cards(list,side,zone){
+  if(!Array.isArray(list))throw new TypeError('Missing legacy cards');
+  const saved=zone==='graveyard'?null:S.cardIdentities[side][zone];
+  if(saved&&(saved.length!==list.length||saved.some((c,i)=>(typeof c==='string'?c:c.cardId)!==(typeof list[i]==='string'?list[i]:list[i].cardId))))throw new Error('STALE_BRIDGE_CARD_IDENTITIES');
+  return list.map((c,i)=>saved?copy(saved[i]):typeof c==='string'?(zone==='hand'?{instanceId:side+'-initial-'+i,cardId:c}:c):({cardId:c.cardId,instanceId:String(c.instanceId)}));
+ }
+ for(const side of ['p','c']){
+  players[side]={kingHp:S[side+'Hp'],mana:S.manaBySide?.[side],maxMana:S.maxManaBySide?.[side],graveyard:cards(S.graveyards?.[side]||[],side,'graveyard')};
+  privateData[side]={hand:cards(S[side==='p'?'hand':'cHand'],side,'hand'),deck:cards(S[side==='p'?'deck':'cDeck'],side,'deck').reverse()};
+ }
+ function target(t){if(t?.kind!=='creature')return copy(t);const index=t.ref?S.board.indexOf(t.ref):S.board.findIndex(p=>p&&String(p.sourceInstanceId)===String(t.instanceId));if(index<0)throw new Error('UNRESOLVED_CREATURE_REFERENCE');board[index].sourceInstanceId??='adapter-board-'+index;return {kind:'creature',instanceId:String(board[index].sourceInstanceId)};}
+ const enchantments=(S.enchantments||[]).map(e=>({...copy(e),instanceId:String(e.instanceId),target:target(e.target)}));
+ const serverData={...copy(metadata?.server||{}),legacyAdapter:true,gameOver:!!S.gameOver};if(S.rules!==undefined)serverData.rules=require('./match-rules.cjs').normalize(S.rules);if(serverData.rules!==undefined)serverData.rules=require('./match-rules.cjs').normalize(serverData.rules);
+ // Top-level HTML resolution fields are authoritative; cleared work must not revive.
+ for(const key of ['pendingChoice','pendingSummon','pendingEntry','effectQueue'])delete serverData[key];
+ for(const viewer of ['p','c'])if(serverData.revealedTo?.[viewer]){const hand=new Set(privateData[viewer==='p'?'c':'p'].hand.map(c=>c.instanceId));serverData.revealedTo[viewer]=serverData.revealedTo[viewer].filter(id=>hand.has(id));}
+ for(const key of ['winner','draw','rngState','manaBonus','kingAction','eventHistory','pendingChoice','pendingSummon','pendingEntry','effectQueue','nextCreatureId','nextCardIdentity'])if(S[key]!==undefined)serverData[key]=copy(S[key]);
+ const temporaryEffects=S.temporaryEffects?.map(e=>({...copy(e),...(e.target?{target:target(e.target)}:{})}));
+ if(S.tokenPlacement){
+  const t=S.tokenPlacement;if(!t.side||!Number.isInteger(t.cell)||!t.sourceInstanceId)throw new Error('UNSUPPORTED_LEGACY_PENDING_CHOICE');
+  serverData.pendingSummon={side:t.side,cell:t.cell,sourceInstanceId:t.sourceInstanceId,choices:copy(t.choices)};
+ }
+ if(S.pendingEntryHtml){const q=S.pendingEntryHtml;serverData.pendingEntry={cell:q.k,instanceId:q.p.sourceInstanceId,jobs:copy(q.jobs).map(j=>({...j,...(j.instanceId!==undefined?{instanceId:String(j.instanceId)}:{})}))};}
+ const result=createState({board,players,privateData,activeSide:S.side,turn:S.turn||1,revision:S.revision??metadata?.revision??0,enchantments,serverData});
+ for(const key of ['abilityControls','modifiers'])if(S[key]!==undefined)result[key]=copy(S[key]);
+ if(temporaryEffects)result.temporaryEffects=temporaryEffects;
+ return result;
+}
+function toLegacyState(core){
+ require('./game-state.cjs').assertState(core);core=copy(core);require('./card-zones.cjs').ensureInstances(core);
+ const s={board:copy(core.board),side:core.activeSide,turn:core.turn,revision:core.revision,gameOver:!!core.server.gameOver,graveyards:{},manaBySide:{},maxManaBySide:{},enchantments:[],mines:Array(25).fill(null),battles:[],card:null,piece:null,nextCardInstanceId:1,coreBridge:{revision:core.revision,server:copy(core.server),zones:{}}};
+ s.cardIdentities={p:{},c:{}};
+ for(const side of ['p','c']){
+  const p=core.players[side],priv=core.private[side],hand=copy(priv.hand),deck=copy(priv.deck).reverse();
+  s[side+'Hp']=p.kingHp;s.manaBySide[side]=p.mana;s.maxManaBySide[side]=p.maxMana;s.graveyards[side]=copy(p.graveyard);
+  s[side==='p'?'hand':'cHand']=hand.map(c=>typeof c==='string'?c:c.cardId);s[side==='p'?'deck':'cDeck']=deck.map(c=>typeof c==='string'?c:c.cardId);
+  s.coreBridge.zones[side]={hand,deck,graveyard:copy(p.graveyard)};
+  s.cardIdentities[side]={hand:copy(hand),deck:copy(deck)};
+ }
+ function target(t){if(t?.kind!=='creature')return copy(t);const ref=s.board.find(p=>p&&String(p.sourceInstanceId)===String(t.instanceId));if(!ref)throw new Error('UNRESOLVED_CREATURE_REFERENCE');return {kind:'creature',ref};}
+ s.enchantments=core.enchantments.map(e=>({...copy(e),target:target(e.target)}));
+ if(core.temporaryEffects)s.temporaryEffects=core.temporaryEffects.map(e=>({...copy(e),...(e.target?{target:target(e.target)}:{})}));
+ for(const e of s.enchantments){if(e.target?.kind==='cell'&&e.cardId==='マイン'){const k=e.target.k;s.mines[k]||={side:e.owner,turns:e.remainingTurns,card:e,cards:[]};s.mines[k].cards.push(e);s.mines[k].turns=Math.max(s.mines[k].turns,e.remainingTurns);}if(e.cardId==='決戦')s.battles.push({turns:e.remainingTurns,card:e});}
+ for(const key of ['winner','draw','rngState','manaBonus','kingAction','eventHistory','pendingChoice','pendingSummon','pendingEntry','effectQueue','nextCreatureId','nextCardIdentity'])if(core.server[key]!==undefined)s[key]=copy(core.server[key]);
+ if(core.server.pendingSummon)s.tokenPlacement=copy(core.server.pendingSummon);
+ if(core.server.pendingEntry){const q=core.server.pendingEntry;s.pendingEntryHtml={k:q.cell,p:s.board.find(p=>p&&String(p.sourceInstanceId)===String(q.instanceId))||{sourceInstanceId:q.instanceId},jobs:copy(q.jobs)};}
+ if(core.server.rules!==undefined)s.rules=require('./match-rules.cjs').normalize(core.server.rules);for(const key of ['abilityControls','modifiers'])if(core[key]!==undefined)s[key]=copy(core[key]);
+ s.nextCardInstanceId=1+Math.max(0,...[...s.enchantments,...s.graveyards.p,...s.graveyards.c].map(e=>Number(e.instanceId)).filter(Number.isSafeInteger));
+ s.kingAction||={p:{},c:{}};s.manaBonus||={p:0,c:0};
+ return s;
+}
+module.exports={fromLegacyState,toLegacyState};
+
+},
+"./legacy-card-identities.js":function(module,exports,require){
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.R3Cards=factory();})(globalThis,function(){
+'use strict';
+const sides=['p','c'],copy=x=>structuredClone(x),name=c=>typeof c==='string'?c:c.cardId;
+function list(s,side,zone){return zone==='graveyard'?(s.graveyards?.[side]||[]):s[side==='p'?zone:zone==='hand'?'cHand':'cDeck'];}
+function used(s){return new Set([
+ ...sides.flatMap(side=>['hand','deck'].flatMap(z=>(list(s,side,z)||[]).filter(c=>typeof c==='object').map(c=>c.instanceId))),
+ ...sides.flatMap(side=>['hand','deck'].flatMap(z=>(s.coreBridge?.zones?.[side]?.[z]||[]).map(c=>c.instanceId))),
+ ...(s.board||[]).filter(Boolean).map(p=>p.sourceInstanceId),
+ ...(s.enchantments||[]).map(e=>e.instanceId),
+ ...sides.flatMap(side=>(s.graveyards?.[side]||[]).map(c=>c.instanceId)),
+ ...sides.flatMap(side=>['hand','deck'].flatMap(z=>(s.cardIdentities?.[side]?.[z]||[]).map(c=>c.instanceId))),
+ ...Object.values(s.pendingCardTransfers||{}).map(c=>c.instanceId)
+ ].filter(x=>x!==undefined).map(String));}
+function allocate(s){const ids=used(s);s.nextCardIdentity=Math.max(1,s.nextCardIdentity||1);let id;do{id='html-card-'+s.nextCardIdentity++;}while(ids.has(id));return id;}
+function ensure(s){
+ if(!s.cardIdentities){
+  const saved=s.coreBridge?.zones;
+  for(const side of sides)for(const zone of ['hand','deck']){const a=list(s,side,zone)||[],old=saved?.[side]?.[zone];if(old&&(old.length!==a.length||old.some((c,i)=>name(c)!==name(a[i]))))throw Error('STALE_BRIDGE_CARD_IDENTITIES');}
+  s.cardIdentities={p:{hand:[],deck:[]},c:{hand:[],deck:[]}};
+  for(const side of sides)for(const zone of ['hand','deck']){
+   const a=list(s,side,zone)||[],old=saved?.[side]?.[zone];
+   if(old&&(old.length!==a.length||old.some((c,i)=>name(c)!==name(a[i]))))throw Error('STALE_BRIDGE_CARD_IDENTITIES');
+   s.cardIdentities[side][zone]=a.map((c,i)=>{const prior=old?.[i]||c;return {cardId:name(c),instanceId:typeof prior==='object'?String(prior.instanceId):allocate(s)};});
+  }
+ }
+ for(const side of sides)for(const zone of ['hand','deck']){const a=list(s,side,zone)||[],m=s.cardIdentities[side]?.[zone];if(!m||m.length!==a.length||m.some((c,i)=>c.cardId!==name(a[i])))throw Error('STALE_BRIDGE_CARD_IDENTITIES');}
+ return s.cardIdentities;
+}
+function drawIdentity(s,side){ensure(s);const deck=list(s,side,'deck'),hand=list(s,side,'hand');if(!deck.length)return null;const c=s.cardIdentities[side].deck.pop();deck.pop();hand.push(c.cardId);s.cardIdentities[side].hand.push(c);return copy(c);}
+function take(s,side,index){ensure(s);const hand=list(s,side,'hand');if(!Number.isInteger(index)||index<0||index>=hand.length)throw Error('INVALID_CARD_INDEX');hand.splice(index,1);const card=s.cardIdentities[side].hand.splice(index,1)[0];for(const viewer of sides){const known=s.coreBridge?.server?.revealedTo?.[viewer];if(known)s.coreBridge.server.revealedTo[viewer]=known.filter(id=>id!==card.instanceId);}return card;}
+function stage(s,side,index){if(s.pendingCardTransfers?.[side])throw Error('CARD_TRANSFER_PENDING');const c=take(s,side,index);(s.pendingCardTransfers||={})[side]=c;return c;}
+function finish(s,side,cardId){const c=s.pendingCardTransfers?.[side];if(!c)return null;if(c.cardId!==cardId)throw Error('CARD_TRANSFER_MISMATCH');delete s.pendingCardTransfers[side];return c.instanceId;}
+function validate(s){ensure(s);const all=[];for(const side of sides)for(const zone of ['hand','deck'])for(const c of s.cardIdentities[side][zone])all.push(c.instanceId);for(const side of sides)for(const c of s.graveyards?.[side]||[])all.push(c.instanceId);for(const p of s.board||[])if(p?.sourceInstanceId!==undefined)all.push(p.sourceInstanceId);for(const e of s.enchantments||[])all.push(e.instanceId);const ids=all.map(String);if(new Set(ids).size!==ids.length)throw Error('DUPLICATE_PHYSICAL_ID');return true;}
+return {ensure,allocate,draw:drawIdentity,take,stage,finish,validate};
+});
 
 },
 "./r4-command-bridge.cjs":function(module,exports,require){
@@ -3110,6 +3120,49 @@ function attack(S,from,to,defs){
 }
 function chooseToken(S,side,to,defs){return execute(S,{type:'chooseTokenCell',side,to},defs);}
 module.exports={execute,summon,attack,chooseToken,commit};
+
+},
+"./deck-validation.cjs":function(module,exports,require){
+'use strict';
+// Shared deck data boundary. Strict validation reads raw counts before draft recovery.
+function create(definitions){
+ const ids=Object.keys(definitions).filter(id=>definitions[id].deckType==='normal'),SIZE=40,LIMIT=4;
+ const aliases={'銀級兵':'銀兵','金級兵':'金兵'};
+ function record(raw){try{if(raw===null||typeof raw!=='object'||Array.isArray(raw))return null;const proto=Object.getPrototypeOf(raw);if(proto!==null&&Object.getPrototypeOf(proto)!==null)return null;return Object.getOwnPropertyDescriptors(raw);}catch{return null;}}
+ function count(value){if(typeof value!=='number'&&typeof value!=='string')return null;if(typeof value==='string'&&!value.trim())return null;const n=Number(value);return Number.isFinite(n)&&Number.isInteger(n)&&n>=0&&n<=LIMIT?n:null;}
+ function inspect(raw){
+  const props=record(raw),counts={},errors=[];if(!props)errors.push('INVALID_STRUCTURE');
+  for(const id of ids){const key=props&&Object.hasOwn(props,id)?id:props&&aliases[id]&&Object.hasOwn(props,aliases[id])?aliases[id]:null;let n=0;if(key){const descriptor=props[key];n=Object.hasOwn(descriptor,'value')?count(descriptor.value):null;if(n===null){errors.push('INVALID_COUNT:'+id);n=0;}}counts[id]=n;}
+  const total=Object.values(counts).reduce((a,n)=>a+n,0);return {counts,total,errors,valid:errors.length===0&&total===SIZE};
+ }
+ function normalize(raw){return inspect(raw).counts;}
+ function defaultCounts(){return normalize(Object.fromEntries(ids.map(id=>[id,definitions[id].deckCount??0])));}
+ function valid(raw){return inspect(raw).valid;}
+ function toCardIds(raw){const x=inspect(raw);if(!x.valid)return null;const out=[];for(const id of ids)for(let i=0;i<x.counts[id];i++)out.push(id);return out;}
+ return {SIZE,LIMIT,isRecord:raw=>record(raw)!==null,inspect,normalize,defaultCounts,valid,toCardIds,total:raw=>inspect(raw).total};
+}
+module.exports={create};
+
+},
+"./r3-command-pilot.cjs":function(module,exports,require){
+'use strict';
+// Small vertical slice: only moves with no entry effect. All other routes remain explicit legacy routes.
+const A=require('./legacy-adapter.cjs'),G=require('./game-core.cjs'),A3=require('./a3-rules.js'),A5=require('./a5-rules.js');
+function move(S,from,to,definitions,busy=false){
+ const piece=S.board[from];
+ if(!piece||busy||S.tokenPlacement||S.pendingEntryHtml||S.pendingChoice||S.pendingSummon||S.pendingEntry||S.effectQueue?.length||Object.keys(S.pendingCardTransfers||{}).length)return {handled:false};
+ if(A5.entryJobs(piece,to,A3.mines(S.enchantments||[],to,S.side),S.side).length)return {handled:false};
+ const core=A.fromLegacyState(S),revision=core.revision;
+ const result=G.execute(core,{matchId:core.server.matchId||'html-local',actionId:'html-move-'+revision,expectedRevision:revision,action:{type:'move',side:S.side,from,to}},S.side,definitions);
+ if(!result.ok)return {handled:true,piece:null,code:result.code};
+ if(result.events.length!==1||result.events[0].type!=='creature:moved')throw Error('UNEXPECTED_PILOT_MOVE_EFFECT');
+ const out=A.toLegacyState(result.state);
+ // Keep live piece identity so UI/CPU locals and attached target.ref remain valid.
+ Object.assign(piece,out.board[to]);S.board[from]=null;S.board[to]=piece;
+ for(const key of ['revision','coreBridge','cardIdentities','nextCardIdentity'])if(out[key]!==undefined)S[key]=out[key];
+ return {handled:true,piece,events:result.events};
+}
+module.exports={move,stateAdapter:A};
 
 },
 "./r5-command-bridge.cjs":function(module,exports,require){
@@ -3208,7 +3261,7 @@ function atKing(a,side){return ['king','player'].includes(a.target?.kind)&&a.tar
 function same(a,b){return JSON.stringify(a)===JSON.stringify(b);}
 module.exports={id,target,view,selection,atCell,atKing,same};
 
-}};const cache={};function load(id){if(cache[id])return cache[id].exports;const module=cache[id]={exports:{}};if(!modules[id])throw Error("Missing module "+id);modules[id](module,module.exports,load);return module.exports;}globalThis.EffectiveRules=load("./effective-rules.js");globalThis.R3Command=load("./r3-command-pilot.cjs");globalThis.R4Command=load("./r4-command-bridge.cjs");globalThis.R5Command=load("./r5-command-bridge.cjs");globalThis.R11Exchange=load("./resolution-exchange.cjs");globalThis.R12Core=load("./game-core.cjs");globalThis.A6SurrenderBridge=load("./surrender-bridge.cjs");globalThis.R13View=load("./target-query-view.cjs");})();
+}};const cache={};function load(id){if(cache[id])return cache[id].exports;const module=cache[id]={exports:{}};modules[id](module,module.exports,load);return module.exports;}globalThis.EffectiveRules=load("./effective-rules.js");globalThis.R3Command=load("./r3-command-pilot.cjs");globalThis.R4Command=load("./r4-command-bridge.cjs");globalThis.R5Command=load("./r5-command-bridge.cjs");globalThis.R11Exchange=load("./resolution-exchange.cjs");globalThis.R12Core=load("./game-core.cjs");globalThis.A6SurrenderBridge=load("./surrender-bridge.cjs");globalThis.R13View=load("./target-query-view.cjs");})();
 
 (function(root,f){if(typeof module==='object'&&module.exports)module.exports=f();else root.A5R1Abilities=f();})(globalThis,function(){
 'use strict';
@@ -3491,8 +3544,8 @@ function tutorialSteps(){
  add('CPU4','相手の金級兵とチャリオットが前進するよ。',{action:{kind:'cpu'}});
   step=10;cell('01_SELECT',8,'あと少し。このターンで決めちゃおう！ 銀級兵をタップしてね。');cell('01_MOVE',2,'銀級兵を光っているマスへ進めよう。');
  card('02_CARD','バーサーク','最後にエンチャントカードの説明をするね。「バーサーク」をタップしよう。');
- cell('02_CAST',2,'基本ATKを2倍にする強力なカード。ただし移動・攻撃範囲が前方1マスだけになるよ。銀級兵に付与しよう。');
- add('02_RESULT','銀級兵のATKが8まで上がった。強力な攻撃を相手の王に叩き込もう！',{select:2,glow:['#infoContent .creatureBasics']});
+ cell('02_CAST',2,'基本ATKを1.5倍（端数切り上げ）にする強力なカード。ただし移動・攻撃範囲が前方1マスだけになるよ。銀級兵に付与しよう。');
+ add('02_RESULT','銀級兵のATKが6まで上がった。強力な攻撃を相手の王に叩き込もう！',{select:2,glow:['#infoContent .creatureBasics']});
  add('02_ATTACK','相手の王をタップして、銀級兵で攻撃しよう。',{action:{kind:'king',value:'c'}});
  add('03_DURATION','エンチャントは、一定ターン効果が続くカードが基本だよ。');
  add('03_TYPES','クリーチャーに付与するものだけでなく、マスや王に付与するものもある。組み合わせ次第で、かなりトリッキーな戦い方もできるよ。');
@@ -3505,7 +3558,11 @@ function tutorialSteps(){
  cell('03_SELECT',14,'チャリオットで見てみよう。チャリオットをタップして。');
  cell('03_MOVE',4,'光ってるマスに進めてみよう。');
  add('03_EDGE','チャリオットは斜め攻撃ができるから、端からでも王に攻撃が届く！',{glow:['#enemyPedestal']});
- add('04_FINISH','このままチャリオットで攻撃してフィニッシュだ！',{action:{kind:'king',value:'c'}});
+ add('04_FINISH','このままチャリオットで相手の王を攻撃しよう。',{action:{kind:'king',value:'c'}});
+ add('04_REMAINS','相手の王は残りHP2。ターンを渡し、次の手番で最後の攻撃をしよう。');end('04_END');
+ add('CPU5','相手はこのターンを終えるよ。次の手番で攻撃権が戻る。',{action:{kind:'cpu'}});
+ cell('04_LAST_SELECT',2,'銀級兵をタップしよう。');
+ add('04_LAST_ATTACK','相手の王を攻撃してフィニッシュだ！',{action:{kind:'king',value:'c'}});
  add('05_WIN','勝利おめでとう‼️🎉');add('05_BEGIN','でも、ここからが本番！');
  add('05_COMBINATIONS','クリーチャー、スペル、エンチャント――組み合わせ次第で戦い方は大きく広がる。');
  add('05_DECK','お気に入りのカードを組み合わせて、キミだけの戦術と最強のデッキを作ってみよう！');
@@ -3536,37 +3593,7 @@ function notImplemented(name){
 
 // PHASE 2 / Step 1: カード定義の単一管理場所。
 // ルール処理・画面表示・CPUはこの定義を参照する。既存の動作は変更しない。
-const CARD_DEFINITIONS = {
-  "歩兵": {type:"creature",cost:1,atk:3,hp:6,move:[[-1,0]],deckCount:2,description:"能力なし。"},
-  "銀級兵": {type:"creature",cost:2,atk:4,hp:6,move:[[-1,-1],[-1,0],[-1,1],[1,-1],[1,1]],deckCount:3,description:"能力なし。"},
-  "金級兵": {type:"creature",cost:3,atk:5,hp:6,move:[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],deckCount:2,description:"能力なし。"},
-  "チャリオット": {type:"creature",cost:5,atk:6,hp:6,move:[[-1,0],[-2,0]],attack:[[-1,-1],[-1,0],[-1,1]],deckCount:1,description:"移動：前方1〜2マス（途中の駒は飛び越えない）。"},
-  "アーチャー": {type:"creature",cost:3,atk:4,hp:3,move:[[-1,0]],attack:[[-2,0]],deckCount:1,description:"間の駒を越えて攻撃できる。"},
-  "盗賊": {type:"creature",cost:2,atk:2,hp:5,move:[[-1,0]],attack:[[-1,-1],[-1,0],[-1,1]],deckCount:1,abilities:["thief_attack_mana"],description:"通常攻撃成立後、自分の最大マナと未使用マナをそれぞれ1増やす（それぞれ上限10）。"},
-  "サラマンダー": {type:"creature",cost:3,atk:4,hp:6,move:[[-1,-1],[-1,0],[-1,1]],attack:[[-1,0]],deckCount:2,abilities:["salamander_counter"],description:"敵クリーチャーから攻撃された時、攻撃してきたクリーチャーに3ダメージを与える。"},
-  "踊り子": {type:"creature",cost:3,atk:1,hp:2,move:[[-1,0],[0,-1],[0,1],[1,0]],attack:[],deckCount:2,abilities:["dancer_aura"],description:"このクリーチャーが戦場にいる間、他の味方クリーチャーの攻撃力+1。複数体の効果は重複する。"},
-  "戦狼": {type:"creature",cost:4,atk:2,hp:6,move:[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],deckCount:2,abilities:["war_wolf_pack"],description:"このクリーチャーの攻撃力は、戦場にいるほかの味方クリーチャー1体につき+1される。"},
-  "ディアブロ": {type:"creature",cost:6,atk:6,hp:9,move:[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],deckCount:1,abilities:["diablo_turn_start"],description:"あなたのターン開始時に、あなたの王に2点のダメージを与える。"},
-  "オルトロス": {type:"creature",cost:4,atk:2,hp:7,move:[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],attack:[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],deckCount:2,abilities:["orthros_double_attack","orthros_self_damage"],description:"このクリーチャーは1ターンに2回攻撃できる。攻撃時、あなたの王に1点のダメージ。"},
-  "隠密": {jump:true,movement:{jump:true},type:"creature",cost:3,atk:3,hp:5,move:[[-2,-1],[-2,1]],attack:[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],deckCount:2,abilities:["promote_assassin"],description:"敵陣最奥列に到達時、暗殺者に変身できる。"},
-  "ソーサラー": {type:"creature",cost:4,atk:2,hp:2,move:[[-1,0],[0,-1],[0,1],[1,0]],attack:[[-1,0],[0,-1],[0,1],[1,0]],deckCount:2,abilities:["sorcerer_bolt"],description:"攻撃権とマナ2を支払い、盤上の任意のクリーチャー/王に2点のダメージを与える。"},
-  "守備兵": {type:"creature",cost:4,atk:3,hp:6,move:[[-1,0],[0,-1],[0,1],[1,0]],attack:[[-1,0],[0,-1],[0,1],[1,0]],deckCount:2,abilities:["guard_barricade"],description:"召喚時、左右の空きマスのどちらかにバリケードを1体生成する。両方埋まっている場合は生成しない。"},
-  "バリケード": {type:"creature",deckType:"token",cost:0,atk:0,hp:3,move:[],attack:[],deckCount:0,token:true,description:"移動・攻撃できないトークン。倒されると消滅し、墓地には入らない。"},
-  "暗殺者": {type:"creature",deckType:"transform",cost:4,atk:6,hp:6,move:[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],attack:[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],deckCount:0,description:"隠密が変身した姿。"},
-  "ファイヤーボルト": {type:"spell",cost:2,damage:2,deckCount:2,description:"クリーチャーまたは王を選び、2ダメージ。敵味方どちらも対象にできる。"},
-  "圧殺": {type:"spell",cost:7,deckCount:0,description:"相手の王を選ぶ。使用時、あなたがクリーチャーを10体以上コントロールしていたら相手の王のHPを0にする。条件を満たさない場合もコストとカードを消費し、何も起きない。"},
-  "裏切り": {type:"spell",cost:10,deckCount:0,description:"盤上の敵味方いずれかのクリーチャー1体を選び、コントローラーを相手側に変更する。所有者・位置・HP・付属エンチャントは変わらない。使用したターン、対象クリーチャーは移動も攻撃も出来ない。"},
-  "転移魔法": {type:"spell",cost:5,deckCount:0,description:"敵味方のクリーチャー1体を選び、戦場の空きマスへ転移させる。通常の移動権は消費しない。"},
-  "解呪": {type:"spell",cost:2,deckCount:1,description:"クリーチャー・王・マス・盤面全体の公開エンチャントまたは公開一時効果を1つ解除。公開対象がなければ非公開エンチャントをランダムに1枚解除。対象なしでもカードとコストを消費。"},
-  "ホープ": {type:"spell",cost:1,draw:2,deckCount:4,description:"自分または相手の王を選ぶ。対象のプレイヤーはカードを2枚引く。"},
-  "マナ": {type:"spell",cost:2,gainMana:1,deckCount:3,description:"自分の最大マナと未使用マナを1増やす（最大10）。"},
-  "バーサーク": {type:"enchant",cost:2,duration:3,deckCount:2,visual:{auraColor:"#b985ff"},description:"敵味方のクリーチャー1体。3ターン基本攻撃力2倍、移動・攻撃は前方1マスのみ。複数枚の期間は独立し、効果は重複しない。"},
-  "マイン": {type:"enchant",cost:2,duration:4,deckCount:0,description:"空きマスに設置。4ターン以内に駒が入ると5ダメージを与えて消滅。敵味方どちらにも発動。"},
-  "防御結界": {type:"enchant",cost:2,duration:3,deckCount:2,description:"3ターンの間、対象のマスに配置されたクリーチャーが受けるダメージを1減らす。"},
-  "封魔": {type:"enchant",cost:4,duration:1,deckCount:0,description:"相手の王に付ける。付いている王のコントローラーはスペルを使用できない。相手の次のターン終了時まで。"},
-  "王の覚醒": {type:"enchant",cost:2,duration:3,deckCount:0,description:"あなたの王に付ける。3ターンの間、王は自陣1段目の任意のマスに攻撃力5で攻撃できる。1ターンに1回。敵軍クリーチャーのみ対象。このカードの能力は重複しない。"},
-  "決戦": {type:"enchant",cost:4,duration:2,deckCount:1,description:"2ターンの間、敵味方すべてのクリーチャーの攻撃力+1。後から召喚された駒も対象。重ねがけ可能。"}
-};
+const CARD_DEFINITIONS = {"歩兵":{"type":"creature","cost":1,"atk":3,"hp":6,"move":[[-1,0]],"deckCount":2,"description":"能力なし。"},"銀級兵":{"type":"creature","cost":2,"atk":4,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[1,-1],[1,1]],"deckCount":3,"description":"能力なし。"},"金級兵":{"type":"creature","cost":3,"atk":5,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"deckCount":2,"description":"能力なし。"},"チャリオット":{"type":"creature","cost":5,"atk":6,"hp":6,"move":[[-1,0],[-2,0]],"attack":[[-1,-1],[-1,0],[-1,1]],"deckCount":1,"description":"移動：前方1〜2マス（途中の駒は飛び越えない）。"},"アーチャー":{"type":"creature","cost":3,"atk":4,"hp":3,"move":[[-1,0]],"attack":[[-2,0]],"deckCount":1,"description":"間の駒を越えて攻撃できる。"},"盗賊":{"type":"creature","cost":2,"atk":2,"hp":5,"move":[[-1,0]],"attack":[[-1,-1],[-1,0],[-1,1]],"deckCount":1,"abilities":["thief_attack_mana"],"description":"通常攻撃成立後、自分の最大マナと未使用マナをそれぞれ1増やす（それぞれ上限10）。"},"サラマンダー":{"type":"creature","cost":3,"atk":4,"hp":6,"move":[[-1,-1],[-1,0],[-1,1]],"attack":[[-1,0]],"deckCount":2,"abilities":["salamander_counter"],"description":"敵クリーチャーから攻撃された時、攻撃してきたクリーチャーに3ダメージを与える。"},"踊り子":{"type":"creature","cost":3,"atk":1,"hp":2,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[],"deckCount":2,"abilities":["dancer_aura"],"description":"このクリーチャーが戦場にいる間、他の味方クリーチャーの攻撃力+1。複数体の効果は重複する。"},"戦狼":{"type":"creature","cost":4,"atk":2,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["war_wolf_pack"],"description":"このクリーチャーの攻撃力は、戦場にいるほかの味方クリーチャー1体につき+1される。"},"ディアブロ":{"type":"creature","cost":6,"atk":6,"hp":9,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"deckCount":1,"abilities":["diablo_turn_start"],"description":"あなたのターン開始時に、あなたの王に2点のダメージを与える。"},"オルトロス":{"type":"creature","cost":4,"atk":2,"hp":7,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"attack":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"deckCount":2,"abilities":["orthros_double_attack","orthros_self_damage"],"description":"このクリーチャーは1ターンに2回攻撃できる。攻撃時、あなたの王に1点のダメージ。"},"隠密":{"jump":true,"movement":{"jump":true},"type":"creature","cost":3,"atk":3,"hp":5,"move":[[-2,-1],[-2,1]],"attack":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"deckCount":2,"abilities":["promote_assassin"],"description":"敵陣最奥列に到達時、暗殺者に変身できる。"},"ソーサラー":{"type":"creature","cost":4,"atk":2,"hp":2,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["sorcerer_bolt"],"description":"攻撃権とマナ2を支払い、盤上の任意のクリーチャー/王に2点のダメージを与える。"},"守備兵":{"type":"creature","cost":4,"atk":3,"hp":6,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["guard_barricade"],"description":"召喚時、左右の空きマスのどちらかにバリケードを1体生成する。両方埋まっている場合は生成しない。"},"バリケード":{"type":"creature","deckType":"token","cost":0,"atk":0,"hp":3,"move":[],"attack":[],"deckCount":0,"token":true,"description":"移動・攻撃できないトークン。倒されると消滅し、墓地には入らない。"},"暗殺者":{"type":"creature","deckType":"transform","cost":4,"atk":6,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"attack":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"deckCount":0,"description":"隠密が変身した姿。"},"ファイヤーボルト":{"type":"spell","cost":2,"damage":2,"deckCount":2,"description":"クリーチャーまたは王を選び、2ダメージ。敵味方どちらも対象にできる。"},"圧殺":{"type":"spell","cost":7,"deckCount":0,"description":"相手の王を選ぶ。使用時、あなたがクリーチャーを10体以上コントロールしていたら相手の王のHPを0にする。条件を満たさない場合もコストとカードを消費し、何も起きない。"},"裏切り":{"type":"spell","cost":10,"deckCount":0,"description":"盤上の敵味方いずれかのクリーチャー1体を選び、コントローラーを相手側に変更する。所有者・位置・HP・付属エンチャントは変わらない。使用したターン、対象クリーチャーは移動も攻撃も出来ない。"},"転移魔法":{"type":"spell","cost":5,"deckCount":0,"description":"敵味方のクリーチャー1体を選び、戦場の空きマスへ転移させる。通常の移動権は消費しない。"},"解呪":{"type":"spell","cost":2,"deckCount":1,"description":"クリーチャー・王・マス・盤面全体の公開エンチャントまたは公開一時効果を1つ解除。公開対象がなければ非公開エンチャントをランダムに1枚解除。対象なしでもカードとコストを消費。"},"ホープ":{"type":"spell","cost":1,"draw":2,"deckCount":4,"description":"自分または相手の王を選ぶ。対象のプレイヤーはカードを2枚引く。"},"マナ":{"type":"spell","cost":2,"gainMana":1,"deckCount":3,"description":"自分の最大マナと未使用マナを1増やす（最大10）。"},"バーサーク":{"type":"enchant","cost":3,"duration":3,"deckCount":2,"visual":{"auraColor":"#b985ff"},"description":"敵味方のクリーチャー1体。3ターン基本攻撃力を1.5倍（端数切り上げ）にし、移動・攻撃は前方1マスのみ。複数枚の期間は独立し、効果は重複しない。"},"マイン":{"type":"enchant","cost":2,"duration":4,"deckCount":0,"description":"空きマスに設置。4ターン以内に駒が入ると5ダメージを与えて消滅。敵味方どちらにも発動。"},"防御結界":{"type":"enchant","cost":2,"duration":3,"deckCount":2,"description":"3ターンの間、対象のマスに配置されたクリーチャーが受けるダメージを1減らす。"},"封魔":{"type":"enchant","cost":4,"duration":1,"deckCount":0,"description":"相手の王に付ける。付いている王のコントローラーはスペルを使用できない。相手の次のターン終了時まで。"},"王の覚醒":{"type":"enchant","cost":2,"duration":3,"deckCount":0,"description":"あなたの王に付ける。3ターンの間、王は自陣1段目の任意のマスに攻撃力5で攻撃できる。1ターンに1回。敵軍クリーチャーのみ対象。このカードの能力は重複しない。"},"決戦":{"type":"enchant","cost":4,"duration":2,"deckCount":1,"description":"2ターンの間、敵味方すべてのクリーチャーの攻撃力+1。後から召喚された駒も対象。重ねがけ可能。"},"突風":{"type":"spell","deckType":"normal","cost":2,"deckCount":0,"description":"クリーチャーを1体選び、あなたから見て敵陣方向へ1マス動かす。敵味方どちらも対象にできる。移動権は消費しない。移動先が盤外または占有済みの対象は選べない。"},"竜巻":{"type":"spell","deckType":"normal","cost":3,"deckCount":0,"description":"対象のクリーチャーに1点のダメージ。その後、対象クリーチャーを上下左右いずれかの方向に1マス動かす。上下左右に空きマスがない場合、位置は変わらず効果は終了する。敵味方どちらも対象にできる。移動権は消費しない。"}};
 
 // Deck metadata: cards are normal unless explicitly generated/transform-only.
 Object.values(CARD_DEFINITIONS).forEach(card=>{if(!card.deckType)card.deckType="normal"});
@@ -3915,7 +3942,7 @@ function syncCpuSelectionStatus(){
  const card=S.card!==null?S.hand[S.card]:null,piece=S.piece!==null?S.board[S.piece]:null;
  const operation=card||piece?.type||(S.kingAttackMode?'あなたの王':'');
  const guide=S.teleportSource!=null?'転移先を選択':S.sorcererMode||S.kingAttackMode?'能力の対象を選択':card?'詳細の可否と色の付いた対象を確認':piece?'移動先・攻撃対象・王を選択':'';
- NormalGameUI.renderSelectionStatus({operation,guide,choice:S.tokenPlacement?'緑色のマスからバリケードの配置先を選択':'',paused:S.gameOver?'対戦終了':S.side!=='p'?'相手の手番です。':'',scope:cpuNoticeScope()});
+ NormalGameUI.renderSelectionStatus({operation,guide,choice:S.pendingChoice?.type==='effectMove'?'竜巻：色の付いた移動先を選択（取消不可）':S.tokenPlacement?'緑色のマスからバリケードの配置先を選択':'',paused:S.gameOver?'対戦終了':S.side!=='p'?'相手の手番です。':'',scope:cpuNoticeScope()});
 }
 
 function draw(side="p"){let d=side==="p"?S.deck:S.cDeck,h=side==="p"?S.hand:S.cHand;if(!d.length){if(side==="p")lose("山札切れ");else win("CPUの山札切れ");return false}R3Cards.draw(S,side);return true}
@@ -4110,7 +4137,7 @@ function pickCard(i){if(S.side!=="p"||!GameCore.combatInputAllowed())return;if(S
 
 if(t==="決戦"&&GameCore.cardQuery("p",i).choices.length){beginPlayerActionUndo();if(!playCardUnified("p",i,{kind:"global"}).ok){cancelPlayerActionUndo();return}S.card=null;S.piece=null;log("あなたは決戦を使用。全クリーチャーの攻撃力+1（2ターン）。");msg("決戦！ 全クリーチャーの攻撃力が+1！");render();commitPlayerActionUndo();return}
 
-S.card=i;S.piece=null;S.kingAttackMode=false;S.teleportSource=null;delete S.teleportIdentity;S.dispelTarget=null;S.inspect=null;if(SPELL[t]&&spellsBlocked("p")){msg("封魔中：スペルの詳細は確認できますが、使用はできません。");render();return}if(d.cost>S.mana){msg(`${t}：必要マナ ${d.cost}。現在 ${S.mana}。マナが足りないため使用できません。`);render();return}msg(t==="バーサーク"?"バーサーク：敵味方のクリーチャーをタップ。カード再タップでキャンセル。":t==="マイン"?"マイン：空きマスをタップして設置。4ターン持続・踏むと5ダメージ。":t==="防御結界"?"防御結界：対象のマスをタップ。空きマス・クリーチャー配置済みのマスどちらも対象にできます。":t==="決戦"?"決戦：カードをもう一度タップするとキャンセル。全クリーチャーの攻撃力+1（2ターン）。":t==="ファイヤーボルト"?"ファイヤーボルト：クリーチャーか王をタップ。カードを再タップでキャンセル。":t==="ホープ"?"ホープ：自分か相手の王をタップして、引くプレイヤーを選択。":t==="マナ"?"マナ：自分の王をタップ、または右の「使用する」で発動。":t==="転移魔法"?"転移魔法：敵味方のクリーチャーを選択し、転移先の空きマスをタップ。":t==="解呪"?"解呪：クリーチャー・王・マスを選択、または情報欄の「盤面全体を対象にする」を押し、公開エンチャント・一時効果を選択。クリーチャーのいるマスでは対象を選び分けます。":t==="裏切り"?"裏切り：敵味方のクリーチャーをタップして支配権を変更。":t==="圧殺"?"圧殺：相手の王をタップ。自軍10体未満でもカードとマナは消費します。":t==="王の覚醒"?"王の覚醒：自分の王をタップして付ける。王を選択すると攻撃ボタンが表示されます。":t==="封魔"?"封魔：相手の王をタップして付ける。相手の次のターン終了時までスペル禁止。":"自分の王の前の5マスから召喚場所を選択");render();}
+S.card=i;S.piece=null;S.kingAttackMode=false;S.teleportSource=null;delete S.teleportIdentity;S.dispelTarget=null;S.inspect=null;if(SPELL[t]&&spellsBlocked("p")){msg("封魔中：スペルの詳細は確認できますが、使用はできません。");render();return}if(d.cost>S.mana){msg(`${t}：必要マナ ${d.cost}。現在 ${S.mana}。マナが足りないため使用できません。`);render();return}msg((["突風","竜巻"].includes(t))?t+"：敵味方のクリーチャーを選択。カード再タップで取消。":t==="バーサーク"?"バーサーク：敵味方のクリーチャーをタップ。カード再タップでキャンセル。":t==="マイン"?"マイン：空きマスをタップして設置。4ターン持続・踏むと5ダメージ。":t==="防御結界"?"防御結界：対象のマスをタップ。空きマス・クリーチャー配置済みのマスどちらも対象にできます。":t==="決戦"?"決戦：カードをもう一度タップするとキャンセル。全クリーチャーの攻撃力+1（2ターン）。":t==="ファイヤーボルト"?"ファイヤーボルト：クリーチャーか王をタップ。カードを再タップでキャンセル。":t==="ホープ"?"ホープ：自分か相手の王をタップして、引くプレイヤーを選択。":t==="マナ"?"マナ：自分の王をタップ、または右の「使用する」で発動。":t==="転移魔法"?"転移魔法：敵味方のクリーチャーを選択し、転移先の空きマスをタップ。":t==="解呪"?"解呪：クリーチャー・王・マスを選択、または情報欄の「盤面全体を対象にする」を押し、公開エンチャント・一時効果を選択。クリーチャーのいるマスでは対象を選び分けます。":t==="裏切り"?"裏切り：敵味方のクリーチャーをタップして支配権を変更。":t==="圧殺"?"圧殺：相手の王をタップ。自軍10体未満でもカードとマナは消費します。":t==="王の覚醒"?"王の覚醒：自分の王をタップして付ける。王を選択すると攻撃ボタンが表示されます。":t==="封魔"?"封魔：相手の王をタップして付ける。相手の次のターン終了時までスペル禁止。":"自分の王の前の5マスから召喚場所を選択");render();}
 function useSelectedMana(){
  if(S.side!=="p"||S.gameOver||S.card===null||S.hand[S.card]!=="マナ")return;
  if(spellsBlocked("p")){msg("封魔：スペルを使用できません。");return}
@@ -4190,9 +4217,35 @@ function targetStillValid(target,card){
 }
 function finishDispelTarget(target,card){a3FinishDispel(target,card);}
 function finishBlindCellDispel(k){if(S.dispelTarget?.kind==='cell'&&S.dispelTarget.k===k)a3FinishDispel({kind:'cell',k},null);}
+// CPU screen adapters only: candidates and effect resolution come from GameCore.
+function effectMoveOptions(side){return R12Core.queryEffectChoices(R13View.view(S,side),side);}
+function chooseWindDestination(k){
+ const a=effectMoveOptions('p').find(a=>a.to===k);if(!a)return;
+ const result=finishR5Command(R4Command.execute(S,a,CARD_DEFINITIONS));if(!result.ok)return;
+ S.card=null;S.piece=null;log('竜巻：移動先を確定。');render();if(!S.pendingChoice)commitPlayerActionUndo();
+}
+function castWindCard(target){
+ if(!target||!GameCore.cardAllowed('p',S.card,target))return false;
+ const card=S.hand[S.card];beginPlayerActionUndo();const r=playCardUnified('p',S.card,target);
+ if(!r.ok){cancelPlayerActionUndo();return false;}
+ S.card=null;S.piece=null;log('あなたは'+card+'を使用。');render();
+ if(S.pendingChoice?.type==='effectMove')msg('竜巻：色の付いた空きマスへ移動してください。支払い・ダメージは解決済みで取消できません。');
+ else commitPlayerActionUndo();return true;
+}
+async function cpuWindCards(){
+ while(!S.gameOver){
+  const entry=S.cHand.map((cardId,index)=>({cardId,index})).find(x=>['突風','竜巻'].includes(x.cardId)&&GameCore.cardQuery('c',x.index).choices.length);
+  if(!entry)break;
+  const a=GameCore.cardQuery('c',entry.index).choices[0];
+  msg('CPU：'+entry.cardId+'を使用');render();await cpuWait();
+  if(!playCardUnified('c',entry.index,a.target).ok)break;
+  log('CPUが'+entry.cardId+'を使用。');render();await cpuWait();
+ }
+}
+
 function spellCast(target){
  if(S.side!=="p"||S.gameOver||S.card===null)return false;
- const t=S.hand[S.card],d=SPELL[t];if(!d)return false;if(t==="マナ"){spellCastDirectMana(S.card);return true;}if(!["圧殺","ホープ","ファイヤーボルト"].includes(t)||!target)return false;
+ const t=S.hand[S.card],d=SPELL[t];if(!d)return false;if(t==="マナ"){spellCastDirectMana(S.card);return true;}if(["突風","竜巻"].includes(t))return castWindCard(target);if(!["圧殺","ホープ","ファイヤーボルト"].includes(t)||!target)return false;
  if(!GameCore.cardAllowed("p",S.card,target))return true;
  if(t==="圧殺"){
   beginPlayerActionUndo();const result=castPressureA2("p",S.card);if(!result){cancelPlayerActionUndo();return true;}
@@ -4241,7 +4294,7 @@ function publishCoreCommand(result){
  }
  function finishR5Command(result){
   if(!publishCoreCommand(result))return result;
-  while(S.pendingChoice&&!S.gameOver){const q=S.pendingChoice,accept=q.side==='c'||window.confirm('隠密が敵陣最奥列に到達しました。暗殺者に変身しますか？\nHPは受けたダメージを引き継ぎ、行動権・付属効果・所有者も維持します。');
+  while(S.pendingChoice&&!S.gameOver){const q=S.pendingChoice;if(q.type==="effectMove"){if(q.side!=="c")break;const a=effectMoveOptions("c")[0];if(!a)throw Error("MISSING_EFFECT_CHOICE");const r=R4Command.execute(S,a,CARD_DEFINITIONS);if(!r.ok)throw Error(r.code);publishCoreCommand(r);continue;}const accept=q.side==='c'||window.confirm('隠密が敵陣最奥列に到達しました。暗殺者に変身しますか？\nHPは受けたダメージを引き継ぎ、行動権・付属効果・所有者も維持します。');
    const next=R5Command.choosePromotion(S,accept,CARD_DEFINITIONS);if(!next.ok)throw Error(next.code);publishCoreCommand(next);
   }
   return result;
@@ -4297,7 +4350,7 @@ const GameCore={
  abilityQuery(side,id,from){const v=R13View.view(S,side);return R12Core.queryAbility(v,side,{abilityId:id,sourceInstanceId:from==null?undefined:R13View.id(S.board[from],from)},CARD_DEFINITIONS,combatRuntime());},
  cardAllowed(side,index,target,extra={}){const id=(side==='p'?S.hand:S.cHand)[index],t=R13View.target(S,target,id);const q=this.cardQuery(side,index,{...(id==='転移魔法'?{sourceInstanceId:t?.instanceId}:{}),...(id==='解呪'&&target?{target:t}:{})});return q.choices.some(a=>R13View.same(a.target,t)&&(id!=='転移魔法'||a.to===extra.to)&&(id!=='解呪'||String(a.effectId??'')===String(extra.effectId??'')));},
  abilityAllowed(side,id,from,target){const t=R13View.target(S,target);return this.abilityQuery(side,id,from).some(a=>R13View.same(a.target,t));},
- selectedTargets(){if(S.sorcererMode)return {stage:'ability',choices:this.abilityQuery('p','sorcerer_bolt',S.piece)};if(S.kingAttackMode)return {stage:'ability',choices:this.abilityQuery('p','awaken_attack')};if(S.card==null)return {stage:'none',choices:[]};const source=S.teleportIdentity!==undefined?S.board.indexOf(S.teleportIdentity):S.teleportSource;return this.cardQuery('p',S.card,S.teleportSource==null?{}:{sourceInstanceId:source>=0?R13View.id(S.board[source],source):'missing-target'});},
+ selectedTargets(){if(S.pendingChoice?.type==="effectMove")return {stage:"effectMove",choices:effectMoveOptions("p")};if(S.sorcererMode)return {stage:'ability',choices:this.abilityQuery('p','sorcerer_bolt',S.piece)};if(S.kingAttackMode)return {stage:'ability',choices:this.abilityQuery('p','awaken_attack')};if(S.card==null)return {stage:'none',choices:[]};const source=S.teleportIdentity!==undefined?S.board.indexOf(S.teleportIdentity):S.teleportSource;return this.cardQuery('p',S.card,S.teleportSource==null?{}:{sourceInstanceId:source>=0?R13View.id(S.board[source],source):'missing-target'});},
   queryCombat(from){return R12Core.queryCombat(combatStateView(),from,S.side,CARD_DEFINITIONS,combatRuntime());},
   combatInputAllowed(){return R12Core.combatInputAllowed(combatStateView(),S.side,combatRuntime());},
   previewCombat(from){return R12Core.previewCombat(combatStateView(),from,CARD_DEFINITIONS);},
@@ -4491,7 +4544,7 @@ function castBetrayal(k){
  log(`裏切り：${piece.type}のコントローラーが${old==="p"?"あなた":"CPU"}から${next==="p"?"あなた":"CPU"}へ変更。所有者は${piece.owner==="p"?"あなた":"CPU"}のまま。`);msg(`${piece.type}が裏切った！`);render();flashBetrayal(k);commitPlayerActionUndo();
 }
 function flashBetrayal(k){const cell=$("board").children[k];if(!cell)return;const mark=document.createElement("span");mark.textContent="↩️";mark.style.cssText="position:absolute;z-index:12;left:50%;top:35%;transform:translate(-50%,-50%);font-size:30px;pointer-events:none;filter:drop-shadow(0 0 5px white)";cell.appendChild(mark);a4SetTimeout(()=>mark.remove(),650);}
-function clickCell(r,c){if(S.side!=="p"||S.gameOver)return;let k=I(r,c);if(S.tokenPlacement){if(S.tokenPlacement.choices.includes(k)&&!S.board[k]){if(!createBarricade("p",k))return;msg("バリケードを生成しました。");commitPlayerActionUndo();}else msg("緑色の空きマスを選んでください。");return;}if(!GameCore.combatInputAllowed())return;if(S.sorcererMode){if(S.board[k])sorcererCast({kind:"piece",k});else{S.sorcererMode=false;S.piece=null;S.inspect={kind:"cell",k};msg("対象外をタップしたため、魔法とソーサラーの選択を解除しました。");render();}return;}if(S.kingAttackMode){if(kingAbilityTargets("p","awaken_attack").includes(k)&&S.board[k]?.side==="c"){S.kingAttackMode=false;activateKingAbility("p","awaken_attack",k)}else{msg("王の攻撃：自陣1段目にいるクリーチャーを選んでください。")}return;}if(S.card!==null){const selected=S.hand[S.card];if(!GameCore.selectedTargets().choices.some(a=>R13View.atCell(S,a,k))&&!(selected==='転移魔法'&&S.board[k]===S.teleportIdentity)){cancelCardSelection();return;}if(selected==="転移魔法"){castTeleport(k);return}if(selected==="解呪"){castDispel(k);return}if(selected==="裏切り"){castBetrayal(k);return}if(!cardCanTargetCell(selected,k,r)){cancelCardSelection();return}if(ENCHANT[selected]){enchantCast(k);return}if(SPELL[selected]){spellCast({kind:"piece",k});return}summon(S.card,r,c);return}let t=S.board[k];if(S.piece===null){if(t?.side==="p"){S.piece=k;S.inspect=null;msg(`${t.type}を選択中。移動先・攻撃対象・王を選べます。`);render()}else{S.inspect=t?{kind:"piece",k}:{kind:"cell",k};renderInfo()}return}let f=S.piece,p=S.board[f];if(!p){S.piece=null;render();return}if(t?.side==="p"&&!atk(p,f).includes(k)){S.piece=k;S.inspect=null;render();return}if(rel(p,f).includes(k)){beginPlayerActionUndo();if(!GameCore.move(f,k)){cancelPlayerActionUndo();return}S.piece=S.board[k]?k:null;log(`${p.type}が移動。`);render();if(!S.board[k])S.piece=null;commitPlayerActionUndo();return}if(atk(p,f).includes(k)){beginPlayerActionUndo();const hit=GameCore.attackCreature(f,k);if(!hit){cancelPlayerActionUndo();return}log(`${p.type}が${t.type}を攻撃（-${hit.amount}）。`);if(S.gameOver)return;if(hit.defeated){log(`${t.type}を撃破！`);msg(`${t.type}を撃破！`)}else msg(`${t.type}のHPは${t.hp}。`);render();flashHit(k);commitPlayerActionUndo();return}if(kingAtk(p,f)&&r===(p.side==="p"?0:4)&&c>=1&&c<=3){beginPlayerActionUndo();const kingHit=GameCore.attackKing(f);if(!kingHit){cancelPlayerActionUndo();return}log(`${p.type}が相手王を攻撃（-${kingHit.amount}）。`);commitPlayerActionUndo();if(S.gameOver)return;if(S.cHp<=0)return win();msg(`相手王に${kingHit.amount}ダメージ！`);render();return}S.piece=null;S.inspect=t?{kind:"piece",k}:{kind:"cell",k};render();msg("移動・攻撃範囲外をタップしたため、駒の選択を解除しました。")}
+function clickCell(r,c){if(S.pendingChoice?.type==="effectMove"){if(S.side==="p"&&!S.gameOver)chooseWindDestination(I(r,c));return;}if(S.side!=="p"||S.gameOver)return;let k=I(r,c);if(S.tokenPlacement){if(S.tokenPlacement.choices.includes(k)&&!S.board[k]){if(!createBarricade("p",k))return;msg("バリケードを生成しました。");commitPlayerActionUndo();}else msg("緑色の空きマスを選んでください。");return;}if(!GameCore.combatInputAllowed())return;if(S.sorcererMode){if(S.board[k])sorcererCast({kind:"piece",k});else{S.sorcererMode=false;S.piece=null;S.inspect={kind:"cell",k};msg("対象外をタップしたため、魔法とソーサラーの選択を解除しました。");render();}return;}if(S.kingAttackMode){if(kingAbilityTargets("p","awaken_attack").includes(k)&&S.board[k]?.side==="c"){S.kingAttackMode=false;activateKingAbility("p","awaken_attack",k)}else{msg("王の攻撃：自陣1段目にいるクリーチャーを選んでください。")}return;}if(S.card!==null){const selected=S.hand[S.card];if(!GameCore.selectedTargets().choices.some(a=>R13View.atCell(S,a,k))&&!(selected==='転移魔法'&&S.board[k]===S.teleportIdentity)){cancelCardSelection();return;}if(selected==="転移魔法"){castTeleport(k);return}if(selected==="解呪"){castDispel(k);return}if(selected==="裏切り"){castBetrayal(k);return}if(!cardCanTargetCell(selected,k,r)){cancelCardSelection();return}if(ENCHANT[selected]){enchantCast(k);return}if(SPELL[selected]){spellCast({kind:"piece",k});return}summon(S.card,r,c);return}let t=S.board[k];if(S.piece===null){if(t?.side==="p"){S.piece=k;S.inspect=null;msg(`${t.type}を選択中。移動先・攻撃対象・王を選べます。`);render()}else{S.inspect=t?{kind:"piece",k}:{kind:"cell",k};renderInfo()}return}let f=S.piece,p=S.board[f];if(!p){S.piece=null;render();return}if(t?.side==="p"&&!atk(p,f).includes(k)){S.piece=k;S.inspect=null;render();return}if(rel(p,f).includes(k)){beginPlayerActionUndo();if(!GameCore.move(f,k)){cancelPlayerActionUndo();return}S.piece=S.board[k]?k:null;log(`${p.type}が移動。`);render();if(!S.board[k])S.piece=null;commitPlayerActionUndo();return}if(atk(p,f).includes(k)){beginPlayerActionUndo();const hit=GameCore.attackCreature(f,k);if(!hit){cancelPlayerActionUndo();return}log(`${p.type}が${t.type}を攻撃（-${hit.amount}）。`);if(S.gameOver)return;if(hit.defeated){log(`${t.type}を撃破！`);msg(`${t.type}を撃破！`)}else msg(`${t.type}のHPは${t.hp}。`);render();flashHit(k);commitPlayerActionUndo();return}if(kingAtk(p,f)&&r===(p.side==="p"?0:4)&&c>=1&&c<=3){beginPlayerActionUndo();const kingHit=GameCore.attackKing(f);if(!kingHit){cancelPlayerActionUndo();return}log(`${p.type}が相手王を攻撃（-${kingHit.amount}）。`);commitPlayerActionUndo();if(S.gameOver)return;if(S.cHp<=0)return win();msg(`相手王に${kingHit.amount}ダメージ！`);render();return}S.piece=null;S.inspect=t?{kind:"piece",k}:{kind:"cell",k};render();msg("移動・攻撃範囲外をタップしたため、駒の選択を解除しました。")}
 function endTurn(){
  if(!advanceTurnUnified('p')||S.gameOver)return;
  render();log('CPUのターン。');msg('CPUが考えています…');
@@ -4657,7 +4710,7 @@ async function strongCpuCreaturePhase(){
 const CpuPresentation=PresentationClock.create({schedule:(f,ms)=>a4SetTimeout(f,ms),cancel:id=>{globalThis.clearTimeout(id);a4Timers.delete(id);},epoch:()=>a4Epoch});
 const cpuWait=()=>CpuPresentation.wait();
 
-async function cpu(){
+async function cpu(){if(S.side==="c"&&!S.gameOver)await cpuWindCards();
   if(S.gameOver||S.side!=="c")return;
   // この検証版では、封魔を使えるならほかのカードより先に使用する。
   const sealIndex=S.cHand.indexOf("封魔");

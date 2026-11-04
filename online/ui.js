@@ -22,7 +22,7 @@
 
  function button(text,fn,disabled=false){const b=document.createElement('button');b.type='button';b.textContent=text;b.disabled=disabled;b.onclick=fn;return b;}
  function choose(o){if(o&&usable())B3Poc.choose(o.choiceId);}
- function belongs(o,v){const a=o.action;if(v.choice)return ['chooseTokenCell','choosePromotion'].includes(a.type);if(!selected)return false;
+ function belongs(o,v){const a=o.action;if(v.choice)return ['chooseTokenCell','choosePromotion','chooseEffectCell'].includes(a.type);if(!selected)return false;
   if(selected.kind==='card')return a.instanceId===selected.id;
   if(selected.kind==='piece')return (a.from===selected.cell||a.sourceInstanceId===v.board[selected.cell]?.sourceInstanceId)&&(mode==='ability'?a.type==='activate_ability':['move','attack_creature','attack_king'].includes(a.type));
   return selected.kind==='king'&&selected.side===v.viewer&&mode==='ability'&&a.abilityId==='awaken_attack';
@@ -54,7 +54,7 @@
   const title=text=>{const e=document.createElement('div');e.className='infoName';e.textContent=text;info.append(e);};
   const description=id=>{if(D[id]?.description){const e=document.createElement('div');e.className='infoEffect';e.textContent=D[id].description;info.append(e);}};
   const range=p=>{const e=document.createElement('div');e.innerHTML=N.rangePair(p,(piece,kind)=>C.combatPattern(piece,D,kind,v));info.append(e);};
-  if(v.choice){title(v.choice.kind==='promotion'?'進化を選んでください':'バリケードの配置先');line(v.choice.kind==='promotion'?'進化するか選択してください。':'緑色の空きマスを選んでください。');}
+  if(v.choice){title(v.choice.kind==='effectMove'?'竜巻：移動先を選んでください':v.choice.kind==='promotion'?'進化を選んでください':'バリケードの配置先');line(v.choice.kind==='effectMove'?'ダメージと支払いは解決済みです。色の付いた空きマスへ必ず移動します。取消はできません。':v.choice.kind==='promotion'?'進化するか選択してください。':'緑色の空きマスを選んでください。');}
   else if(selected?.kind==='card'){const d=D[selected.cardId];title(selected.cardId);line((d.type==='creature'?'クリーチャー':d.type==='spell'?'スペル':'エンチャント')+' / コスト '+d.cost);if(d.type==='creature'){line('ATK '+d.atk+' / HP '+d.hp);range({type:selected.cardId,side:v.viewer,berserk:0});}description(selected.cardId);line(!usable()?'通信・処理の確定待ちのため操作停止中。':v.activeSide!==v.viewer?'相手の手番です。カードの情報を確認できます。':d.type==='spell'&&C.spellsBlocked(v,v.viewer)?'🔒 封魔中：カードの情報は確認できますが、スペルは使用できません。':d.cost>v.players[v.viewer].mana?`必要マナ ${d.cost} / 現在 ${v.players[v.viewer].mana}：マナ不足のため使用不可`:options().length?(source?'転移先の空きマスをタップしてください。':'色の付いた対象をタップして使用。再タップで選択解除。'):'現在使用できる対象がありません。');}
   else if(selected?.kind==='piece'&&v.board[selected.cell]){const p=v.board[selected.cell],d=D[p.type],power=C.powerForPiece(v,p,D),limit=C.attackLimit(p,D,v);info.innerHTML=N.creatureInfoHTML({piece:p,viewer:v.viewer,definition:d,power:{...power,total:v.power[selected.cell]},display:describePiece(p,selected.cell),range:N.rangePair(p,(piece,kind)=>describePiece(piece).patterns[kind]),description:d.description,berserkDescription:D.バーサーク.description,cellEffects:v.enchantments.filter(e=>e.target?.k===selected.cell).map(e=>({...e,description:D[e.cardId]?.description}))});
    for(const e of v.enchantments.filter(e=>e.target?.kind==='creature'&&e.target.instanceId===p.sourceInstanceId)){line(e.cardId+' 残り'+e.remainingTurns+'ターン');if(e.cardId!=='バーサーク')description(e.cardId);}
@@ -78,7 +78,7 @@
   const imageType=selected?.kind==='piece'?v.board[selected.cell]?.type:selected?.kind==='card'&&D[selected.cardId].type==='creature'?selected.cardId:null;
   const ownPiece=selected?.kind==='piece'&&v.board[selected.cell]?.side===v.viewer;
   const operation=selected?.kind==='card'?selected.cardId:ownPiece?v.board[selected.cell].type:mode==='ability'&&selected?.kind==='king'?'あなたの王':'';
-  N.renderSelectionStatus({operation,guide:source?'転移先を選択':mode==='ability'?'能力の対象を選択':selected?.kind==='card'?'詳細の可否と色の付いた対象を確認':'移動先・攻撃対象・王を選択',choice:v.choice?(v.choice.kind==='promotion'?'進化を選択':'緑色のマスからバリケードの配置先を選択'):'',paused:!usable()?'通信・処理の確定待ちのため操作停止中。':v.activeSide!==v.viewer?'相手の手番です。':'',scope:JSON.stringify([v.revision,selected,source,mode,state.status,state.inFlight])});
+  N.renderSelectionStatus({operation,guide:source?'転移先を選択':mode==='ability'?'能力の対象を選択':selected?.kind==='card'?'詳細の可否と色の付いた対象を確認':'移動先・攻撃対象・王を選択',choice:v.choice?(v.choice.kind==='effectMove'?'竜巻：色の付いた空きマスを選択（取消不可）':v.choice.kind==='promotion'?'進化を選択':'緑色のマスからバリケードの配置先を選択'):'',paused:!usable()?'通信・処理の確定待ちのため操作停止中。':v.activeSide!==v.viewer?'相手の手番です。':'',scope:JSON.stringify([v.revision,selected,source,mode,state.status,state.inFlight])});
   info.scrollTop=oldInfoScroll;updateInfoScroll();
   if(imageType){const asset=N.requestCreatureAsset(imageType);if(asset?.status==='loaded'){const img=document.createElement('img');img.className='infoCreatureBackdrop';img.alt='';img.src=asset.image.src;info.prepend(img);}}
  }
