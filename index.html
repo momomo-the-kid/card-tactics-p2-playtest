@@ -728,7 +728,7 @@ body.tutorial-mode #app{padding-bottom:240px}
    A real child avoids pseudo-element/class timing issues during tutorial re-rendering. */
 .overlayPiece .sharedHitBurst,.cell>.sharedHitBurst{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:clamp(28px,9vw,54px);z-index:120;pointer-events:none;animation:hitPop .70s ease-out forwards;}
 
-#deckBuilderScreen{box-sizing:border-box;padding:12px max(10px,env(safe-area-inset-right)) 24px max(10px,env(safe-area-inset-left))}
+#deckBuilderScreen{--deck-list-base:calc(74.4dvh - 50.4px);--deck-list-extra:0px;box-sizing:border-box;padding:12px max(10px,env(safe-area-inset-right)) 24px max(10px,env(safe-area-inset-left))}
 #deckBuilderScreen .deckBuilderShell{width:min(1160px,100%)}
 #deckBuilderScreen button,#deckBuilderScreen select,#deckBuilderScreen input:not([type=checkbox]){font:inherit;min-height:40px;border:1px solid #64758c;border-radius:6px;background:#202c3d;color:#f4f7fc;padding:6px 9px;box-sizing:border-box}
 #deckBuilderScreen button:disabled{opacity:.4}#deckBuilderScreen button:focus-visible{outline:3px solid #91c6ff}
@@ -745,16 +745,24 @@ body.tutorial-mode #app{padding-bottom:240px}
 .deckBackToList{display:none}@media(max-width:620px){.deckBackToList{display:block;margin-bottom:8px}}
 
 .deckListPanel{min-width:0}.deckListHeading,.deckDetailHeading{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:42px;box-sizing:border-box;padding:6px 8px;background:#202e42;border:1px solid #687f9c;border-radius:8px 8px 0 0;font-size:14px}
-#deckBuilderScreen .deckCardList{max-height:calc(74.4dvh - 50.4px)}
+#deckBuilderScreen .deckCardList{max-height:calc(var(--deck-list-base) + var(--deck-list-extra))}
 #deckBuilderScreen .deckInfoPanel{display:flex;flex-direction:column;overflow:hidden;padding:0;min-height:100px}#deckInfoBody{overflow:auto;min-height:0;padding:10px;overscroll-behavior:contain}.deckDetailHeading{flex-shrink:0;flex-wrap:wrap;border:0;border-bottom:1px solid #687f9c;border-radius:0}.deckDetailHeading .deckBackToList{margin:0!important}
 #deckCodePanel{margin:12px 0;padding:10px;border:1px solid #60748e;border-radius:8px}#deckCodePanel>summary{cursor:pointer;min-height:32px;font-weight:700}.deckCodeGrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.deckCodeGrid section{min-width:0}.deckCodeGrid h2{font-size:16px}.deckCodeGrid textarea{display:block;box-sizing:border-box;width:100%;min-height:100px;margin:5px 0 8px;background:#0c1420;color:#e8f1ff;border:1px solid #6d86a5;border-radius:6px;padding:8px;font-size:13px;overflow-wrap:anywhere}.deckCodeGrid p,.deckCodeGrid div{overflow-wrap:anywhere}.deckCodeGrid p{font-size:14px}.deckCodeGrid label{font-size:14px}#deckImportPreview{white-space:pre-wrap;font-size:14px;max-height:240px;overflow:auto;margin:8px 0}
-@media(max-width:620px){#deckBuilderScreen .deckCardList{max-height:calc(48dvh - 50.4px)}.deckCodeGrid{grid-template-columns:1fr}}
+@media(max-width:620px){#deckBuilderScreen{--deck-list-base:calc(48dvh - 50.4px)}.deckCodeGrid{grid-template-columns:1fr}}
 
 /* Count readiness is independent of storage success and explicit match application. */
 .deckCountStatus{display:inline-flex;align-items:center;box-sizing:border-box;white-space:nowrap;padding:4px 10px;border:1px solid transparent;border-radius:999px;font-size:14px;font-weight:900;line-height:20px;color:#f4f7fc;font-variant-numeric:tabular-nums}
 .deckCountStatus.complete{background:#163d29;border-color:#77c98b;box-shadow:0 0 8px rgba(119,201,139,.28)}
 .deckCountStatus.incomplete{background:#49232c;border-color:#ff7b83;box-shadow:0 0 8px rgba(255,94,103,.28)}
 #deckStorageDiagnostic{display:block;box-sizing:border-box;width:100%;max-width:100%;min-height:140px;margin:8px 0;background:#0c1420;color:#e8f1ff;border:1px solid #6d86a5;border-radius:6px;padding:8px;font-size:13px;overflow-wrap:anywhere}
+
+/* Portrait gains two normal 51px rows without changing row typography. */
+@media(orientation:portrait){#deckBuilderScreen{--deck-list-extra:102px}}
+/* List max-height is content height: add its 2px border and 42px heading once. */
+@media(orientation:landscape){#deckBuilderScreen .deckInfoPanel{max-height:calc(var(--deck-list-base) + 2px + 42px)}}
+#deckInfoBody{position:relative;isolation:isolate}
+#deckInfoBody>*:not(.deckCreatureBackdrop){position:relative;z-index:1}
+#deckInfoBody>.deckCreatureBackdrop{top:0;right:0;width:100%;height:100%;max-width:100%;transform:none;object-fit:contain;object-position:center;opacity:.34}
 /* The existing SVG is the king fallback when no PNG has loaded. The legacy
    image switch hid it with display:none even after resetting its opacity. */
 body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
@@ -1019,7 +1027,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-three-cards-v26">ver p3-three-cards-v26</div>
+  <div class="titleVersion" data-build="p3-deck-visibility-v27">ver p3-deck-visibility-v27</div>
   <div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -1419,12 +1427,24 @@ function requestCreatureAsset(type){
   let entry=creatureAssetCache.get(path);
   if(entry)return entry;
   const image=new Image();
-  entry={status:"loading",path,image};
+  let settled;const ready=new Promise(resolve=>settled=resolve);
+  entry={status:"loading",path,image,ready};
   creatureAssetCache.set(path,entry);
-  image.onload=()=>{entry.status="loaded";redraw()};
-  image.onerror=()=>{entry.status="missing";redraw()};
+  image.onload=()=>{entry.status="loaded";settled();redraw()};
+  image.onerror=()=>{entry.status="missing";settled();redraw()};
   image.src=path;
   return entry;
+}
+// A token per detail container prevents a late image from replacing a newer selection.
+const detailImageTokens=new WeakMap();
+function renderCreatureDetailImage(container,type,className='infoCreatureBackdrop'){
+ const token={};detailImageTokens.set(container,token);
+ container.querySelectorAll('[data-creature-detail-image]').forEach(img=>img.remove());
+ const entry=type?requestCreatureAsset(type):null;if(!entry)return;
+ const show=()=>{if(entry.status!=='loaded'||!container.isConnected||detailImageTokens.get(container)!==token)return;
+  const img=document.createElement('img');img.className=className;img.alt='';img.dataset.creatureDetailImage=type;img.onerror=()=>img.remove();img.src=entry.image.src;container.prepend(img);
+ };
+ if(entry.status==='loading')entry.ready.then(show);else show();
 }
 function bindCreatureAsset(img,pieceEl,type){
   const entry=requestCreatureAsset(type);
@@ -1640,7 +1660,7 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();
 </script><script>
 (function(){const modules={"./game-core.cjs":function(module,exports,require){
@@ -3825,6 +3845,7 @@ function encode({name,counts}){
 return {FORMAT,VERSION,MAX_LENGTH,encode,decode};
 });
 
+const DeckCardKinds=Object.freeze({creature:{label:'クリーチャー',icon:'♟️'},spell:{label:'スペル',icon:'⚡️'},enchant:{label:'エンチャント',icon:'🔮'}});
 const DeckLibrary=CardTacticsDeckLibrary.create(DeckValidation,{getItem:k=>localStorage.getItem(k),setItem:(k,v)=>localStorage.setItem(k,v)});
 const DeckRepository={loadConfirmed:()=>DeckLibrary.active().counts,toCardIds:c=>DeckValidation.toCardIds(c)};
 const DeckBuilder={selected:null,dirty:false,
@@ -3843,15 +3864,15 @@ const DeckBuilder={selected:null,dirty:false,
  status(){const actual=this.session.state.active,active=this.data.active.slotId===this.id,pending=!active||!DeckLibrary.same(this.slot.draft,actual.counts);document.getElementById('deckActive').textContent='実戦で使用：'+actual.name+(active&&pending?'（編集内容は未反映）':'');const notice=document.getElementById('deckBuilderNotice');notice.textContent=this.error||((this.dirty?'未保存':'編集内容は保存済み')+' ／ '+(pending?'実戦へ未反映':'実戦に反映済み')+(DeckValidation.valid(this.slot.draft)?'':' ／ 下書き・有効な40枚ではありません'));notice.classList.toggle('unsaved',!!this.error||this.dirty);document.getElementById('deckRetry').hidden=!this.dirty||this.session.blocked;document.getElementById('deckReload').hidden=!this.error;document.getElementById('deckUse').disabled=!DeckValidation.valid(this.slot.draft)||this.session.blocked;this.updateCounts();document.getElementById('deckStorageDiagnostic').value=DeckLibrary.diagnostics();globalThis.DeckSharing?.sync();},
  render(){const list=document.getElementById('deckCardList'),top=list.scrollTop,info=document.getElementById('deckInfoBody'),itop=info.scrollTop,total=DeckValidation.total(this.slot.draft),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  document.getElementById('deckSlot').innerHTML=this.data.slots.map(s=>'<option value="'+s.id+'" '+(s.id===this.id?'selected':'')+'>'+esc(s.name)+(s.id===this.data.active.slotId?'（使用中）':'')+'</option>').join('');if(document.activeElement!==document.getElementById('deckName'))document.getElementById('deckName').value=this.slot.name;this.updateCounts();this.status();
- const labels={creature:'クリーチャー',spell:'スペル',enchant:'エンチャント'},types={creature:0,spell:0,enchant:0},costs={};for(const[id,n]of Object.entries(this.slot.draft)){const d=CARD_DEFINITIONS[id];types[d.type]+=n;costs[d.cost]=(costs[d.cost]||0)+n;}
- document.getElementById('deckSummary').innerHTML=Object.entries(types).map(([t,n])=>labels[t]+' '+n+'枚').join(' ／ ')+'<div class="deckCurve" aria-label="コスト別採用枚数">'+Object.entries(costs).sort((a,b)=>Number(a[0])-Number(b[0])).map(([c,n])=>'<span> '+n+'<i style="height:'+Math.min(40,n*2)+'px"></i>'+c+'マナ</span>').join('')+'</div>';
+ const types={creature:0,spell:0,enchant:0},costs={};for(const[id,n]of Object.entries(this.slot.draft)){const d=CARD_DEFINITIONS[id];types[d.type]+=n;costs[d.cost]=(costs[d.cost]||0)+n;}
+ document.getElementById('deckSummary').innerHTML=Object.entries(types).map(([t,n])=>DeckCardKinds[t].label+DeckCardKinds[t].icon+n+'枚').join(' ／ ')+'<div class="deckCurve" aria-label="コスト別採用枚数">'+Object.entries(costs).sort((a,b)=>Number(a[0])-Number(b[0])).map(([c,n])=>'<span> '+n+'<i style="height:'+Math.min(40,n*2)+'px"></i>'+c+'マナ</span>').join('')+'</div>';
  const typeOrder={creature:0,spell:1,enchant:2};
  const query=document.getElementById('deckSearch').value.trim().toLocaleLowerCase(),type=document.getElementById('deckType').value,cost=document.getElementById('deckCost').value,adopted=document.getElementById('deckAdopted').checked;
- list.innerHTML=Object.entries(CARD_DEFINITIONS).sort(([,a],[,b])=>(typeOrder[a.type]??3)-(typeOrder[b.type]??3)).filter(([id,d])=>id.toLocaleLowerCase().includes(query)&&(!type||d.type===type)&&(cost===''||String(d.cost??0)===cost)&&(!adopted||(this.slot.draft[id]||0)>0)).map(([id,d])=>{const n=this.slot.draft[id]||0,normal=d.deckType==='normal';return '<div class="deckRow" data-card="'+esc(id)+'"><button class="deckCardName" data-select="'+esc(id)+'">'+esc(id)+' <small>('+d.cost+')</small></button>'+(normal?'<div class="deckControls"><button data-delta="-1" '+(n<=0?'disabled':'')+' aria-label="'+esc(id)+'を減らす">−</button><span class="deckQty">'+n+'</span><button data-delta="1" '+(n>=DeckValidation.LIMIT||total>=DeckValidation.SIZE?'disabled':'')+' aria-label="'+esc(id)+'を増やす">＋</button></div>':'<span class="deckLocked">投入不可</span>')+'</div>';}).join('')||'<p>該当するカードはありません。</p>';list.scrollTop=top;if(this.selected)this.renderInfo();info.scrollTop=itop;
+ list.innerHTML=Object.entries(CARD_DEFINITIONS).sort(([,a],[,b])=>(typeOrder[a.type]??3)-(typeOrder[b.type]??3)).filter(([id,d])=>id.toLocaleLowerCase().includes(query)&&(!type||d.type===type)&&(cost===''||String(d.cost??0)===cost)&&(!adopted||(this.slot.draft[id]||0)>0)).map(([id,d])=>{const n=this.slot.draft[id]||0,normal=d.deckType==='normal';return '<div class="deckRow" data-card="'+esc(id)+'"><button class="deckCardName" data-select="'+esc(id)+'">'+(DeckCardKinds[d.type]?.icon||'')+' '+esc(id)+' <small>('+d.cost+')</small></button>'+(normal?'<div class="deckControls"><button data-delta="-1" '+(n<=0?'disabled':'')+' aria-label="'+esc(id)+'を減らす">−</button><span class="deckQty">'+n+'</span><button data-delta="1" '+(n>=DeckValidation.LIMIT||total>=DeckValidation.SIZE?'disabled':'')+' aria-label="'+esc(id)+'を増やす">＋</button></div>':'<span class="deckLocked">投入不可</span>')+'</div>';}).join('')||'<p>該当するカードはありません。</p>';list.scrollTop=top;if(this.selected)this.renderInfo();info.scrollTop=itop;
  },
  // Explicit references for existing ability IDs; never infer relationships from card prose.
  relatedHTML(d){const links=[{ability:'guard_barricade',label:'生成',target:'バリケード'},{ability:'promote_assassin',label:'変身先',target:'暗殺者'}].filter(r=>d.abilities?.includes(r.ability)&&CARD_DEFINITIONS[r.target]);return links.length?'<div class="deckRelated">'+links.map(r=>'<button data-related="'+r.target+'">'+r.label+'：'+r.target+'</button>').join('')+'</div>':'';},
- renderInfo(){const id=this.selected,d=CARD_DEFINITIONS[id];if(!d)return;const labels={creature:'クリーチャー',spell:'スペル',enchant:'エンチャント'},normal=d.deckType==='normal';document.getElementById('deckInfoBody').innerHTML='<div class="deckInfoTitle">《'+id+'》</div><div>'+labels[d.type]+' / コスト '+d.cost+'</div>'+(d.type==='creature'?'<div class="deckInfoStats">HP '+d.hp+' ／ ATK '+d.atk+'</div>'+rangePair({type:id,side:'p',berserk:0}):'')+'<div class="deckInfoText">'+(d.description||'能力なし。')+'</div>'+(normal?'':'<p class="deckInfoLocked">投入不可：'+(d.deckType==='token'?'生成トークン':'変身先カード')+'</p>')+this.relatedHTML(d);}
+ renderInfo(){const id=this.selected,d=CARD_DEFINITIONS[id];if(!d)return;const normal=d.deckType==='normal';document.getElementById('deckInfoBody').innerHTML='<div class="deckInfoTitle">《'+id+'》</div><div>'+DeckCardKinds[d.type].label+' / コスト '+d.cost+'</div>'+(d.type==='creature'?'<div class="deckInfoStats">HP '+d.hp+' ／ ATK '+d.atk+'</div>'+rangePair({type:id,side:'p',berserk:0}):'')+'<div class="deckInfoText">'+(d.description||'能力なし。')+'</div>'+(normal?'':'<p class="deckInfoLocked">投入不可：'+(d.deckType==='token'?'生成トークン':'変身先カード')+'</p>')+this.relatedHTML(d);NormalGameUI.renderCreatureDetailImage(document.getElementById('deckInfoBody'),d.type==='creature'?id:null,'infoCreatureBackdrop deckCreatureBackdrop');}
 };
 function openDeckBuilder(){DeckBuilder.open();}function closeDeckBuilder(){DeckBuilder.close();}
 function refreshActiveDeck(){const a=DeckLibrary.active();for(const el of document.querySelectorAll('.activeDeckLabel'))el.textContent='使用デッキ：'+a.name+(a.error?'（保存読込に問題あり・代替内容を使用）':'');}

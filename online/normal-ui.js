@@ -307,12 +307,24 @@ function requestCreatureAsset(type){
   let entry=creatureAssetCache.get(path);
   if(entry)return entry;
   const image=new Image();
-  entry={status:"loading",path,image};
+  let settled;const ready=new Promise(resolve=>settled=resolve);
+  entry={status:"loading",path,image,ready};
   creatureAssetCache.set(path,entry);
-  image.onload=()=>{entry.status="loaded";redraw()};
-  image.onerror=()=>{entry.status="missing";redraw()};
+  image.onload=()=>{entry.status="loaded";settled();redraw()};
+  image.onerror=()=>{entry.status="missing";settled();redraw()};
   image.src=path;
   return entry;
+}
+// A token per detail container prevents a late image from replacing a newer selection.
+const detailImageTokens=new WeakMap();
+function renderCreatureDetailImage(container,type,className='infoCreatureBackdrop'){
+ const token={};detailImageTokens.set(container,token);
+ container.querySelectorAll('[data-creature-detail-image]').forEach(img=>img.remove());
+ const entry=type?requestCreatureAsset(type):null;if(!entry)return;
+ const show=()=>{if(entry.status!=='loaded'||!container.isConnected||detailImageTokens.get(container)!==token)return;
+  const img=document.createElement('img');img.className=className;img.alt='';img.dataset.creatureDetailImage=type;img.onerror=()=>img.remove();img.src=entry.image.src;container.prepend(img);
+ };
+ if(entry.status==='loading')entry.ready.then(show);else show();
 }
 function bindCreatureAsset(img,pieceEl,type){
   const entry=requestCreatureAsset(type);
@@ -528,5 +540,5 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();
