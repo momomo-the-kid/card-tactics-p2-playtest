@@ -26,7 +26,7 @@
  function belongs(o,v){const a=o.action;if(v.choice)return ['chooseTokenCell','choosePromotion','chooseEffectCell'].includes(a.type);if(!selected)return false;
   if(selected.kind==='card')return a.instanceId===selected.id;
   if(selected.kind==='piece')return (a.from===selected.cell||a.sourceInstanceId===v.board[selected.cell]?.sourceInstanceId)&&(mode==='ability'?a.type==='activate_ability':['move','attack_creature','attack_king'].includes(a.type));
-  return selected.kind==='king'&&selected.side===v.viewer&&mode==='ability'&&a.abilityId==='awaken_attack';
+  return selected.kind==='king'&&selected.side===v.viewer&&a.abilityId===(mode==='wind'?'royal_wind':mode==='ability'?'awaken_attack':null);
  }
  const atCell=(a,k,v)=>a.cardId==='スワップスペル'&&source?v.board[k]?.sourceInstanceId===a.sourceInstanceId:a.to===k||a.target?.kind==='cell'&&a.target.k===k||a.target?.kind==='creature'&&v.board[k]?.sourceInstanceId===a.target.instanceId&&a.cardId!=='転移魔法';
  const atKing=(a,s)=>a.type==='attack_king'&&s!==state.view.viewer||['king','player'].includes(a.target?.kind)&&a.target.side===s;
@@ -62,7 +62,16 @@
    if(p.side===v.viewer&&C.effectiveAbilities(p,D,v).includes('sorcerer_bolt')){line('魔法：攻撃権＋マナ2で、盤上の任意のクリーチャー／王に2ダメージ');if(v.activeSide!==v.viewer)line('相手の手番です。');else if(describePiece(p).attack.state==='spent')line('攻撃済みのため魔法は使用できません。');else if(describePiece(p).attack.state==='blocked')line(describePiece(p).attack.label+'。魔法の可否は能力ボタンに反映されます。');else if(v.players[v.viewer].mana<2)line(`必要マナ 2 / 現在 ${v.players[v.viewer].mana}：マナ不足のため使用不可`);}
    const abilities=v.options.filter(o=>o.action.type==='activate_ability'&&o.action.sourceInstanceId===p.sourceInstanceId);if(abilities.length){const b=button(mode==='ability'?'魔法の選択を解除':'魔法を使用',()=>{mode=mode==='ability'?'combat':'ability';target=null;render(state);},!usable());b.id='useAbility';b.className='useCardButton';actions.append(b);}
   }
-  else if(selected?.kind==='king'){const own=selected.side===v.viewer,p=v.players[selected.side];title(own?'あなたの王':'相手の王');if(C.spellsBlocked(v,selected.side))line('🔒 封魔：スペル使用不可（次のターン終了まで）');line('HP '+p.kingHp+' / 20');line('マナ '+p.mana+' / '+p.maxMana);for(const e of v.enchantments.filter(e=>e.target?.side===selected.side)){line(e.cardId+' 残り'+e.remainingTurns+'ターン');description(e.cardId);}line('通常の王への攻撃対象は盤外の中央3列。');const awakened=v.enchantments.some(e=>e.cardId==='王の覚醒'&&e.target?.side===selected.side&&e.remainingTurns>0);if(awakened){line(`王の攻撃：${v.kingAction[selected.side]?.awaken_attack||0}/1回（攻撃力5）`);if(v.kingAction[selected.side]?.awaken_attack)line('このターンは攻撃済み');}if(own&&v.options.some(o=>o.action.abilityId==='awaken_attack')){const b=button(mode==='ability'?'王の攻撃を解除':'攻撃',()=>{mode=mode==='ability'?'combat':'ability';render(state);},!usable());b.id='useAbility';b.className='useCardButton';actions.append(b);}}
+  else if(selected?.kind==='king'){const own=selected.side===v.viewer,p=v.players[selected.side];title(own?'あなたの王':'相手の王');if(C.spellsBlocked(v,selected.side))line('🔒 封魔：スペル使用不可（次のターン終了まで）');line('HP '+p.kingHp+' / 20');line('マナ '+p.mana+' / '+p.maxMana);for(const e of v.enchantments.filter(e=>e.target?.side===selected.side)){line(e.cardId+' 残り'+e.remainingTurns+'ターン');description(e.cardId);}line('通常の王への攻撃対象は盤外の中央3列。');const wind=v.enchantments.some(e=>e.cardId==='風精霊の加護'&&e.target?.side===selected.side);
+   if(own&&wind){
+    if(v.kingAction[v.viewer]?.royal_wind)line('風精霊の加護はこのターン使用済みです。');
+    else if(v.options.some(o=>o.action.abilityId==='royal_wind')){
+     const b=button(mode==='wind'?'対象選択を取消':'風の力を使う（0マナ）',()=>{mode=mode==='wind'?'combat':'wind';target=null;render(state);},!usable());
+     b.className='useCardButton';actions.append(b);
+     if(mode==='wind')line('自軍1段目の色の付いた対象を選んでください。');
+    }else line(v.activeSide!==v.viewer?'自分の手番に使用できます。':'現在選べる対象がありません。');
+   }
+   const awakened=v.enchantments.some(e=>e.cardId==='王の覚醒'&&e.target?.side===selected.side&&e.remainingTurns>0);if(awakened){line(`王の攻撃：${v.kingAction[selected.side]?.awaken_attack||0}/1回（攻撃力5）`);if(v.kingAction[selected.side]?.awaken_attack)line('このターンは攻撃済み');}if(own&&v.options.some(o=>o.action.abilityId==='awaken_attack')){const b=button(mode==='ability'?'王の攻撃を解除':'攻撃',()=>{mode=mode==='ability'?'combat':'ability';render(state);},!usable());b.id='useAbility';b.className='useCardButton';actions.append(b);}}
   else if(selected?.kind==='grave'){info.innerHTML=N.graveyardHTML(v.players[selected.side].graveyard,selected.side===v.viewer?'あなた':'相手');}
   else if(selected?.kind==='effects'){info.innerHTML=N.globalEffectsHTML(v.enchantments.filter(e=>e.target?.kind==='global'));}
   else if(selected?.kind==='effect-detail'){const e=v.enchantments.find(e=>String(e.instanceId)===String(selected.id)&&e.target?.kind==='global');info.innerHTML=N.globalDetailHTML(e,D[e?.cardId],D[e?.cardId]?.description);}

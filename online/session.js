@@ -66,7 +66,7 @@ function choices(Core,state,side,defs){
    else q.choices.forEach(add);
   }
   for(const piece of state.board.filter(p=>p?.side===side))Core.queryAbility(state,side,{abilityId:'sorcerer_bolt',sourceInstanceId:piece.sourceInstanceId},defs).forEach(add);
-  Core.queryAbility(state,side,{abilityId:'awaken_attack'},defs).forEach(add);add({type:'end_turn',side});
+  for(const abilityId of ['awaken_attack','royal_wind'])Core.queryAbility(state,side,{abilityId},defs).forEach(add);add({type:'end_turn',side});
  }
  add({type:'surrender',side});return [...new Map(out.map(a=>[JSON.stringify(a),a])).values()];
 }
