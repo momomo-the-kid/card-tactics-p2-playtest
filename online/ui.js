@@ -25,7 +25,7 @@
  function choose(o){if(o&&usable()){const result=B3Poc.choose(o.choiceId);if(result&&!result.ok){N.setNotice('操作を確定できませんでした：'+result.code,detailScope());renderInfo();}}}
  function belongs(o,v){const a=o.action;if(v.choice)return ['chooseTokenCell','choosePromotion','chooseEffectCell'].includes(a.type);if(!selected)return false;
   if(selected.kind==='card')return a.instanceId===selected.id;
-  if(selected.kind==='piece')return (a.from===selected.cell||a.sourceInstanceId===v.board[selected.cell]?.sourceInstanceId)&&(mode==='ability'?a.type==='activate_ability':['move','attack_creature','attack_king'].includes(a.type));
+  if(selected.kind==='piece')return (a.from===selected.cell||a.sourceInstanceId===v.board[selected.cell]?.sourceInstanceId)&&(mode==='heal'?a.abilityId==='heal':mode==='ability'?a.type==='activate_ability'&&a.abilityId==='sorcerer_bolt':['move','attack_creature','attack_king'].includes(a.type));
   return selected.kind==='king'&&selected.side===v.viewer&&a.abilityId===(mode==='wind'?'royal_wind':mode==='ability'?'awaken_attack':null);
  }
  const atCell=(a,k,v)=>a.cardId==='スワップスペル'&&source?v.board[k]?.sourceInstanceId===a.sourceInstanceId:a.to===k||a.target?.kind==='cell'&&a.target.k===k||a.target?.kind==='creature'&&v.board[k]?.sourceInstanceId===a.target.instanceId&&a.cardId!=='転移魔法';
@@ -60,9 +60,17 @@
   else if(selected?.kind==='piece'&&v.board[selected.cell]){const p=v.board[selected.cell],d=D[p.type],power=C.powerForPiece(v,p,D),limit=C.attackLimit(p,D,v);info.innerHTML=N.creatureInfoHTML({piece:p,viewer:v.viewer,definition:d,power:{...power,total:v.power[selected.cell]},display:describePiece(p,selected.cell),range:N.rangePair(p,(piece,kind)=>describePiece(piece).patterns[kind]),description:d.description,berserkDescription:D.バーサーク.description,cellEffects:v.enchantments.filter(e=>e.target?.k===selected.cell).map(e=>({...e,description:D[e.cardId]?.description}))});
    for(const e of v.enchantments.filter(e=>e.target?.kind==='creature'&&e.target.instanceId===p.sourceInstanceId)){line(e.cardId+' 残り'+e.remainingTurns+'ターン');if(e.cardId!=='バーサーク')description(e.cardId);}
    if(p.side===v.viewer&&C.effectiveAbilities(p,D,v).includes('sorcerer_bolt')){line('魔法：攻撃権＋マナ2で、盤上の任意のクリーチャー／王に2ダメージ');if(v.activeSide!==v.viewer)line('相手の手番です。');else if(describePiece(p).attack.state==='spent')line('攻撃済みのため魔法は使用できません。');else if(describePiece(p).attack.state==='blocked')line(describePiece(p).attack.label+'。魔法の可否は能力ボタンに反映されます。');else if(v.players[v.viewer].mana<2)line(`必要マナ 2 / 現在 ${v.players[v.viewer].mana}：マナ不足のため使用不可`);}
-   const abilities=v.options.filter(o=>o.action.type==='activate_ability'&&o.action.sourceInstanceId===p.sourceInstanceId);if(abilities.length){const b=button(mode==='ability'?'魔法の選択を解除':'魔法を使用',()=>{mode=mode==='ability'?'combat':'ability';target=null;render(state);},!usable());b.id='useAbility';b.className='useCardButton';actions.append(b);}
+   const abilities=v.options.filter(o=>o.action.type==='activate_ability'&&o.action.sourceInstanceId===p.sourceInstanceId);const healing=abilities.some(o=>o.action.abilityId==='heal');
+   if(p.side===v.viewer&&D[p.type]?.abilities?.includes('heal')){
+    if(healing){
+     const b=button(mode==='heal'?'対象選択を取消':'回復を使う（0マナ）',()=>{mode=mode==='heal'?'combat':'heal';target=null;render(state);},!usable());
+     b.className='useCardButton';actions.append(b);
+     if(mode==='heal')line('自軍王または回復できる自軍クリーチャーを選んでください。');
+    }else line(v.activeSide!==v.viewer?'自分の手番に使用できます。':p.m||p.a?'移動権と攻撃権が両方必要です。':'現在、回復を使用できません。');
+   }
+   if(abilities.some(o=>o.action.abilityId==='sorcerer_bolt')){const b=button(mode==='ability'?'魔法の選択を解除':'魔法を使用',()=>{mode=mode==='ability'?'combat':'ability';target=null;render(state);},!usable());b.id='useAbility';b.className='useCardButton';actions.append(b);}
   }
-  else if(selected?.kind==='king'){const own=selected.side===v.viewer,p=v.players[selected.side];title(own?'あなたの王':'相手の王');if(C.spellsBlocked(v,selected.side))line('🔒 封魔：スペル使用不可（次のターン終了まで）');line('HP '+p.kingHp+' / 20');line('マナ '+p.mana+' / '+p.maxMana);for(const e of v.enchantments.filter(e=>e.target?.side===selected.side)){line(e.cardId+' 残り'+e.remainingTurns+'ターン');description(e.cardId);}line('通常の王への攻撃対象は盤外の中央3列。');const wind=v.enchantments.some(e=>e.cardId==='風精霊の加護'&&e.target?.side===selected.side);
+  else if(selected?.kind==='king'){const own=selected.side===v.viewer,p=v.players[selected.side];title(own?'あなたの王':'相手の王');if(C.spellsBlocked(v,selected.side))line('🔒 封魔：スペル使用不可（次のターン終了まで）');line('HP '+p.kingHp);line('マナ '+p.mana+' / '+p.maxMana);for(const e of v.enchantments.filter(e=>e.target?.side===selected.side)){line(e.cardId+' 残り'+e.remainingTurns+'ターン');description(e.cardId);}line('通常の王への攻撃対象は盤外の中央3列。');const wind=v.enchantments.some(e=>e.cardId==='風精霊の加護'&&e.target?.side===selected.side);
    if(own&&wind){
     if(v.kingAction[v.viewer]?.royal_wind)line('風精霊の加護はこのターン使用済みです。');
     else if(v.options.some(o=>o.action.abilityId==='royal_wind')){
