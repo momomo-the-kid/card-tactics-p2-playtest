@@ -1029,7 +1029,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-cpu-basic-v35">ver p3-cpu-basic-v35</div>
+  <div class="titleVersion" data-build="p3-first-mana-parity-v36">ver p3-first-mana-parity-v36</div>
   <div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -2929,7 +2929,7 @@ module.exports={rules,valid,apply};
 },
 "./match-rules.cjs":function(module,exports,require){
 'use strict';
-const DEFAULTS=Object.freeze({version:1,secondPlayerInitialManaBonus:1,firstPlayerFirstDraw:false,initialHandSize:5,normalDrawCount:1,handLimit:null});
+const DEFAULTS=Object.freeze({version:1,secondPlayerInitialManaBonus:0,firstPlayerFirstDraw:false,initialHandSize:5,normalDrawCount:1,handLimit:null});
 function normalize(input){
  if(input==null)return {...DEFAULTS};
  if(typeof input!=='object'||Array.isArray(input)||Object.keys(input).some(k=>!Object.hasOwn(DEFAULTS,k)))throw Error('INVALID_RULES');
@@ -3786,6 +3786,8 @@ const TutorialController={
   this.epoch++;this.running=false;this.error=null;this.active=true;this.index=0;this.historyViewing=false;this.steps=tutorialSteps();
    msg('説明を読んで「次へ」を押して下さい。','routine');
   delete S.cardIdentities;delete S.coreBridge;delete S.pendingCardTransfers;delete S.pendingSummon;delete S.pendingEntry;delete S.pendingChoice;delete S.pendingEntryHtml;Object.assign(S,{turn:1,side:'p',manaBySide:{p:1,c:2},maxManaBySide:{p:1,c:2},manaBonus:{p:0,c:0},pHp:20,cHp:20,board:Array(25).fill(null),hand:['歩兵','歩兵','銀級兵','銀級兵','バーサーク'],deck:[...Array(31).fill('歩兵'),'バーサーク','チャリオット','ファイヤーボルト','マナ'],cHand:['歩兵','踊り子','金級兵','チャリオット','銀級兵'],cDeck:Array(35).fill('歩兵'),card:null,piece:null,inspect:null,gameOver:false,mines:Array(25).fill(null),enchantments:[],battles:[],graveyards:{p:[],c:[]},nextCardInstanceId:1,kingAction:{p:{},c:{}},kingAttackMode:false,sorcererMode:false,tokenPlacement:null,teleportSource:null,dispelTarget:null,cpuPreview:null});
+  // The scripted opponent needs its original mana curve for fixed summons.
+  S.rules=R12Core.normalizeRules({secondPlayerInitialManaBonus:1});
   $('log').innerHTML='';clearOneStepUndo();document.body.classList.add('tutorial-mode');startGameScreen();this.show();
  },
  clearGlow(){document.querySelectorAll('.tutorialGlow,.tutorialZoom').forEach(e=>e.classList.remove('tutorialGlow','tutorialZoom'));NormalGameUI.refreshTutorialGeometry()},
