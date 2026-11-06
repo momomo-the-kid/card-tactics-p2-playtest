@@ -65,7 +65,7 @@ function choices(Core,state,side,defs){
    else if(card.cardId==='解呪')for(const a of q.choices)Core.queryCard(state,side,{...card,target:a.target},defs).choices.forEach(add);
    else q.choices.forEach(add);
   }
-  for(const piece of state.board.filter(p=>p?.side===side))for(const abilityId of ['sorcerer_bolt','heal'])Core.queryAbility(state,side,{abilityId,sourceInstanceId:piece.sourceInstanceId},defs).forEach(add);
+  for(const piece of state.board.filter(p=>p?.side===side))for(const abilityId of ['sorcerer_bolt','heal','fortune_draw','generate_golem'])Core.queryAbility(state,side,{abilityId,sourceInstanceId:piece.sourceInstanceId},defs).forEach(add);
   for(const abilityId of ['awaken_attack','royal_wind'])Core.queryAbility(state,side,{abilityId},defs).forEach(add);add({type:'end_turn',side});
  }
  add({type:'surrender',side});return [...new Map(out.map(a=>[JSON.stringify(a),a])).values()];

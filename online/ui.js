@@ -25,16 +25,16 @@
  function choose(o){if(o&&usable()){const result=B3Poc.choose(o.choiceId);if(result&&!result.ok){N.setNotice('操作を確定できませんでした：'+result.code,detailScope());renderInfo();}}}
  function belongs(o,v){const a=o.action;if(v.choice)return ['chooseTokenCell','choosePromotion','chooseEffectCell'].includes(a.type);if(!selected)return false;
   if(selected.kind==='card')return a.instanceId===selected.id;
-  if(selected.kind==='piece')return (a.from===selected.cell||a.sourceInstanceId===v.board[selected.cell]?.sourceInstanceId)&&(mode==='heal'?a.abilityId==='heal':mode==='ability'?a.type==='activate_ability'&&a.abilityId==='sorcerer_bolt':['move','attack_creature','attack_king'].includes(a.type));
+  if(selected.kind==='piece')return (a.from===selected.cell||a.sourceInstanceId===v.board[selected.cell]?.sourceInstanceId)&&(['heal','generate_golem'].includes(mode)?a.abilityId===mode:mode==='ability'?a.type==='activate_ability'&&a.abilityId==='sorcerer_bolt':['move','attack_creature','attack_king'].includes(a.type));
   return selected.kind==='king'&&selected.side===v.viewer&&a.abilityId===(mode==='wind'?'royal_wind':mode==='ability'?'awaken_attack':null);
  }
- const atCell=(a,k,v)=>a.cardId==='スワップスペル'&&source?v.board[k]?.sourceInstanceId===a.sourceInstanceId:a.to===k||a.target?.kind==='cell'&&a.target.k===k||a.target?.kind==='creature'&&v.board[k]?.sourceInstanceId===a.target.instanceId&&a.cardId!=='転移魔法';
+ const atCell=(a,k,v)=>D[a.cardId]?.creaturePair&&source?v.board[k]?.sourceInstanceId===a.sourceInstanceId:a.to===k||a.target?.kind==='cell'&&a.target.k===k||a.target?.kind==='creature'&&v.board[k]?.sourceInstanceId===a.target.instanceId&&a.cardId!=='転移魔法';
  const atKing=(a,s)=>a.type==='attack_king'&&s!==state.view.viewer||['king','player'].includes(a.target?.kind)&&a.target.side===s;
  function options(){const v=state.view;return v.options.filter(o=>belongs(o,v)&&(!source||o.action.target?.instanceId===source)&&(!target||target(o.action)));}
  function pickCard(c){if(!state?.view||state.view.choice)return;const same=selected?.kind==='card'&&selected.id===c.instanceId;clear();if(!same)selected={kind:'card',id:c.instanceId,cardId:c.cardId};render(state);}
  function cell(k){if(!state?.view)return;const v=state.view;
   if(usable()){
-   if(selected?.kind==='card'&&['転移魔法','スワップスペル'].includes(selected.cardId)&&!source){const id=v.board[k]?.sourceInstanceId;if(id&&options().some(o=>o.action.target?.instanceId===id)){source=id;target=null;render(state);return;}}
+   if(selected?.kind==='card'&&(selected.cardId==='転移魔法'||D[selected.cardId]?.creaturePair)&&!source){const id=v.board[k]?.sourceInstanceId;if(id&&options().some(o=>o.action.target?.instanceId===id)){source=id;target=null;render(state);return;}}
    const matches=options().filter(o=>atCell(o.action,k,v));
    if(matches.length===1){choose(matches[0]);return;}
    if(matches.length>1){target=a=>atCell(a,k,v);render(state);return;}
@@ -68,6 +68,18 @@
      if(mode==='heal')line('自軍王または回復できる自軍クリーチャーを選んでください。');
     }else line(v.activeSide!==v.viewer?'自分の手番に使用できます。':p.m||p.a?'移動権と攻撃権が両方必要です。':'現在、回復を使用できません。');
    }
+   if(p.side===v.viewer)for(const id of ['fortune_draw','generate_golem']){
+    if(!d.abilities?.includes(id))continue;
+    const available=abilities.find(o=>o.action.abilityId===id),golem=id==='generate_golem';
+    if(!available){line(N.paidAbilityReason(id,p,v.activeSide===v.viewer,v.players[v.viewer].mana));continue;}
+    const selecting=mode===id;
+    const b=button(selecting?'生成先の選択を取消':golem?'土ゴーレムを生成（4マナ）':'占いを使う（2マナ）',()=>{
+     if(!golem){choose(available);return;}
+     mode=selecting?'combat':id;target=null;render(state);
+    },!usable());
+    b.className='useCardButton';actions.append(b);
+    if(selecting)line('上下左右の色の付いた空きマスを選んでください。');
+   }
    if(abilities.some(o=>o.action.abilityId==='sorcerer_bolt')){const b=button(mode==='ability'?'魔法の選択を解除':'魔法を使用',()=>{mode=mode==='ability'?'combat':'ability';target=null;render(state);},!usable());b.id='useAbility';b.className='useCardButton';actions.append(b);}
   }
   else if(selected?.kind==='king'){const own=selected.side===v.viewer,p=v.players[selected.side];title(own?'あなたの王':'相手の王');if(C.spellsBlocked(v,selected.side))line('🔒 封魔：スペル使用不可（次のターン終了まで）');line('HP '+p.kingHp);line('マナ '+p.mana+' / '+p.maxMana);for(const e of v.enchantments.filter(e=>e.target?.side===selected.side)){line(e.cardId+' 残り'+e.remainingTurns+'ターン');description(e.cardId);}line('通常の王への攻撃対象は盤外の中央3列。');const wind=v.enchantments.some(e=>e.cardId==='風精霊の加護'&&e.target?.side===selected.side);
@@ -98,7 +110,7 @@
   const d=selected?.kind==='card'?D[selected.cardId]:null;
   const reason=d?N.cardUseReason({available:query.length>0,active:v.activeSide===v.viewer,paused:!usable(),sealed:d.type==='spell'&&C.spellsBlocked(v,v.viewer),cost:d.cost,mana:v.players[v.viewer].mana}):'';
   info.scrollTop=oldInfoScroll;
-  N.renderDetailStatus({reason,choice:N.mandatoryPrompt(v.choice?.kind==='tokenCell'?'token':v.choice?.kind),guide:selected?.cardId==='スワップスペル'?(source?'2体目を選んで交換を確定。カード再タップで取消（未消費）。':'1体目を選んでください。カード再タップで取消（未消費）。'):source?'転移先の空きマスを選んでください。':'',scope:detailScope()});updateInfoScroll();
+  N.renderDetailStatus({reason,choice:N.mandatoryPrompt(v.choice?.kind==='tokenCell'?'token':v.choice?.kind),guide:d?.creaturePair?N.creaturePairGuide(d.creaturePair,!!source):source?'転移先の空きマスを選んでください。':'',scope:detailScope()});updateInfoScroll();
   if(imageType){const asset=N.requestCreatureAsset(imageType);if(asset?.status==='loaded'){const img=document.createElement('img');img.className='infoCreatureBackdrop';img.alt='';img.src=asset.image.src;info.prepend(img);}}
  }
  function drawPieces(){const v=state?.view;if(!v)return;N.renderPieces({board:v.board,viewer:v.viewer,describe:describePiece,redrawInfo:renderInfo,afterRender:restoreHits,enchantVisual:p=>{const cards=v.enchantments.filter(e=>e.target?.kind==='creature'&&e.target.instanceId===p.sourceInstanceId);return cards.length?{cards,colors:[...new Set(cards.map(e=>D[e.cardId]?.visual?.auraColor||'#b985ff'))]}:null;}});const column=document.querySelector('.boardColumn');if(!document.body.classList.contains('layout-landscape')&&column?.offsetHeight)$('infoPanel').style.setProperty('--panel-height',column.getBoundingClientRect().height+'px');}
