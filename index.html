@@ -1029,7 +1029,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-cpu-deck-choice-v32">ver p3-cpu-deck-choice-v32</div>
+  <div class="titleVersion" data-build="p3-cpu-gachi-v34">ver p3-cpu-gachi-v34</div>
   <div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -1056,7 +1056,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
   </div>
   <p id="cpuDeckMatchNotice" role="status" hidden></p><div class="status"><span class="badge">ターン: <b id="turn">1</b></span><span class="badge">自分山札: <b id="deck">35</b></span><span class="badge">相手山札: <b id="cpuDeck">35</b></span><span class="badge">相手手札: <b id="cpuHand">5</b>枚</span><button class="badge statusButton" type="button" onclick="showGlobalEnchantments()">全体エンチャント🔮<b id="globalEnchantCount">0</b></button></div><div class="playArea"><div class="boardColumn"><div id="turnIndicator" class="turnIndicator" role="status" hidden></div><div class="kingZone enemy"><span class="kingStat">❤️HP<b id="cHp">20</b></span><button class="graveButton" type="button" onclick="showGraveyard('c')">🪦<b id="cGrave">0</b></button><div class="king" onclick="clickKing('c')">相手の王</div><span class="kingStat manaStat"><span class="manaOwner">相手</span><span class="manaGlyph" aria-hidden="true">💧</span><b id="cpuMana">2/2</b></span></div><div class="boardWrap"><div class="boardPlane"><div id="board" class="board" aria-label="5行5列の戦闘盤面"></div><svg class="boardGrid" viewBox="0 0 5 5" aria-hidden="true"><path data-grid-axis="column" d="M0 0V5"/><path data-grid-axis="column" d="M1 0V5"/><path data-grid-axis="column" d="M2 0V5"/><path data-grid-axis="column" d="M3 0V5"/><path data-grid-axis="column" d="M4 0V5"/><path data-grid-axis="column" d="M5 0V5"/><path data-grid-axis="row" d="M0 0H5"/><path data-grid-axis="row" d="M0 1H5"/><path data-grid-axis="row" d="M0 2H5"/><path data-grid-axis="row" d="M0 3H5"/><path data-grid-axis="row" d="M0 4H5"/><path data-grid-axis="row" d="M0 5H5"/></svg><span class="royalFoot enemy" aria-hidden="true"></span><span class="royalFoot player" aria-hidden="true"></span></div><div id="pieceOverlay" aria-hidden="true"></div><button id="enemyPedestal" class="royalPedestal enemy" type="button" onclick="clickKing('c')" aria-label="相手の王"><div class="crownModel" aria-hidden="true"><svg class="crownSvg" viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="goldA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a1805"/><stop offset=".13" stop-color="#9c681d"/><stop offset=".27" stop-color="#f2cc69"/><stop offset=".39" stop-color="#6c4310"/><stop offset=".53" stop-color="#d7a33b"/><stop offset=".69" stop-color="#fff0a3"/><stop offset=".78" stop-color="#8a5818"/><stop offset="1" stop-color="#251505"/></linearGradient><linearGradient id="goldB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8dc7a"/><stop offset=".22" stop-color="#a66b1c"/><stop offset=".48" stop-color="#e3b449"/><stop offset=".72" stop-color="#5a350d"/><stop offset="1" stop-color="#d8a13a"/></linearGradient><radialGradient id="gem" cx="35%" cy="25%"><stop offset="0" stop-color="#fff4aa"/><stop offset=".35" stop-color="#d7a42e"/><stop offset="1" stop-color="#5a3208"/></radialGradient><filter id="metal"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#000" flood-opacity=".8"/></filter></defs><g filter="url(#metal)" stroke="#211304" stroke-width="4" stroke-linejoin="round"><path fill="url(#goldA)" d="M25 143 C25 121 31 101 43 72 L69 109 L89 48 L118 103 L150 14 L182 103 L211 48 L231 109 L257 72 C269 101 275 121 275 143 Z"/><path fill="#160d04" opacity=".58" d="M41 133 C55 116 66 110 83 121 C101 132 114 119 126 105 C137 92 145 86 150 86 C156 86 165 94 175 106 C188 121 201 132 218 121 C236 109 248 117 260 133 L260 146 L41 146Z"/><path fill="none" stroke="url(#goldB)" stroke-width="8" d="M37 132 C61 107 77 108 96 126 C113 141 126 116 150 91 C174 116 187 141 204 126 C223 108 239 107 263 132"/><path fill="url(#goldB)" d="M22 137 Q150 151 278 137 L274 171 Q150 186 26 171Z"/><path fill="none" stroke="#f4d574" stroke-width="3" opacity=".7" d="M31 148 Q150 159 269 148"/><path fill="none" stroke="#51300c" stroke-width="5" d="M31 162 Q150 175 269 162"/></g><g fill="url(#gem)" stroke="#241504" stroke-width="3"><path d="M150 27 l11 17 -11 18 -11-18z"/><path d="M90 61 l9 14 -9 15 -9-15z"/><path d="M210 61 l9 14 -9 15 -9-15z"/><circle cx="48" cy="91" r="7"/><circle cx="252" cy="91" r="7"/><circle cx="150" cy="126" r="9"/></g><g fill="none" stroke="#d9a63d" stroke-width="5" stroke-linecap="round"><path d="M57 139 C57 117 79 115 84 133 C88 147 105 145 110 132 C116 115 135 113 142 132"/><path d="M243 139 C243 117 221 115 216 133 C212 147 195 145 190 132 C184 115 165 113 158 132"/></g><g fill="#1b1005" opacity=".95"><circle cx="62" cy="155" r="4"/><circle cx="88" cy="158" r="4"/><circle cx="116" cy="160" r="4"/><circle cx="150" cy="162" r="5"/><circle cx="184" cy="160" r="4"/><circle cx="212" cy="158" r="4"/><circle cx="238" cy="155" r="4"/></g><path d="M34 169 Q150 183 266 169" fill="none" stroke="#f4cf64" stroke-width="3" opacity=".6"/></svg></div><span class="kingLabel">相手の王</span></button><button id="playerPedestal" class="royalPedestal player" type="button" onclick="clickKing('p')" aria-label="あなたの王"><div class="crownModel" aria-hidden="true"><svg class="crownSvg" viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="goldA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a1805"/><stop offset=".13" stop-color="#9c681d"/><stop offset=".27" stop-color="#f2cc69"/><stop offset=".39" stop-color="#6c4310"/><stop offset=".53" stop-color="#d7a33b"/><stop offset=".69" stop-color="#fff0a3"/><stop offset=".78" stop-color="#8a5818"/><stop offset="1" stop-color="#251505"/></linearGradient><linearGradient id="goldB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8dc7a"/><stop offset=".22" stop-color="#a66b1c"/><stop offset=".48" stop-color="#e3b449"/><stop offset=".72" stop-color="#5a350d"/><stop offset="1" stop-color="#d8a13a"/></linearGradient><radialGradient id="gem" cx="35%" cy="25%"><stop offset="0" stop-color="#fff4aa"/><stop offset=".35" stop-color="#d7a42e"/><stop offset="1" stop-color="#5a3208"/></radialGradient><filter id="metal"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#000" flood-opacity=".8"/></filter></defs><g filter="url(#metal)" stroke="#211304" stroke-width="4" stroke-linejoin="round"><path fill="url(#goldA)" d="M25 143 C25 121 31 101 43 72 L69 109 L89 48 L118 103 L150 14 L182 103 L211 48 L231 109 L257 72 C269 101 275 121 275 143 Z"/><path fill="#160d04" opacity=".58" d="M41 133 C55 116 66 110 83 121 C101 132 114 119 126 105 C137 92 145 86 150 86 C156 86 165 94 175 106 C188 121 201 132 218 121 C236 109 248 117 260 133 L260 146 L41 146Z"/><path fill="none" stroke="url(#goldB)" stroke-width="8" d="M37 132 C61 107 77 108 96 126 C113 141 126 116 150 91 C174 116 187 141 204 126 C223 108 239 107 263 132"/><path fill="url(#goldB)" d="M22 137 Q150 151 278 137 L274 171 Q150 186 26 171Z"/><path fill="none" stroke="#f4d574" stroke-width="3" opacity=".7" d="M31 148 Q150 159 269 148"/><path fill="none" stroke="#51300c" stroke-width="5" d="M31 162 Q150 175 269 162"/></g><g fill="url(#gem)" stroke="#241504" stroke-width="3"><path d="M150 27 l11 17 -11 18 -11-18z"/><path d="M90 61 l9 14 -9 15 -9-15z"/><path d="M210 61 l9 14 -9 15 -9-15z"/><circle cx="48" cy="91" r="7"/><circle cx="252" cy="91" r="7"/><circle cx="150" cy="126" r="9"/></g><g fill="none" stroke="#d9a63d" stroke-width="5" stroke-linecap="round"><path d="M57 139 C57 117 79 115 84 133 C88 147 105 145 110 132 C116 115 135 113 142 132"/><path d="M243 139 C243 117 221 115 216 133 C212 147 195 145 190 132 C184 115 165 113 158 132"/></g><g fill="#1b1005" opacity=".95"><circle cx="62" cy="155" r="4"/><circle cx="88" cy="158" r="4"/><circle cx="116" cy="160" r="4"/><circle cx="150" cy="162" r="5"/><circle cx="184" cy="160" r="4"/><circle cx="212" cy="158" r="4"/><circle cx="238" cy="155" r="4"/></g><path d="M34 169 Q150 183 266 169" fill="none" stroke="#f4cf64" stroke-width="3" opacity=".6"/></svg></div><span class="kingLabel">あなたの王</span></button></div>
 <div class="kingZone player"><span class="kingStat">❤️HP<b id="pHp">20</b></span><button class="graveButton" type="button" onclick="showGraveyard('p')">🪦<b id="pGrave">0</b></button><div class="king" onclick="clickKing('p')">あなたの王</div><span class="kingStat manaStat"><span class="manaOwner">自分</span><span class="manaGlyph" aria-hidden="true">💧</span><b id="mana">1/1</b></span></div></div><aside id="infoPanel" aria-live="polite"><div class="infoHeading">選択中の情報</div><div id="infoContent" class="infoContent"></div></aside></div><div class="handTitle">手札（タップして使用）</div><div class="handScroller"><button type="button" class="layoutHandScroll" data-scroll-hand="-1" aria-label="手札を左へ">◀</button><div id="hand" class="hand"></div><button type="button" class="layoutHandScroll" data-scroll-hand="1" aria-label="手札を右へ">▶</button></div><div class="battleStrip" aria-label="手札と対戦操作"><div class="stripLeft"></div><div class="stripRight"><div class="stripButtons"></div><div class="stripEnd"></div></div></div><div class="controls"><span class="manaDock" aria-label="自分のマナ"></span><details class="layoutLog"><summary>戦闘ログ</summary><div class="logPanel"><div id="log"></div></div></details><button id="endTurn">ターン終了</button><button id="undoOne" class="secondary" disabled>1手戻る</button></div></div>
-<div id="settingsOverlay" aria-hidden="true"><div class="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="settingsHead"><b id="settingsTitle">⚙️ 設定</b><button id="settingsClose" type="button">×</button></div><div class="settingsGroup"><div class="settingsLabel">視点比較（試作）</div><div class="settingsChoices" data-setting="view"><button type="button" data-value="current">A：現行方向</button><button type="button" data-value="left">B：左回転俯瞰</button></div><div class="settingsNote">横画面で比較します。端末だけの表示設定です。Bは正式採用前の試作です。</div></div><div class="settingsGroup"><div class="settingsLabel">ボード</div><div class="settingsChoices" data-setting="board"><button type="button" data-value="rich">リッチ</button><button type="button" data-value="simple">シンプル</button><button type="button" data-value="antique">アンティーク</button><button type="button" data-value="light">ライト</button></div></div><div class="settingsGroup"><div class="settingsLabel">王アイコン</div><div class="settingsChoices kingChoices" data-setting="king"><button type="button" data-value="simple1">デフォルト</button><button type="button" data-value="dark">ダーク</button><button type="button" data-value="default">ゴージャス</button><button type="button" data-value="simple2">シンプル</button><button type="button" data-value="oldking">老王1</button><button type="button" data-value="oldking2">老王2</button></div><div class="settingsNote">王冠画像アセットを切り替えます。ゲームルールには影響しません。</div></div><div class="settingsGroup"><div class="settingsLabel">BGM</div><div class="settingsChoices"><button type="button" data-bgm-enabled="true">ON</button><button type="button" data-bgm-enabled="false">OFF</button></div><div class="bgmVolumeRow"><label for="bgmVolume">音量</label><input id="bgmVolume" type="range" min="0" max="100" step="1" value="50" aria-describedby="bgmStatus"><output id="bgmVolumeValue" for="bgmVolume">50％</output></div><div id="bgmStatus" class="settingsNote">対戦中にループ再生します。音量0％は無音です。</div></div><div class="settingsGroup"><div class="settingsLabel">クリーチャー名称表示</div><div class="settingsChoices" id="creatureNameChoices"><button type="button" data-name-visible="true">ON</button><button type="button" data-name-visible="false">OFF</button></div><div class="settingsNote">盤上のクリーチャー名称のみ表示・非表示を切り替えます。</div></div><!-- CPU_SETTINGS_START --><div class="settingsGroup"><div class="settingsLabel">CPU演出</div><div id="cpuPresentationChoices" class="settingsChoices"><button type="button" data-cpu-speed="normal" aria-pressed="true">通常</button><button type="button" data-cpu-speed="fast" aria-pressed="false">高速</button><button type="button" data-cpu-speed="skip" aria-pressed="false">演出スキップ</button></div><div class="settingsNote">思考・ルール結果を変えず、CPUの演出待ちだけを変更します。</div></div><div class="settingsGroup"><div class="settingsLabel">CPUの強さ</div><div class="settingsChoices" data-setting="cpuDifficulty"><button type="button" data-value="weak">よわい</button><button type="button" data-value="strong">普通</button><button type="button" data-value="tactical">つよい</button></div><div class="settingsNote">「よわい」は従来CPU。「つよい」は王へ前進しながら、移動→攻撃／攻撃→移動を1手先まで判断する攻撃型CPUです。</div></div><div class="settingsGroup">
+<div id="settingsOverlay" aria-hidden="true"><div class="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="settingsHead"><b id="settingsTitle">⚙️ 設定</b><button id="settingsClose" type="button">×</button></div><div class="settingsGroup"><div class="settingsLabel">視点比較（試作）</div><div class="settingsChoices" data-setting="view"><button type="button" data-value="current">A：現行方向</button><button type="button" data-value="left">B：左回転俯瞰</button></div><div class="settingsNote">横画面で比較します。端末だけの表示設定です。Bは正式採用前の試作です。</div></div><div class="settingsGroup"><div class="settingsLabel">ボード</div><div class="settingsChoices" data-setting="board"><button type="button" data-value="rich">リッチ</button><button type="button" data-value="simple">シンプル</button><button type="button" data-value="antique">アンティーク</button><button type="button" data-value="light">ライト</button></div></div><div class="settingsGroup"><div class="settingsLabel">王アイコン</div><div class="settingsChoices kingChoices" data-setting="king"><button type="button" data-value="simple1">デフォルト</button><button type="button" data-value="dark">ダーク</button><button type="button" data-value="default">ゴージャス</button><button type="button" data-value="simple2">シンプル</button><button type="button" data-value="oldking">老王1</button><button type="button" data-value="oldking2">老王2</button></div><div class="settingsNote">王冠画像アセットを切り替えます。ゲームルールには影響しません。</div></div><div class="settingsGroup"><div class="settingsLabel">BGM</div><div class="settingsChoices"><button type="button" data-bgm-enabled="true">ON</button><button type="button" data-bgm-enabled="false">OFF</button></div><div class="bgmVolumeRow"><label for="bgmVolume">音量</label><input id="bgmVolume" type="range" min="0" max="100" step="1" value="50" aria-describedby="bgmStatus"><output id="bgmVolumeValue" for="bgmVolume">50％</output></div><div id="bgmStatus" class="settingsNote">対戦中にループ再生します。音量0％は無音です。</div></div><div class="settingsGroup"><div class="settingsLabel">クリーチャー名称表示</div><div class="settingsChoices" id="creatureNameChoices"><button type="button" data-name-visible="true">ON</button><button type="button" data-name-visible="false">OFF</button></div><div class="settingsNote">盤上のクリーチャー名称のみ表示・非表示を切り替えます。</div></div><!-- CPU_SETTINGS_START --><div class="settingsGroup"><div class="settingsLabel">CPU演出</div><div id="cpuPresentationChoices" class="settingsChoices"><button type="button" data-cpu-speed="normal" aria-pressed="true">通常</button><button type="button" data-cpu-speed="fast" aria-pressed="false">高速</button><button type="button" data-cpu-speed="skip" aria-pressed="false">演出スキップ</button></div><div class="settingsNote">思考・ルール結果を変えず、CPUの演出待ちだけを変更します。</div></div><div class="settingsGroup"><div class="settingsLabel">CPUの強さ</div><div class="settingsChoices" data-setting="cpuDifficulty"><button type="button" data-value="weak">よわい</button><button type="button" data-value="strong">普通</button><button type="button" data-value="tactical">つよい</button><button type="button" data-value="gachi">ガチ</button></div><div class="settingsNote">「ガチ」は相手の応手と味方の反撃まで読み、駒の交換や配置を判断します。</div></div><div class="settingsGroup">
   <label class="settingsLabel" for="cpuDeckChoice">CPUの使用デッキ</label>
   <select id="cpuDeckChoice" aria-describedby="cpuDeckHelp cpuDeckStatus"></select>
   <div id="cpuDeckHelp" class="settingsNote">登録デッキは確定済みの40枚を使用します。未確定の場合はデッキ編成で「CPU用に確定」を選んでください。変更は次の対戦から適用します。</div>
@@ -1613,9 +1613,9 @@ async function applyKingAsset(kind){
 function readStoredVisualSettings(){try{const v=JSON.parse(localStorage.getItem('phase2VisualSettings')||'{}');return v&&typeof v==='object'&&!Array.isArray(v)?v:{};}catch(e){return {};}}
 const VisualSettings={
  state:{view:'current',board:'rich',king:'default',creatureNames:true,...(includeCPU?{cpuDifficulty:'weak'}:{})},
- load(){try{const v=readStoredVisualSettings();if(['current','left'].includes(v.view))this.state.view=v.view;if(['light','antique','rich','simple'].includes(v.board))this.state.board=v.board;if(v.king==='pop')v.king='default';if(v.king==='simple')v.king='simple1';if(['default','dark','simple1','simple2','oldking','oldking2'].includes(v.king))this.state.king=v.king;if(typeof v.creatureNames==='boolean')this.state.creatureNames=v.creatureNames;if(includeCPU&&['weak','strong','tactical'].includes(v.cpuDifficulty))this.state.cpuDifficulty=v.cpuDifficulty}catch(e){}this.apply()},
+ load(){try{const v=readStoredVisualSettings();if(['current','left'].includes(v.view))this.state.view=v.view;if(['light','antique','rich','simple'].includes(v.board))this.state.board=v.board;if(v.king==='pop')v.king='default';if(v.king==='simple')v.king='simple1';if(['default','dark','simple1','simple2','oldking','oldking2'].includes(v.king))this.state.king=v.king;if(typeof v.creatureNames==='boolean')this.state.creatureNames=v.creatureNames;if(includeCPU&&['weak','strong','tactical','gachi'].includes(v.cpuDifficulty))this.state.cpuDifficulty=v.cpuDifficulty}catch(e){}this.apply()},
  apply(){presentationView=this.state.view;document.body.classList.remove('board-light','board-antique','board-rich','board-simple','king-default','king-dark','king-simple1','king-simple2','king-oldking','king-oldking2','creature-names-off');document.body.classList.add('board-'+this.state.board,'king-'+this.state.king);if(!this.state.creatureNames)document.body.classList.add('creature-names-off');applyKingAsset(this.state.king);document.querySelectorAll('.settingsChoices[data-setting]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.value===this.state[g.dataset.setting])));document.querySelectorAll('#creatureNameChoices button').forEach(b=>b.classList.toggle('active',(b.dataset.nameVisible==='true')===this.state.creatureNames));try{localStorage.setItem('phase2VisualSettings',JSON.stringify({...readStoredVisualSettings(),...this.state}))}catch(e){}syncLayout();if(current)renderPieces(current);},
- set(key,value){if(!Object.hasOwn(this.state,key))return;if(key==='cpuDifficulty'&&!['weak','strong','tactical'].includes(value))return;if(key==='view'&&!['current','left'].includes(value))return;if(key==='king'&&!Object.hasOwn(KING_ASSET_PATHS,value))return;if(key==='board'&&!['light','antique','rich','simple'].includes(value))return;this.state[key]=value;this.apply()}
+ set(key,value){if(!Object.hasOwn(this.state,key))return;if(key==='cpuDifficulty'&&!['weak','strong','tactical','gachi'].includes(value))return;if(key==='view'&&!['current','left'].includes(value))return;if(key==='king'&&!Object.hasOwn(KING_ASSET_PATHS,value))return;if(key==='board'&&!['light','antique','rich','simple'].includes(value))return;this.state[key]=value;this.apply()}
 };
 function openSettings(){document.getElementById('settingsOverlay').classList.add('show');document.getElementById('settingsOverlay').setAttribute('aria-hidden','false')}
 function closeSettings(){document.getElementById('settingsOverlay').classList.remove('show');document.getElementById('settingsOverlay').setAttribute('aria-hidden','true')}
@@ -5407,6 +5407,8 @@ const cpuWait=()=>CpuPresentation.wait();
   const unknown = '@cpu-unknown';
   const endTurn = side => ({type: 'end_turn', side});
   const limits = Object.freeze({depth: 3, rootWidth: 32, width: 8, beam: 3, finalists: 5, replyWidth: 5, replyDepth: 3, nodes: 180});
+  const gachiLimits = Object.freeze({...limits, gachi: true, rootWidth: 40, width: 10, beam: 4,
+    finalists: 6, replyWidth: 8, replyDepth: 5, nodes: 1120});
   const support = {
     dancer_aura: 2.6, war_wolf_pack: 0.7, salamander_counter: 1.5,
     sorcerer_bolt: 2, orthros_double_attack: 1.4, orthros_self_damage: -0.7,
@@ -5502,7 +5504,7 @@ const cpuWait=()=>CpuPresentation.wait();
     return actions;
   }
 
-  function evaluator(defs, side) {
+  function evaluator(defs, side, gachi) {
     const routeCache = new Map();
     const travelCache = new WeakMap();
     const enemy = other(side);
@@ -5554,8 +5556,35 @@ const cpuWait=()=>CpuPresentation.wait();
       const canFight = Core.combatPattern(piece, defs, 'attack', state).length > 0;
       const terrain = canFight ? position(state, piece, cell) : 0;
       const threat = forecast.king ? 0.34 * Math.max(0, power - Core.damageReduction(state)) : 0;
-      return base + 0.58 * piece.hp + (canFight ? 0.86 * power : 0)
-        + ability.reduce((total, id) => total + (support[id] ?? 0), 0)
+      let outlook = 0;
+      if (gachi) {
+        const player = state.players[piece.side];
+        const hand = state.private[piece.side].hand.length;
+        const deck = state.private[piece.side].deck.length;
+        const engagement = forecast.king || forecast.targets.length ? 1 : forecast.moves.length ? 0.5 : 0.2;
+        const endurance = Math.min(1, piece.hp / 5);
+        if (ability.includes('draw_growth') && deck > 1) outlook += 0.65 * engagement * endurance;
+        if (ability.includes('fortune_draw') && deck > 2 && player.maxMana >= 2) {
+          const synergy = state.board.some(ally => ally?.side === piece.side
+            && Core.effectiveAbilities(ally, defs, state).includes('draw_growth'));
+          outlook += endurance * (0.25 + 0.14 * Math.max(0, 5 - hand) + (synergy ? 0.35 : 0));
+        }
+        if (ability.includes('diablo_turn_start')) {
+          outlook -= endurance * (player.kingHp <= 4 ? 3.2 : player.kingHp <= 8 ? 1.8 : 0.85);
+        }
+        outlook += 0.3 * engagement * Number(!piece.a && piece.side === state.activeSide);
+        for (const target of forecast.targets) {
+          const victim = state.board[target];
+          if (victim && power - Core.damageReduction(state, target) >= victim.hp) {
+            outlook += 0.7;
+            break;
+          }
+        }
+        // Power off the contact line matters less, and surplus damage has diminishing value.
+        outlook += (engagement - 1) * 0.32 * power - 0.42 * Math.max(0, power - 6);
+      }
+      return outlook + base + 0.58 * piece.hp + (canFight ? 0.86 * power : 0)
+        + ability.reduce((total, id) => total + (gachi && id === 'diablo_turn_start' ? 0 : support[id] ?? 0), 0)
         + terrain + threat + 0.12 * Math.min(5, forecast.moves.length)
         + 0.33 * forecast.targets.length + 0.33 * Core.damageReduction(state, cell);
     }
@@ -5654,7 +5683,7 @@ const cpuWait=()=>CpuPresentation.wait();
 
   function* search(input, side, defs, config = limits) {
     const enemy = other(side), state = project(input, side);
-    const {score, rank} = evaluator(defs, side);
+    const {score, rank} = evaluator(defs, side, config.gachi);
     let nodes = 0;
     const initial = score(state);
     const maxNodes = config.nodes;
@@ -5700,34 +5729,62 @@ const cpuWait=()=>CpuPresentation.wait();
       return Math.min(30, best) * 0.65;
     }
 
+    // Ignore revision and event history, which encode the order of otherwise
+    // equivalent actions. Keep gameplay fields, including both projected zones.
+    function positionKey(snapshot) {
+      const {server, board, players, enchantments, modifiers, abilityControls, temporaryEffects} = snapshot;
+      return JSON.stringify([snapshot.activeSide, board, players, enchantments, snapshot.private,
+        modifiers, abilityControls, temporaryEffects, server.pendingChoice, server.pendingSummon,
+        server.pendingEntry, server.manaBonus, server.kingAction, server.gameOver, server.winner]);
+    }
+
     const results = new Map();
     const pending = pendingActions(state, side);
     const end = {action: endTurn(side), state, value: initial, length: 0};
     if (!pending && Core.combatInputAllowed(state, side)) results.set(end.action, end);
     let beam = [{state, value: initial, length: 0}];
-    for (let depth = 0; depth < config.depth && beam.length; depth++) {
+    const ownDepth = config.depth + (config.gachi ? 2 : 0);
+    for (let depth = 0; depth < ownDepth && beam.length; depth++) {
       const next = [];
       for (const branch of beam) {
-        const actions = ranked(branch.state, side, depth === 0 ? config.rootWidth : config.width, false);
+        const extending = depth >= config.depth;
+        const actions = extending
+          ? ranked(branch.state, side, 3, true)
+          : ranked(branch.state, side, depth === 0 ? config.rootWidth : config.width, false);
         yield;
         for (const action of actions) {
           if (nodes >= Math.floor(maxNodes * 0.55)) break;
           const after = yield* apply(branch.state, action);
           if (!after) continue;
+          if (extending && action.type === 'move' && !Core.legalCombatActions(after, side, defs)
+            .some(next => next.from === action.to && next.type !== 'move')) continue;
+          if (extending && !branch.incomplete && action.type !== 'move'
+            && action.type !== 'attack_creature' && action.type !== 'attack_king') continue;
           const first = branch.action || action;
           const value = score(after) - 0.12 * (depth + 1);
           const node = {action: first, state: after, value, length: depth + 1};
-          if (after.server.gameOver && after.server.winner === side) return {action: first, nodes, winningLine: depth + 1};
+          if (config.explain) node.line = [...(branch.line ?? []), action];
+          if (after.server.gameOver && after.server.winner === side) {
+            config.explain?.({winning: node.line, nodes});
+            return {action: first, nodes, winningLine: depth + 1};
+          }
           const current = results.get(first);
           const stillChoosing = !!(after.server.pendingChoice || after.server.pendingSummon);
           if (!current || (current.incomplete && !stillChoosing)
               || (current.incomplete === stillChoosing && value > current.value)) {
             results.set(first, {...node, incomplete: stillChoosing});
           }
-          if (!after.server.gameOver) next.push({...node, priority: value + attackOpportunity(after, side)});
+          if (!after.server.gameOver) next.push({...node, incomplete: stillChoosing, priority: value + attackOpportunity(after, side)});
         }
       }
-      beam = next.sort((a, b) => b.priority - a.priority).slice(0, config.beam);
+      next.sort((a, b) => b.priority - a.priority);
+      const positions = new Set();
+      beam = config.gachi ? next.filter(node => {
+        const key = positionKey(node.state);
+        if (positions.has(key)) return false;
+        positions.add(key);
+        return true;
+      }).slice(0, config.beam) : next.slice(0, config.beam);
     }
 
     // Evaluate the best known reply of public units and royal abilities. End
@@ -5775,29 +5832,132 @@ const cpuWait=()=>CpuPresentation.wait();
       return 0.78 * (start - worst) + Math.max(0, score(snapshot) - start - 2.2) * 0.45;
     }
 
+    // Inspect several public replies, including independent movers. Only known
+    // board actions are searched after passing the turn; opaque draws stay opaque.
+    const replyKey = snapshot => JSON.stringify([snapshot.board, snapshot.players,
+      snapshot.enchantments, snapshot.modifiers, snapshot.abilityControls,
+      snapshot.temporaryEffects, snapshot.server.pendingChoice, snapshot.server.pendingSummon]);
+
+    function* exchange(snapshot, allowance) {
+      if (snapshot.server.gameOver || allowance < 2) return 0;
+      if (snapshot.server.pendingChoice || snapshot.server.pendingSummon) return yield* risk(snapshot, allowance);
+      const after = yield* apply(snapshot, endTurn(side));
+      if (!after) return 0;
+      if (after.server.gameOver) return after.server.winner === enemy ? 5000 : after.server.winner === side ? -5000 : 0;
+      const cap = Math.min(maxNodes, nodes + allowance - 1);
+      // Reserve one pass and enough executions to compare recaptures.
+      const replyCap = Math.min(cap - 1, nodes + 1 + config.replyWidth * (2 * config.replyDepth - 1));
+      const start = score(after);
+      const replies = [];
+      let frontier = [after];
+      const seen = new Set([replyKey(after)]);
+      for (let depth = 0; depth < config.replyDepth && frontier.length && nodes < replyCap; depth++) {
+        const next = [];
+        for (const branch of frontier) {
+          const actions = ranked(branch, enemy, config.replyWidth, true);
+          yield;
+          for (const action of actions) {
+            if (nodes >= replyCap) break;
+            const reply = yield* apply(branch, action);
+            if (!reply) continue;
+            if (reply.server.gameOver && reply.server.winner === enemy) return 5000;
+            const key = replyKey(reply);
+            if (seen.has(key)) continue;
+            seen.add(key);
+            const value = score(reply);
+            const pending = reply.server.pendingChoice || reply.server.pendingSummon;
+            if (!pending && reply.activeSide === enemy) replies.push({state: reply, value});
+            if (!reply.server.gameOver && reply.activeSide === enemy) {
+              next.push({state: reply, priority: value - attackOpportunity(reply, enemy)});
+            }
+          }
+        }
+        frontier = next.sort((a, b) => a.priority - b.priority).slice(0, 2).map(node => node.state);
+      }
+      let worst = 0;
+      const adverse = replies.filter(reply => reply.value < start).sort((a, b) => a.value - b.value).slice(0, 3);
+      // Passing is also a reply, including when the next refresh is lethal.
+      const afterPass = yield* apply(after, endTurn(enemy));
+      if (afterPass?.server.gameOver && afterPass.server.winner === enemy) return 5000;
+      const passHp = afterPass?.players[side].kingHp ?? after.players[side].kingHp;
+      worst = 0.75 * Math.max(0, after.players[side].kingHp - passHp);
+      for (const [index, reply] of adverse.entries()) {
+        const loss = start - reply.value;
+        if (nodes >= cap) {
+          worst = Math.max(worst, loss);
+          continue;
+        }
+        const counterCap = nodes + Math.floor((cap - nodes) / (adverse.length - index));
+        if (counterCap === nodes) {
+          worst = Math.max(worst, loss);
+          continue;
+        }
+        const refreshed = yield* apply(reply.state, endTurn(enemy));
+        if (!refreshed) continue;
+        if (refreshed.server.gameOver && refreshed.server.winner === enemy) return 5000;
+        if (refreshed.server.gameOver) continue;
+        const baseline = score(refreshed);
+        let recovery = baseline;
+        const counter = ranked(refreshed, side, 5, true);
+        for (const action of counter) {
+          if (nodes >= counterCap) break;
+          const restored = yield* apply(refreshed, action);
+          if (!restored) continue;
+          recovery = Math.max(recovery, score(restored));
+          if (action.type !== 'move' || restored.server.gameOver) continue;
+          const attacks = Core.legalCombatActions(restored, side, defs).filter(next => next.from === action.to
+            && (next.type === 'attack_king' || next.type === 'attack_creature'));
+          for (const attack of attacks.sort((a, b) => rank(restored, b) - rank(restored, a)).slice(0, 2)) {
+            if (nodes >= counterCap) break;
+            const hit = yield* apply(restored, attack);
+            if (hit) recovery = Math.max(recovery, score(hit));
+          }
+        }
+        // A possible counterattack offsets only part of the loss. The opponent
+        // can have a different reply outside the beam or use an unknown card.
+        worst = Math.max(worst, loss - 0.6 * Math.min(loss, recovery - baseline));
+      }
+      return worst + 0.65 * Math.max(0, score(snapshot) - start - 2.2);
+    }
+
     const provisional = node => node.value - (node.incomplete ? 1.2 : 0);
     const ordered = [...results.values()].filter(node => node !== end)
       .sort((a, b) => provisional(b) - provisional(a));
-    const shortlist = ordered.slice(0, config.finalists - 2);
+    const unique = new Set();
+    const finalists = config.gachi ? ordered.filter(node => {
+      const key = positionKey(node.state);
+      if (unique.has(key)) return false;
+      unique.add(key);
+      return true;
+    }) : ordered;
+    const shortlist = finalists.slice(0, config.finalists - 2);
     const distinct = new Set(shortlist.map(node => node.action.cardId || node.action.type));
-    for (const node of ordered) {
+    for (const node of finalists) {
       if (shortlist.length >= config.finalists) break;
       const key = node.action.cardId || node.action.type;
       if (!distinct.has(key)) shortlist.push(node);
       distinct.add(key);
     }
-    for (const node of ordered) {
+    for (const node of finalists) {
       if (shortlist.length >= config.finalists) break;
       if (!shortlist.includes(node)) shortlist.push(node);
     }
     if (results.has(end.action)) shortlist.unshift(end);
     let best = null;
-    const allowance = Math.min(1 + config.replyWidth * config.replyDepth, Math.floor((maxNodes - nodes) / Math.max(1, shortlist.length)));
+    const replyLimit = config.gachi ? 2 + config.replyWidth * (2 * config.replyDepth - 1) + 3 * 16
+      : 1 + config.replyWidth * config.replyDepth;
+    const allowance = Math.min(replyLimit, Math.floor((maxNodes - nodes) / Math.max(1, shortlist.length)));
+    const evaluated = config.explain ? [] : null;
     for (const node of shortlist) {
       const penalty = node.incomplete ? 1.2 : 0;
-      const value = node.value - penalty - (yield* risk(node.state, allowance));
+      const start = nodes;
+      const danger = yield* (config.gachi ? exchange(node.state, allowance) : risk(node.state, allowance));
+      const value = node.value - penalty - danger;
+      evaluated?.push({action: node.action, line: node.line, static: node.value, danger, value, nodes: nodes - start});
       if (!best || value > best.value + 0.06) best = {action: node.action, value};
     }
+    config.explain?.({allowance, evaluated, omitted: ordered.filter(node => !shortlist.includes(node))
+      .slice(0, 12).map(node => ({action: node.action, line: node.line, static: node.value}))});
     return {action: best?.action ?? null, nodes, winningLine: null};
   }
 
@@ -5808,8 +5968,8 @@ const cpuWait=()=>CpuPresentation.wait();
     return item.value;
   }
 
-  async function decideAsync(state, side, defs, {alive, pause, now = () => performance.now()}) {
-    const work = search(state, side, defs);
+  async function decideAsync(state, side, defs, {alive, pause, now = () => performance.now(), config = limits}) {
+    const work = search(state, side, defs, config);
     while (alive()) {
       const start = now();
       do {
@@ -5821,12 +5981,12 @@ const cpuWait=()=>CpuPresentation.wait();
     return null;
   }
 
-  return {project, candidates, decide, decideAsync, limits};
+  return {project, candidates, decide, decideAsync, limits, gachiLimits};
 });
 
 // CPU match entry. Use the existing adapter and event/presentation lifecycle.
 let tacticalCpuEpoch = null;
-async function runTacticalCpu() {
+async function runTacticalCpu(difficulty) {
   const epoch = a4Epoch;
   if (tacticalCpuEpoch === epoch) return;
   tacticalCpuEpoch = epoch;
@@ -5846,6 +6006,7 @@ async function runTacticalCpu() {
         action = {type: 'end_turn', side: 'c'};
       } else {
         const plan = await CpuTactics.decideAsync(state, 'c', CARD_DEFINITIONS, {
+          config: difficulty === 'gachi' ? CpuTactics.gachiLimits : CpuTactics.limits,
           alive, pause: () => new Promise(resolve => a4SetTimeout(resolve, 0))
         });
         if (!alive() || (S.revision ?? 0) !== state.revision) return;
@@ -5903,7 +6064,7 @@ function describeTacticalCpuAction(action, events, actor) {
   }
 }
 
-async function cpu(){if(!TutorialController.active&&VisualSettings.state.cpuDifficulty==="tactical")return runTacticalCpu();if(S.side==="c"&&!S.gameOver){await cpuCreatureAbilities();await cpuRoyalWind();await cpuThreeCards();await cpuWindCards();}
+async function cpu(){if(!TutorialController.active&&["tactical","gachi"].includes(VisualSettings.state.cpuDifficulty))return runTacticalCpu(VisualSettings.state.cpuDifficulty);if(S.side==="c"&&!S.gameOver){await cpuCreatureAbilities();await cpuRoyalWind();await cpuThreeCards();await cpuWindCards();}
   if(S.gameOver||S.side!=="c")return;
   // この検証版では、封魔を使えるならほかのカードより先に使用する。
   const sealIndex=S.cHand.indexOf("封魔");
