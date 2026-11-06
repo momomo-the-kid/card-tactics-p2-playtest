@@ -1029,7 +1029,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-cpu-gachi-v34">ver p3-cpu-gachi-v34</div>
+  <div class="titleVersion" data-build="p3-cpu-basic-v35">ver p3-cpu-basic-v35</div>
   <div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -4183,6 +4183,12 @@ globalThis.DeckSharing=(()=>{
 const CpuDeckSettings = globalThis.CpuDeckSettings = (() => {
   const key = 'cardTacticsCpuDeckV1';
   const standardId = 'standard';
+  const standardName = '標準（ベーシック）';
+  const standardCounts = Object.freeze({
+    ソーサラー: 2, チャリオット: 2, ディアブロ: 2, ファイヤーボルト: 2,
+    ホープ: 4, ポーン: 4, 土ゴーレム: 2, 天狗: 2, 戦狼: 2, 槍兵: 2,
+    歩兵: 2, 突風: 2, 踊り子: 2, 金級兵: 4, 銀級兵: 4, 隠密: 2
+  });
   const select = document.getElementById('cpuDeckChoice');
   const status = document.getElementById('cpuDeckStatus');
   const title = document.getElementById('cpuDeckTitle');
@@ -4258,11 +4264,11 @@ const CpuDeckSettings = globalThis.CpuDeckSettings = (() => {
     if (id !== standardId && !selected?.cards) {
       const reason = selected ? '「' + selected.name + '」は使用できません（' + selected.reason + '）。'
         : error || '選択した登録デッキが見つかりません。';
-      warning = reason + ' 標準デッキに戻しました。';
+      warning = reason + ' ' + standardName + 'に戻しました。';
       save(standardId);
     }
     const current = selected?.cards ? selected : null;
-    select.replaceChildren(new Option('標準デッキ（40枚）', standardId));
+    select.replaceChildren(new Option(standardName + '・40枚', standardId));
     for (const choice of choices) {
       const option = new Option(choice.name + '（' + choice.total + '/40枚）'
         + (choice.reason ? ' — ' + choice.reason : ''), choice.id);
@@ -4271,7 +4277,7 @@ const CpuDeckSettings = globalThis.CpuDeckSettings = (() => {
     }
     select.value = current?.id ?? standardId;
     status.textContent = warning || error;
-    title.textContent = 'CPUの使用デッキ：' + (current ? current.name : '標準デッキ')
+    title.textContent = 'CPUの使用デッキ：' + (current ? current.name : standardName)
       + (warning ? ' ／ ' + warning : '');
     return current;
   }
@@ -4280,7 +4286,7 @@ const CpuDeckSettings = globalThis.CpuDeckSettings = (() => {
     const choice = refresh();
     matchNotice.textContent = warning;
     matchNotice.hidden = !warning;
-    return choice ? sh(choice.cards.slice()) : defaultDeck();
+    return sh(choice ? choice.cards.slice() : DeckValidation.toCardIds(standardCounts));
   }
 
   select.addEventListener('change', () => {
