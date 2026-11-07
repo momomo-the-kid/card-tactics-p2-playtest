@@ -1029,7 +1029,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-five-cards-v37">ver p3-five-cards-v37</div>
+  <div class="titleVersion" data-build="p3-weaken-dispel-v38">ver p3-weaken-dispel-v38</div>
   <div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -1194,6 +1194,11 @@ function paidAbilityReason(id,p,active,mana){
  if(mana<cost)return `マナ不足：必要 ${cost} / 現在 ${mana}`;
  if(p.a||golem&&(p.m||p.attacksUsed>0))return golem?'移動権と攻撃権が両方必要です。':'攻撃権が必要です。';
  return golem?'現在、生成できません。行動制約と上下左右の空きマスを確認してください。':'現在、占いを使用できません。';
+}
+function dispelEffectLabel(effect){
+ if(effect?.kind==='weakened')return '一時効果：衰弱を解除';
+ if(effect?.cardId)return `${effect.cardId}（残り${effect.remainingTurns}ターン）`;
+ return '一時効果：移動・攻撃禁止を解除';
 }
 function mandatoryPrompt(kind){return kind==='effectMove'?'竜巻：色の付いた空きマスへ移動してください。支払い・ダメージは解決済みで、取消はできません。':kind==='promotion'?'暗殺者に変身するか選んでください。':kind==='token'?'バリケードの生成先：緑色の空きマスを選んでください。':'';}
 function renderDetailStatus(context){
@@ -1671,14 +1676,14 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  const infoLine=x=>`<div class="infoLine">${escape(x)}</div>`;
  function attackStatus(piece,limit){const remaining=Math.max(0,limit-(piece.attacksUsed??(piece.a?limit:0)));return limit>1?(remaining?`攻撃 残${remaining}`:'攻撃 済'):(remaining?'攻撃 可':'攻撃 済');}
  function creatureInfoHTML({piece:p,viewer,definition:d,power:current,display,range,abilityHTML='',description='',berserkDescription='基本攻撃力1.5倍（端数切り上げ）、移動・攻撃は前方1マスのみ。',cellEffects=[]}){
-  return `<div class="infoName creatureInfoName">${escape(p.type)}</div><div class="creatureBasics">`+infoLine(`${p.side===viewer?'自軍':'敵軍'} / コスト ${p.generatedToken||d.token?'—':d.cost??'—'}`)+infoLine(`HP ${p.hp} / ${d.hp}　ATK ${current.total}（基本 ${current.base}${current.dancer?` / 踊り子 +${current.dancer}`:''}${current.pack?` / 味方 +${current.pack}`:''}${current.growth?` / 蓄積 ${current.growth>0?'+':''}${current.growth}`:''}）`)+infoLine(`${display.move.label} / ${display.attack.label}`)+range+'</div>'+(p.paralyzed?infoLine('麻痺：次の自軍ターン開始時に移動権・攻撃権が回復しません。'):'')+abilityHTML+(description?`<div class="infoEffect">${escape(description)}</div>`:'')+(p.berserk>0?`<div class="infoEffect">バーサーク：残り${p.berserk}ターン<br>${escape(berserkDescription)}</div>`:'')+(current.battle?`<div class="infoEffect">決戦：${current.battleTurns.map(t=>t+'T').join('・')} / ATK +${current.battle}</div>`:'')+cellEffects.map(e=>`<div class="infoEffect">このマス：${escape(e.cardId)} 残り${e.remainingTurns}ターン<br>${escape(e.description||'')}</div>`).join('');
+  return `<div class="infoName creatureInfoName">${escape(p.type)}</div><div class="creatureBasics">`+infoLine(`${p.side===viewer?'自軍':'敵軍'} / コスト ${p.generatedToken||d.token?'—':d.cost??'—'}`)+infoLine(`HP ${p.hp} / ${d.hp}　ATK ${current.total}（基本 ${current.base}${current.dancer?` / 踊り子 +${current.dancer}`:''}${current.pack?` / 味方 +${current.pack}`:''}${current.growth?` / 蓄積 ${current.growth>0?'+':''}${current.growth}`:''}）`)+infoLine(`${display.move.label} / ${display.attack.label}`)+range+'</div>'+(p.paralyzed?infoLine('衰弱：次の自軍ターン開始時に移動権・攻撃権が回復しません。'):'')+abilityHTML+(description?`<div class="infoEffect">${escape(description)}</div>`:'')+(p.berserk>0?`<div class="infoEffect">バーサーク：残り${p.berserk}ターン<br>${escape(berserkDescription)}</div>`:'')+(current.battle?`<div class="infoEffect">決戦：${current.battleTurns.map(t=>t+'T').join('・')} / ATK +${current.battle}</div>`:'')+cellEffects.map(e=>`<div class="infoEffect">このマス：${escape(e.cardId)} 残り${e.remainingTurns}ターン<br>${escape(e.description||'')}</div>`).join('');
  }
  function graveyardHTML(cards,label){const counts=new Map();for(const c of cards)counts.set(c.cardId,(counts.get(c.cardId)||0)+1);return `<div class="infoName">${escape(label)}の墓地 🪦${cards.length}</div>`+(cards.length?[...counts].map(([id,n])=>infoLine(`${id} ×${n}`)).join(''):infoLine('墓地は空です。'))+infoLine('カードは元の持ち主の墓地に入ります。');}
  function globalEffectsHTML(cards){return `<div class="infoName">全体エンチャント 🔮${cards.length}</div>`+(cards.length?cards.map(c=>`<button type="button" class="globalEnchantButton" data-effect-detail="${escape(c.instanceId)}">《${escape(c.cardId)}》${c.remainingTurns!=null?`　残り${c.remainingTurns}ターン`:''}</button>`).join(''):infoLine('効果中の全体エンチャントはありません。'));}
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,creaturePairGuide,paidAbilityReason,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();
 </script><script>
 (function(){const modules={"./game-core.cjs":function(module,exports,require){
@@ -1737,7 +1742,8 @@ function projectEvents(events,viewer){
  const out=[];
  for(const e of events){
   if(e.type==='card:played'){out.push({type:e.type,side:e.side,cardId:e.cardId});continue;}
-  if(e.type==='dispel:resolved'){out.push({type:e.type,side:e.side,removed:e.removed});continue;}
+  if(e.type==='dispel:resolved'){out.push({type:e.type,side:e.side,removed:e.removed,...(e.weakened?{weakened:true}:{})});continue;}
+  if(e.type==='creature:weakened'){out.push({type:e.type,creature:e.creature});continue;}
   if(e.type==='card:drawn'){out.push({type:e.type,side:e.side,...(e.side===viewer?{instanceId:e.instanceId}:{})});continue;}
   if(['king:attack-targeted','king:ability-used'].includes(e.type)){out.push({type:e.type,side:e.side,abilityId:e.abilityId,cell:e.cell});continue;}
   if(e.type==='creature:ability-used'){out.push({type:e.type,side:e.side,abilityId:e.abilityId,from:e.from});continue;}
@@ -1786,7 +1792,7 @@ function legalCombatActions(state,actor,definitions,runtime){
 }
 const targets=require("./target-queries.cjs");
 const powerQuery=require('./power-query.cjs');
-module.exports={damageReduction:require('./damage-engine.cjs').reduction,initializeLegacyMatch,normalizeRules:require('./match-rules.cjs').normalize,attackLimit:combat.attackLimit,finishBoundary,effectiveAbilities:require('./effective-rules.js').abilities,createGame,queryPower:powerQuery.query,powerForPiece:powerQuery.forPiece,spellsBlocked:targets.sealed,queryCard:targets.queryCard,queryEffectChoices:require('./wind-spells.cjs').choices,queryAbility:targets.queryAbility,VERSION,execute,getPlayerView,projectEvents,legalCombatActions,queryCombat,previewCombat,planCombat,combatPattern,combatRights,combatPathClear,combatInputAllowed};
+module.exports={damageReduction:require('./damage-engine.cjs').reduction,initializeLegacyMatch,normalizeRules:require('./match-rules.cjs').normalize,attackLimit:combat.attackLimit,finishBoundary,effectiveAbilities:require('./effective-rules.js').abilities,createGame,queryPower:powerQuery.query,powerForPiece:powerQuery.forPiece,spellsBlocked:targets.sealed,dispelEffects:targets.effectChoices,queryCard:targets.queryCard,queryEffectChoices:require('./wind-spells.cjs').choices,queryAbility:targets.queryAbility,VERSION,execute,getPlayerView,projectEvents,legalCombatActions,queryCombat,previewCombat,planCombat,combatPattern,combatRights,combatPathClear,combatInputAllowed};
 
 },
 "./game-state.cjs":function(module,exports,require){
@@ -2417,7 +2423,7 @@ function makePort(state,definitions,events){return {
   return hit;
  },
  healKing:(side,amount)=>require('./healing.cjs').recover(state,{kind:'king',side},amount,definitions,events),
- paralyze:id=>require('./creature-status.cjs').paralyze(state,id),
+ paralyze:id=>require('./creature-status.cjs').paralyze(state,id,events),
  adjustAttack:(id,amount)=>require('./power-query.cjs').adjust(state,id,amount),
  gainAttackMana:side=>{const result=require('./a2-spells.cjs').gainMana(state,side,events);record(state,events,{type:'ability:resolved',ability:'thief_attack_mana',side,before:result.before,after:result.after});}
 };}
@@ -2802,7 +2808,7 @@ function cardValid(s,a,defs){
 function abilityPort(s,defs){return {gameOver:()=>!!s.server.gameOver,activeSide:()=>s.activeSide,piece:k=>s.board[k],abilities:p=>require('./effective-rules.js').abilities(p,defs,s),remaining:p=>C.attackLimit(p,defs,s)-(p.attacksUsed??(p.a?C.attackLimit(p,defs,s):0)),mana:a=>s.players[a].mana,validTarget:t=>t?.kind==='king'?side(t.side):t?.kind==='creature'&&!!s.board[t.cell],awakened:a=>s.enchantments.some(e=>e.cardId==='王の覚醒'&&e.zone!=='graveyard'&&e.target?.kind==='king'&&e.target.side===a&&require('./effective-rules.js').enabled(s,{sourceInstanceId:'king:'+a},'awaken_attack','activated',e.instanceId)),kingUsed:a=>s.server.kingAction?.[a]?.awaken_attack||0};}
 function abilityValid(s,a,defs){const paid=require('./paid-creature-abilities.cjs');if(Object.hasOwn(paid.rules,a.abilityId))return paid.valid(s,a,defs);if(a.abilityId==='heal')return require('./healing.cjs').valid(s,a,defs);if(a.abilityId==='royal_wind')return require('./royal-wind.cjs').valid(s,a);const piece=s.board.find(p=>p?.sourceInstanceId===a.sourceInstanceId),limit=defs[piece?.type]?.abilityLimits?.[a.abilityId];if(piece&&limit!=null&&(piece.abilityUses?.[a.abilityId]||0)>=limit)return false;const port=abilityPort(s,defs),from=s.board.findIndex(p=>p?.sourceInstanceId===a.sourceInstanceId),t=a.target?.kind==='creature'?{kind:'creature',cell:creature(s,a.target)}:a.target;return a.abilityId==='sorcerer_bolt'?K.canBolt(port,a.side,from,t):a.abilityId==='awaken_attack'?K.canAwaken(port,a.side,t):false;}
 function regions(s){return [...s.board.flatMap(p=>p?[{kind:'creature',instanceId:p.sourceInstanceId}]:[]),...Array.from({length:25},(_,k)=>({kind:'cell',k})),{kind:'king',side:'p'},{kind:'king',side:'c'},{kind:'player',side:'p'},{kind:'player',side:'c'},{kind:'global'}];}
-function effectChoices(s,target,viewer){return require('./a3-actions.cjs').candidates(s,target,viewer).public.map(e=>({effectId:String(e.instanceId??e.id),cardId:e.cardId??null}));}
+function effectChoices(s,target,viewer){return require('./a3-actions.cjs').candidates(s,target,viewer).public.map(e=>({effectId:String(e.instanceId??e.id),cardId:e.cardId??null,remainingTurns:e.remainingTurns,kind:e.temporary?e.kind??'temporary':'enchantment'}));}
 function queryCard(s,actor,selection,defs,runtime,options={}){
  const d=defs[selection?.cardId],hand=s.private?.[actor]?.hand||[];
  const matches=hand.filter(c=>c.cardId===selection?.cardId),card=selection?.instanceId?matches.find(c=>c.instanceId===selection.instanceId):matches.length===1?matches[0]:null;
@@ -3044,8 +3050,9 @@ module.exports={reason,valid,apply};
 "./a3-actions.cjs":function(module,exports,require){
 'use strict';
 const R=require('./a3-rules.js'),{ensureInstances}=require('./card-zones.cjs'),{forgetCard}=require('./hand-visibility.cjs');
+const {weakenEffect,clearWeakened}=require('./creature-status.cjs');
 const {castEnchantment}=require('./enchantment-cast.cjs'),{removeEnchantment}=require('./enchantment-lifecycle.cjs');
-function temporary(s){return [...(s.temporaryEffects||[]),...s.board.flatMap(p=>p?(p.actionRestrictions||[]).map(e=>({...e,temporary:true,target:{kind:'creature',instanceId:p.sourceInstanceId},source:e,piece:p})):[])].map(e=>({...e,temporary:true,source:e.source||e}));}
+function temporary(s){return [...(s.temporaryEffects||[]),...s.board.flatMap(p=>p?[...(p.actionRestrictions||[]).map(e=>({...e,target:{kind:'creature',instanceId:p.sourceInstanceId},source:e,piece:p})),...weakenEffect(p)]:[])].map(e=>({...e,temporary:true,source:e.source||e}));}
 function candidates(s,target,viewer){return R.candidates(s.enchantments,temporary(s),target,viewer);}
 function apply(s,a,defs){
  if(s.server.gameOver)return {ok:false,code:'GAME_OVER'};
@@ -3065,13 +3072,46 @@ function apply(s,a,defs){
  s.players[a.side].graveyard.push(card);
  const choice=R.choose(c,selected,()=>R.random(s.server));const effect=choice.effect;
  if(effect?.temporary){
-  if(effect.piece)effect.piece.actionRestrictions=effect.piece.actionRestrictions.filter(e=>e!==effect.source);
+  if(effect.kind==='weakened'&&effect.piece)clearWeakened(effect.piece);
+  else if(effect.piece)effect.piece.actionRestrictions=effect.piece.actionRestrictions.filter(e=>e!==effect.source);
   else s.temporaryEffects=(s.temporaryEffects||[]).filter(e=>e!==effect.source);
   events.push({type:'temporary:ended',id:effect.id,reason:'dispelled'});
  }else if(effect)removeEnchantment(s,effect,events,'dispelled');
- events.push({type:'dispel:resolved',side:a.side,removed:!!effect});return {ok:true,events};
+ events.push({type:'dispel:resolved',side:a.side,removed:!!effect,...(effect?.kind==='weakened'&&effect.piece?{weakened:true}:{})});return {ok:true,events};
 }
 module.exports={apply,candidates,temporary};
+
+},
+"./creature-status.cjs":function(module,exports,require){
+'use strict';
+
+function paralyze(state,instanceId,events){
+ if(typeof instanceId!=='string')return false;
+ const piece=state.board.find(p=>p?.sourceInstanceId===instanceId);
+ if(!piece)return false;
+ if(!piece.paralyzed)events?.push({type:'creature:weakened',creature:piece.type});
+ piece.paralyzed=true;
+ return true;
+}
+
+function refreshRights(piece){
+ if(piece.paralyzed)clearWeakened(piece);
+ else{
+  piece.m=false;
+  piece.a=false;
+  piece.attacksUsed=0;
+ }
+ if(piece.abilityUses)piece.abilityUses={};
+}
+
+function weakenEffect(piece){
+ if(!piece.paralyzed)return [];
+ return [{id:'weaken:'+piece.sourceInstanceId,kind:'weakened',public:true,target:{kind:'creature',instanceId:piece.sourceInstanceId},piece}];
+}
+
+function clearWeakened(piece){delete piece.paralyzed;}
+
+module.exports={paralyze,refreshRights,weakenEffect,clearWeakened};
 
 },
 "./enchantment-cast.cjs":function(module,exports,require){
@@ -3139,30 +3179,6 @@ function onTurnStart(state,side,events){
 }
 function revalidate(state,events=[]){for(const e of [...state.enchantments])if(A3.durations[e.cardId]&&!A3.stillValid(state.board,e))removeEnchantment(state,e,events,'invalid-target');}
 module.exports={revalidate,EFFECTS,removeEnchantment,onTurnEnd,onTurnStart};
-
-},
-"./creature-status.cjs":function(module,exports,require){
-'use strict';
-
-function paralyze(state,instanceId){
- if(typeof instanceId!=='string')return false;
- const piece=state.board.find(p=>p?.sourceInstanceId===instanceId);
- if(!piece)return false;
- piece.paralyzed=true;
- return true;
-}
-
-function refreshRights(piece){
- if(piece.paralyzed)delete piece.paralyzed;
- else{
-  piece.m=false;
-  piece.a=false;
-  piece.attacksUsed=0;
- }
- if(piece.abilityUses)piece.abilityUses={};
-}
-
-module.exports={paralyze,refreshRights};
 
 },
 "./action-bridge.cjs":function(module,exports,require){
@@ -3362,8 +3378,8 @@ function cast(state,action,defs){
   require('./effect-events.cjs').dispatchGroup(state,damage,defs,events);
   return {ok:true,events};
  }
- if(cardId==='パラライズ'){
-  require('./creature-status.cjs').paralyze(state, target.instanceId);
+ if(cardId==='エネルヴェイト'){
+  require('./creature-status.cjs').paralyze(state,target.instanceId,events);
   return {ok:true,events};
  }
  if(cardId==='強制的呪術'){require('./swap-spell.cjs').destroyPair(state,action,defs,events);return {ok:true,events};}
@@ -3533,19 +3549,30 @@ module.exports={execute,summon,attack,chooseToken,commit};
 // Shared deck data boundary. Strict validation reads raw counts before draft recovery.
 function create(definitions){
  const ids=Object.keys(definitions).filter(id=>definitions[id].deckType==='normal'),SIZE=40,LIMIT=4;
+ const renames=new Map([['パラライズ','エネルヴェイト']].filter(([,id])=>ids.includes(id)));
+ const canonicalId=id=>renames.get(id)??id;
+ const legacyName=new Map([...renames].map(([old,id])=>[id,old]));
  const aliases={'銀級兵':'銀兵','金級兵':'金兵'};
  function record(raw){try{if(raw===null||typeof raw!=='object'||Array.isArray(raw))return null;const proto=Object.getPrototypeOf(raw);if(proto!==null&&Object.getPrototypeOf(proto)!==null)return null;return Object.getOwnPropertyDescriptors(raw);}catch{return null;}}
  function count(value){if(typeof value!=='number'&&typeof value!=='string')return null;if(typeof value==='string'&&!value.trim())return null;const n=Number(value);return Number.isFinite(n)&&Number.isInteger(n)&&n>=0&&n<=LIMIT?n:null;}
  function inspect(raw){
   const props=record(raw),counts={},errors=[];if(!props)errors.push('INVALID_STRUCTURE');
-  for(const id of ids){const key=props&&Object.hasOwn(props,id)?id:props&&aliases[id]&&Object.hasOwn(props,aliases[id])?aliases[id]:null;let n=0;if(key){const descriptor=props[key];n=Object.hasOwn(descriptor,'value')?count(descriptor.value):null;if(n===null){errors.push('INVALID_COUNT:'+id);n=0;}}counts[id]=n;}
+  for(const id of ids){
+   const legacy=legacyName.get(id);
+   const keys=legacy?[id,legacy]:[props&&Object.hasOwn(props,id)?id:aliases[id]??id];
+   const values=keys.filter(key=>props&&Object.hasOwn(props,key)).map(key=>Object.hasOwn(props[key],'value')?count(props[key].value):null);
+   const sum=values.reduce((a,n)=>a+n,0);
+   const invalid=values.includes(null)||sum>LIMIT;
+   if(invalid)errors.push('INVALID_COUNT:'+id);
+   counts[id]=invalid?0:sum;
+  }
   const total=Object.values(counts).reduce((a,n)=>a+n,0);return {counts,total,errors,valid:errors.length===0&&total===SIZE};
  }
  function normalize(raw){return inspect(raw).counts;}
  function defaultCounts(){return normalize(Object.fromEntries(ids.map(id=>[id,definitions[id].deckCount??0])));}
  function valid(raw){return inspect(raw).valid;}
  function toCardIds(raw){const x=inspect(raw);if(!x.valid)return null;const out=[];for(const id of ids)for(let i=0;i<x.counts[id];i++)out.push(id);return out;}
- return {SIZE,LIMIT,isRecord:raw=>record(raw)!==null,inspect,normalize,defaultCounts,valid,toCardIds,total:raw=>inspect(raw).total};
+ return {SIZE,LIMIT,canonicalId,isRecord:raw=>record(raw)!==null,inspect,normalize,defaultCounts,valid,toCardIds,total:raw=>inspect(raw).total};
 }
 module.exports={create};
 
@@ -3668,7 +3695,7 @@ function atKing(a,side){return ['king','player'].includes(a.target?.kind)&&a.tar
 function same(a,b){return JSON.stringify(a)===JSON.stringify(b);}
 module.exports={id,target,view,selection,atCell,atKing,same};
 
-}};const cache={};function load(id){if(cache[id])return cache[id].exports;const module=cache[id]={exports:{}};modules[id](module,module.exports,load);return module.exports;}globalThis.EffectiveRules=load("./effective-rules.js");globalThis.R3Command=load("./r3-command-pilot.cjs");globalThis.R4Command=load("./r4-command-bridge.cjs");globalThis.R5Command=load("./r5-command-bridge.cjs");globalThis.R11Exchange=load("./resolution-exchange.cjs");globalThis.R12Core=load("./game-core.cjs");globalThis.A6SurrenderBridge=load("./surrender-bridge.cjs");globalThis.R13View=load("./target-query-view.cjs");})();
+}};const cache={};function load(id){if(cache[id])return cache[id].exports;const module=cache[id]={exports:{}};modules[id](module,module.exports,load);return module.exports;}globalThis.EffectiveRules=load("./effective-rules.js");globalThis.R3Command=load("./r3-command-pilot.cjs");globalThis.R4Command=load("./r4-command-bridge.cjs");globalThis.R5Command=load("./r5-command-bridge.cjs");globalThis.R11Exchange=load("./resolution-exchange.cjs");globalThis.R12Core=load("./game-core.cjs");globalThis.A6SurrenderBridge=load("./surrender-bridge.cjs");globalThis.R13View=load("./target-query-view.cjs");globalThis.DeckValidationFactory=load("./deck-validation.cjs");})();
 
 (function(root,f){if(typeof module==='object'&&module.exports)module.exports=f();else root.A5R1Abilities=f();})(globalThis,function(){
 'use strict';
@@ -4001,33 +4028,12 @@ function notImplemented(name){
 
 // PHASE 2 / Step 1: カード定義の単一管理場所。
 // ルール処理・画面表示・CPUはこの定義を参照する。既存の動作は変更しない。
-const CARD_DEFINITIONS = {"歩兵":{"type":"creature","cost":1,"atk":3,"hp":6,"move":[[-1,0]],"deckCount":2,"description":"能力なし。"},"銀級兵":{"type":"creature","cost":2,"atk":4,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[1,-1],[1,1]],"deckCount":3,"description":"能力なし。"},"金級兵":{"type":"creature","cost":3,"atk":5,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"deckCount":2,"description":"能力なし。"},"チャリオット":{"type":"creature","cost":5,"atk":6,"hp":6,"move":[[-1,0],[-2,0]],"attack":[[-1,-1],[-1,0],[-1,1]],"deckCount":1,"description":"移動：前方1〜2マス（途中の駒は飛び越えない）。"},"アーチャー":{"type":"creature","cost":3,"atk":4,"hp":3,"move":[[-1,0]],"attack":[[-2,0]],"deckCount":1,"description":"間の駒を越えて攻撃できる。"},"盗賊":{"type":"creature","cost":2,"atk":2,"hp":5,"move":[[-1,0]],"attack":[[-1,-1],[-1,0],[-1,1]],"deckCount":1,"abilities":["thief_attack_mana"],"description":"通常攻撃成立後、自分の最大マナと未使用マナをそれぞれ1増やす（それぞれ上限10）。"},"サラマンダー":{"type":"creature","cost":3,"atk":4,"hp":6,"move":[[-1,-1],[-1,0],[-1,1]],"attack":[[-1,0]],"deckCount":2,"abilities":["salamander_counter"],"description":"敵クリーチャーから攻撃された時、攻撃してきたクリーチャーに3ダメージを与える。"},"踊り子":{"type":"creature","cost":3,"atk":1,"hp":2,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[],"deckCount":2,"abilities":["dancer_aura"],"description":"このクリーチャーが戦場にいる間、他の味方クリーチャーの攻撃力+1。複数体の効果は重複する。"},"戦狼":{"type":"creature","cost":4,"atk":2,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["war_wolf_pack"],"description":"このクリーチャーの攻撃力は、戦場にいるほかの味方クリーチャー1体につき+1される。"},"ディアブロ":{"type":"creature","cost":6,"atk":6,"hp":9,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"deckCount":1,"abilities":["diablo_turn_start"],"description":"あなたのターン開始時に、あなたの王に2点のダメージを与える。"},"オルトロス":{"type":"creature","cost":4,"atk":2,"hp":7,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"attack":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"deckCount":2,"abilities":["orthros_double_attack","orthros_self_damage"],"description":"このクリーチャーは1ターンに2回攻撃できる。攻撃時、あなたの王に1点のダメージ。"},"隠密":{"jump":true,"movement":{"jump":true},"type":"creature","cost":3,"atk":3,"hp":5,"move":[[-2,-1],[-2,1]],"attack":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"deckCount":2,"abilities":["promote_assassin"],"description":"敵陣最奥列に到達時、暗殺者に変身できる。"},"ソーサラー":{"type":"creature","cost":4,"atk":2,"hp":2,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["sorcerer_bolt"],"description":"攻撃権とマナ2を支払い、盤上の任意のクリーチャー/王に2点のダメージを与える。"},"守備兵":{"type":"creature","cost":4,"atk":3,"hp":6,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["guard_barricade"],"description":"召喚時、左右の空きマスのどちらかにバリケードを1体生成する。両方埋まっている場合は生成しない。"},"バリケード":{"type":"creature","deckType":"token","cost":0,"atk":0,"hp":3,"move":[],"attack":[],"deckCount":0,"token":true,"description":"移動・攻撃できないトークン。倒されると消滅し、墓地には入らない。"},"暗殺者":{"type":"creature","deckType":"transform","cost":4,"atk":6,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"attack":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"deckCount":0,"description":"隠密が変身した姿。"},"ファイヤーボルト":{"type":"spell","cost":2,"damage":2,"deckCount":2,"description":"クリーチャーまたは王を選び、2ダメージ。敵味方どちらも対象にできる。"},"圧殺":{"type":"spell","cost":7,"deckCount":0,"description":"相手の王を選ぶ。使用時、あなたがクリーチャーを10体以上コントロールしていたら相手の王のHPを0にする。条件を満たさない場合もコストとカードを消費し、何も起きない。"},"裏切り":{"type":"spell","cost":10,"deckCount":0,"description":"盤上の敵味方いずれかのクリーチャー1体を選び、コントローラーを相手側に変更する。所有者・位置・HP・付属エンチャントは変わらない。使用したターン、対象クリーチャーは移動も攻撃も出来ない。"},"転移魔法":{"type":"spell","cost":5,"deckCount":0,"description":"敵味方のクリーチャー1体を選び、戦場の空きマスへ転移させる。通常の移動権は消費しない。"},"解呪":{"type":"spell","cost":2,"deckCount":1,"description":"クリーチャー・王・マス・盤面全体の公開エンチャントまたは公開一時効果を1つ解除。公開対象がなければ非公開エンチャントをランダムに1枚解除。対象なしでもカードとコストを消費。"},"ホープ":{"type":"spell","cost":1,"draw":2,"deckCount":4,"description":"自分または相手の王を選ぶ。対象のプレイヤーはカードを2枚引く。"},"マナ":{"type":"spell","cost":2,"gainMana":1,"deckCount":3,"description":"自分の最大マナと未使用マナを1増やす（最大10）。"},"バーサーク":{"type":"enchant","cost":3,"duration":3,"deckCount":2,"visual":{"auraColor":"#b985ff"},"description":"敵味方のクリーチャー1体。3ターン基本攻撃力を1.5倍（端数切り上げ）にし、移動・攻撃は前方1マスのみ。複数枚の期間は独立し、効果は重複しない。"},"マイン":{"type":"enchant","cost":2,"duration":4,"deckCount":0,"description":"空きマスに設置。4ターン以内に駒が入ると5ダメージを与えて消滅。敵味方どちらにも発動。"},"防御結界":{"type":"enchant","cost":2,"duration":3,"deckCount":2,"description":"3ターンの間、対象のマスに配置されたクリーチャーが受けるダメージを1減らす。"},"封魔":{"type":"enchant","cost":4,"duration":1,"deckCount":0,"description":"相手の王に付ける。付いている王のコントローラーはスペルを使用できない。相手の次のターン終了時まで。"},"王の覚醒":{"type":"enchant","cost":2,"duration":3,"deckCount":0,"description":"あなたの王に付ける。3ターンの間、王は自陣1段目の任意のマスに攻撃力5で攻撃できる。1ターンに1回。敵軍クリーチャーのみ対象。このカードの能力は重複しない。"},"決戦":{"type":"enchant","cost":4,"duration":2,"deckCount":1,"description":"2ターンの間、敵味方すべてのクリーチャーの攻撃力+1。後から召喚された駒も対象。重ねがけ可能。"},"突風":{"type":"spell","deckType":"normal","cost":2,"deckCount":0,"description":"クリーチャーを1体選び、あなたから見て敵陣方向へ1マス動かす。敵味方どちらも対象にできる。移動権は消費しない。移動先が盤外または占有済みの対象は選べない。"},"竜巻":{"type":"spell","deckType":"normal","cost":3,"deckCount":0,"description":"対象のクリーチャーに1点のダメージ。その後、対象クリーチャーを上下左右いずれかの方向に1マス動かす。上下左右に空きマスがない場合、位置は変わらず効果は終了する。敵味方どちらも対象にできる。移動権は消費しない。"},"ポーン":{"type":"creature","deckType":"normal","cost":1,"deckCount":0,"atk":3,"hp":5,"move":[[-1,0]],"attack":[[-1,-1],[-1,1]],"abilities":[],"description":"自身から見て前方1マスに移動し、斜め前方左右の各1マスを攻撃する。能力なし。"},"スワップスペル":{"type":"spell","deckType":"normal","cost":5,"deckCount":0,"description":"クリーチャーを2体選び、その位置を入れ替える。敵味方どちらも対象にできる。移動権は消費しない。","creaturePair":"distinct"},"恩寵の光":{"type":"enchant","deckType":"normal","cost":4,"deckCount":0,"description":"2ターンの間、敵味方すべてのクリーチャーと王が受けるダメージを1点軽減する。この効果は重複する。"},"風精霊の加護":{"type":"enchant","deckType":"normal","cost":3,"duration":3,"deckCount":0,"description":"あなたの王につける。3ターンの間、王は「自軍1段目のクリーチャー1体を選び、あなたから見て敵陣方向へ1マス動かす」能力を得る。敵味方どちらも対象にできる。この能力は自分のターンに1度、コスト0で使える。移動権は消費しない。移動先が占有済みの対象は選べない。このカードの能力は重複しない。"},"天狗":{"type":"creature","deckType":"normal","cost":5,"hp":7,"atk":5,"deckCount":0,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1],[-2,0],[2,0],[0,-2],[0,2]],"attack":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"abilities":["flight"],"description":"飛行：移動範囲内の空きマスへ、途中の駒を飛び越えて移動できる。"},"遊撃騎兵":{"type":"creature","deckType":"normal","cost":5,"hp":7,"atk":5,"deckCount":0,"move":[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]],"attack":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"jump":true,"abilities":[],"description":"縦に2マス・横に1マス、または縦に1マス・横に2マス離れた空きマスへ移動する。途中の駒には影響されない。能力なし。"},"ヒーラー":{"type":"creature","deckType":"normal","cost":2,"hp":1,"atk":1,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"abilities":["heal"],"abilityKinds":{"heal":"activated"},"description":"移動権と攻撃権を消費し、自軍クリーチャー1体または自軍王のHPを1回復する。自分自身も対象にできる。コスト0。移動権と攻撃権が両方未使用の場合のみ使える。クリーチャーは初期HPを超えて回復せず、王はHP20を超えて回復できる。"},"覇王の参謀":{"type":"creature","deckType":"normal","cost":4,"hp":2,"atk":3,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"abilities":["heal_draw"],"triggers":[{"id":"heal_draw","on":"king:healed","controllerEvent":true,"targetKind":"player","unit":{"unitId":"heal_draw","mode":"sequential","targetPolicy":"valid-only","operations":[{"kind":"draw","count":1}]}}],"description":"あなたの王のHPが回復するたび、あなたはカードを1枚引く。"},"求道者":{"type":"creature","deckType":"normal","cost":3,"hp":6,"atk":1,"deckCount":0,"move":[[-1,-1],[-1,0],[-1,1]],"attack":[[-1,-1],[-1,0],[-1,1]],"abilities":["draw_growth"],"triggers":[{"id":"draw_growth","on":"card:drawn","controllerEvent":true,"unit":{"unitId":"draw_growth","mode":"sequential","targetPolicy":"valid-only","operations":[{"kind":"growAttack","amount":1}]}}],"description":"あなたがカードを1枚引くたび、このクリーチャーのATKが1上がる。この上昇は、このクリーチャーが盤上にいる間持続する。"},"密命を受けし者":{"type":"creature","deckType":"normal","cost":3,"hp":3,"atk":2,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"description":"敵陣最奥列に到達した時、「密命を受けし者2」に進化する。","evolution":{"rank":"enemy","to":"密命を受けし者2"}},"密命を受けし者2":{"type":"creature","deckType":"transform","cost":null,"hp":3,"atk":2,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"description":"自陣1段目に到達した時、「密命を受けし者3」に進化する。","evolution":{"rank":"own","to":"密命を受けし者3"}},"密命を受けし者3":{"type":"creature","deckType":"transform","cost":null,"hp":3,"atk":2,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"description":"敵陣最奥列に到達した時、「密命の遂行者」に進化する。","evolution":{"rank":"enemy","to":"密命の遂行者"}},"密命の遂行者":{"type":"creature","deckType":"transform","cost":null,"hp":3,"atk":2,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"description":"このクリーチャーに進化した時、相手の王のHPを0にする。","onEvolution":"defeat_enemy_king"},"占い師":{"type":"creature","deckType":"normal","cost":3,"hp":3,"atk":1,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"description":"攻撃権1回分と2マナを消費し、カードを1枚引く。","abilities":["fortune_draw"],"abilityKinds":{"fortune_draw":"activated"}},"強制的呪術":{"type":"spell","deckType":"normal","cost":2,"deckCount":0,"creaturePair":"opposed","description":"あなたがコントロールするクリーチャー1体と、相手がコントロールするクリーチャー1体を選び、それらを破壊する。"},"ベンケイ":{"type":"creature","deckType":"normal","cost":4,"hp":6,"atk":3,"deckCount":0,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"attack":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"description":"通常攻撃後、攻撃対象のクリーチャーのATKを2下げ、自身のATKを2上げる。この増減は、それぞれのクリーチャーが盤上にいる間持続する。","abilities":["attack_exchange_power"],"abilityKinds":{"attack_exchange_power":"triggered"}},"土ゴーレム":{"type":"creature","deckType":"normal","cost":4,"hp":7,"atk":5,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"description":"能力なし。"},"ゴーレム使い":{"type":"creature","deckType":"normal","cost":3,"hp":3,"atk":1,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"description":"移動権と攻撃権、および4マナを消費し、このクリーチャーの上下左右いずれかの空きマスに土ゴーレムを1体生成する。移動権と攻撃権が両方未使用の場合のみ使える。","abilities":["generate_golem"],"abilityKinds":{"generate_golem":"activated"},"generatedCreature":"土ゴーレム"},"槍兵":{"type":"creature","deckType":"normal","cost":2,"hp":4,"atk":4,"deckCount":0,"move":[[0,-1],[-1,0],[0,1]],"attack":[[-1,0],[-2,0]],"description":"前方1マスまたは2マス先を攻撃できる。間にクリーチャーがいる場合、その先は攻撃できない。能力なし。","attackObstructed":true},"ゴブリン":{"type":"creature","deckType":"normal","cost":1,"hp":3,"atk":3,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"description":"能力なし。"},"クロスフレイム":{"type":"spell","deckType":"normal","cost":4,"deckCount":0,"targetKind":"cell","description":"盤内のマスを1つ選び、そのマスと上下左右に隣接するマスの全クリーチャーに2点のダメージを与える。敵味方どちらにもダメージを与える。"},"狂信者":{"type":"creature","deckType":"normal","cost":4,"hp":7,"atk":3,"deckCount":0,"move":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"attack":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"description":"このクリーチャーが通常攻撃で与えたダメージ分、あなたの王のHPを回復する。ただし、攻撃対象の残りHPを超えたダメージは回復量に含めない。","abilities":["attack_heal_king"],"abilityKinds":{"attack_heal_king":"triggered"}},"パラライズ":{"type":"spell","deckType":"normal","cost":3,"deckCount":0,"targetKind":"creature","description":"クリーチャー1体を麻痺状態にする。敵味方どちらも対象にできる。対象は次の自軍ターン開始時、移動権と攻撃権が回復しない。"},"チュパカブラ":{"type":"creature","deckType":"normal","cost":3,"hp":4,"atk":1,"deckCount":0,"move":[[-1,-1],[-1,0],[-1,1]],"attack":[[-1,-1],[-1,0],[-1,1]],"description":"通常攻撃後、攻撃したクリーチャーが生存していれば麻痺状態にする。対象は次の自軍ターン開始時、移動権と攻撃権が回復しない。","abilities":["attack_paralyze"],"abilityKinds":{"attack_paralyze":"triggered"}}};
+const CARD_DEFINITIONS = {"歩兵":{"type":"creature","cost":1,"atk":3,"hp":6,"move":[[-1,0]],"deckCount":2,"description":"能力なし。"},"銀級兵":{"type":"creature","cost":2,"atk":4,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[1,-1],[1,1]],"deckCount":3,"description":"能力なし。"},"金級兵":{"type":"creature","cost":3,"atk":5,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"deckCount":2,"description":"能力なし。"},"チャリオット":{"type":"creature","cost":5,"atk":6,"hp":6,"move":[[-1,0],[-2,0]],"attack":[[-1,-1],[-1,0],[-1,1]],"deckCount":1,"description":"移動：前方1〜2マス（途中の駒は飛び越えない）。"},"アーチャー":{"type":"creature","cost":3,"atk":4,"hp":3,"move":[[-1,0]],"attack":[[-2,0]],"deckCount":1,"description":"間の駒を越えて攻撃できる。"},"盗賊":{"type":"creature","cost":2,"atk":2,"hp":5,"move":[[-1,0]],"attack":[[-1,-1],[-1,0],[-1,1]],"deckCount":1,"abilities":["thief_attack_mana"],"description":"通常攻撃成立後、自分の最大マナと未使用マナをそれぞれ1増やす（それぞれ上限10）。"},"サラマンダー":{"type":"creature","cost":3,"atk":4,"hp":6,"move":[[-1,-1],[-1,0],[-1,1]],"attack":[[-1,0]],"deckCount":2,"abilities":["salamander_counter"],"description":"敵クリーチャーから攻撃された時、攻撃してきたクリーチャーに3ダメージを与える。"},"踊り子":{"type":"creature","cost":3,"atk":1,"hp":2,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[],"deckCount":2,"abilities":["dancer_aura"],"description":"このクリーチャーが戦場にいる間、他の味方クリーチャーの攻撃力+1。複数体の効果は重複する。"},"戦狼":{"type":"creature","cost":4,"atk":2,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["war_wolf_pack"],"description":"このクリーチャーの攻撃力は、戦場にいるほかの味方クリーチャー1体につき+1される。"},"ディアブロ":{"type":"creature","cost":6,"atk":6,"hp":9,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"deckCount":1,"abilities":["diablo_turn_start"],"description":"あなたのターン開始時に、あなたの王に2点のダメージを与える。"},"オルトロス":{"type":"creature","cost":4,"atk":2,"hp":7,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,0]],"attack":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"deckCount":2,"abilities":["orthros_double_attack","orthros_self_damage"],"description":"このクリーチャーは1ターンに2回攻撃できる。攻撃時、あなたの王に1点のダメージ。"},"隠密":{"jump":true,"movement":{"jump":true},"type":"creature","cost":3,"atk":3,"hp":5,"move":[[-2,-1],[-2,1]],"attack":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"deckCount":2,"abilities":["promote_assassin"],"description":"敵陣最奥列に到達時、暗殺者に変身できる。"},"ソーサラー":{"type":"creature","cost":4,"atk":2,"hp":2,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["sorcerer_bolt"],"description":"攻撃権とマナ2を支払い、盤上の任意のクリーチャー/王に2点のダメージを与える。"},"守備兵":{"type":"creature","cost":4,"atk":3,"hp":6,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"deckCount":2,"abilities":["guard_barricade"],"description":"召喚時、左右の空きマスのどちらかにバリケードを1体生成する。両方埋まっている場合は生成しない。"},"バリケード":{"type":"creature","deckType":"token","cost":0,"atk":0,"hp":3,"move":[],"attack":[],"deckCount":0,"token":true,"description":"移動・攻撃できないトークン。倒されると消滅し、墓地には入らない。"},"暗殺者":{"type":"creature","deckType":"transform","cost":4,"atk":6,"hp":6,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"attack":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"deckCount":0,"description":"隠密が変身した姿。"},"ファイヤーボルト":{"type":"spell","cost":2,"damage":2,"deckCount":2,"description":"クリーチャーまたは王を選び、2ダメージ。敵味方どちらも対象にできる。"},"圧殺":{"type":"spell","cost":7,"deckCount":0,"description":"相手の王を選ぶ。使用時、あなたがクリーチャーを10体以上コントロールしていたら相手の王のHPを0にする。条件を満たさない場合もコストとカードを消費し、何も起きない。"},"裏切り":{"type":"spell","cost":10,"deckCount":0,"description":"盤上の敵味方いずれかのクリーチャー1体を選び、コントローラーを相手側に変更する。所有者・位置・HP・付属エンチャントは変わらない。使用したターン、対象クリーチャーは移動も攻撃も出来ない。"},"転移魔法":{"type":"spell","cost":5,"deckCount":0,"description":"敵味方のクリーチャー1体を選び、戦場の空きマスへ転移させる。通常の移動権は消費しない。"},"解呪":{"type":"spell","cost":2,"deckCount":1,"description":"クリーチャー・王・マス・盤面全体の公開エンチャントまたは公開一時効果を1つ解除。公開対象がなければ非公開エンチャントをランダムに1枚解除。対象なしでもカードとコストを消費。"},"ホープ":{"type":"spell","cost":1,"draw":2,"deckCount":4,"description":"自分または相手の王を選ぶ。対象のプレイヤーはカードを2枚引く。"},"マナ":{"type":"spell","cost":2,"gainMana":1,"deckCount":3,"description":"自分の最大マナと未使用マナを1増やす（最大10）。"},"バーサーク":{"type":"enchant","cost":3,"duration":3,"deckCount":2,"visual":{"auraColor":"#b985ff"},"description":"敵味方のクリーチャー1体。3ターン基本攻撃力を1.5倍（端数切り上げ）にし、移動・攻撃は前方1マスのみ。複数枚の期間は独立し、効果は重複しない。"},"マイン":{"type":"enchant","cost":2,"duration":4,"deckCount":0,"description":"空きマスに設置。4ターン以内に駒が入ると5ダメージを与えて消滅。敵味方どちらにも発動。"},"防御結界":{"type":"enchant","cost":2,"duration":3,"deckCount":2,"description":"3ターンの間、対象のマスに配置されたクリーチャーが受けるダメージを1減らす。"},"封魔":{"type":"enchant","cost":4,"duration":1,"deckCount":0,"description":"相手の王に付ける。付いている王のコントローラーはスペルを使用できない。相手の次のターン終了時まで。"},"王の覚醒":{"type":"enchant","cost":2,"duration":3,"deckCount":0,"description":"あなたの王に付ける。3ターンの間、王は自陣1段目の任意のマスに攻撃力5で攻撃できる。1ターンに1回。敵軍クリーチャーのみ対象。このカードの能力は重複しない。"},"決戦":{"type":"enchant","cost":4,"duration":2,"deckCount":1,"description":"2ターンの間、敵味方すべてのクリーチャーの攻撃力+1。後から召喚された駒も対象。重ねがけ可能。"},"突風":{"type":"spell","deckType":"normal","cost":2,"deckCount":0,"description":"クリーチャーを1体選び、あなたから見て敵陣方向へ1マス動かす。敵味方どちらも対象にできる。移動権は消費しない。移動先が盤外または占有済みの対象は選べない。"},"竜巻":{"type":"spell","deckType":"normal","cost":3,"deckCount":0,"description":"対象のクリーチャーに1点のダメージ。その後、対象クリーチャーを上下左右いずれかの方向に1マス動かす。上下左右に空きマスがない場合、位置は変わらず効果は終了する。敵味方どちらも対象にできる。移動権は消費しない。"},"ポーン":{"type":"creature","deckType":"normal","cost":1,"deckCount":0,"atk":3,"hp":5,"move":[[-1,0]],"attack":[[-1,-1],[-1,1]],"abilities":[],"description":"自身から見て前方1マスに移動し、斜め前方左右の各1マスを攻撃する。能力なし。"},"スワップスペル":{"type":"spell","deckType":"normal","cost":5,"deckCount":0,"description":"クリーチャーを2体選び、その位置を入れ替える。敵味方どちらも対象にできる。移動権は消費しない。","creaturePair":"distinct"},"恩寵の光":{"type":"enchant","deckType":"normal","cost":4,"deckCount":0,"description":"2ターンの間、敵味方すべてのクリーチャーと王が受けるダメージを1点軽減する。この効果は重複する。"},"風精霊の加護":{"type":"enchant","deckType":"normal","cost":3,"duration":3,"deckCount":0,"description":"あなたの王につける。3ターンの間、王は「自軍1段目のクリーチャー1体を選び、あなたから見て敵陣方向へ1マス動かす」能力を得る。敵味方どちらも対象にできる。この能力は自分のターンに1度、コスト0で使える。移動権は消費しない。移動先が占有済みの対象は選べない。このカードの能力は重複しない。"},"天狗":{"type":"creature","deckType":"normal","cost":5,"hp":7,"atk":5,"deckCount":0,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1],[-2,0],[2,0],[0,-2],[0,2]],"attack":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"abilities":["flight"],"description":"飛行：移動範囲内の空きマスへ、途中の駒を飛び越えて移動できる。"},"遊撃騎兵":{"type":"creature","deckType":"normal","cost":5,"hp":7,"atk":5,"deckCount":0,"move":[[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]],"attack":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"jump":true,"abilities":[],"description":"縦に2マス・横に1マス、または縦に1マス・横に2マス離れた空きマスへ移動する。途中の駒には影響されない。能力なし。"},"ヒーラー":{"type":"creature","deckType":"normal","cost":2,"hp":1,"atk":1,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"abilities":["heal"],"abilityKinds":{"heal":"activated"},"description":"移動権と攻撃権を消費し、自軍クリーチャー1体または自軍王のHPを1回復する。自分自身も対象にできる。コスト0。移動権と攻撃権が両方未使用の場合のみ使える。クリーチャーは初期HPを超えて回復せず、王はHP20を超えて回復できる。"},"覇王の参謀":{"type":"creature","deckType":"normal","cost":4,"hp":2,"atk":3,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"abilities":["heal_draw"],"triggers":[{"id":"heal_draw","on":"king:healed","controllerEvent":true,"targetKind":"player","unit":{"unitId":"heal_draw","mode":"sequential","targetPolicy":"valid-only","operations":[{"kind":"draw","count":1}]}}],"description":"あなたの王のHPが回復するたび、あなたはカードを1枚引く。"},"求道者":{"type":"creature","deckType":"normal","cost":3,"hp":6,"atk":1,"deckCount":0,"move":[[-1,-1],[-1,0],[-1,1]],"attack":[[-1,-1],[-1,0],[-1,1]],"abilities":["draw_growth"],"triggers":[{"id":"draw_growth","on":"card:drawn","controllerEvent":true,"unit":{"unitId":"draw_growth","mode":"sequential","targetPolicy":"valid-only","operations":[{"kind":"growAttack","amount":1}]}}],"description":"あなたがカードを1枚引くたび、このクリーチャーのATKが1上がる。この上昇は、このクリーチャーが盤上にいる間持続する。"},"密命を受けし者":{"type":"creature","deckType":"normal","cost":3,"hp":3,"atk":2,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"description":"敵陣最奥列に到達した時、「密命を受けし者2」に進化する。","evolution":{"rank":"enemy","to":"密命を受けし者2"}},"密命を受けし者2":{"type":"creature","deckType":"transform","cost":null,"hp":3,"atk":2,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"description":"自陣1段目に到達した時、「密命を受けし者3」に進化する。","evolution":{"rank":"own","to":"密命を受けし者3"}},"密命を受けし者3":{"type":"creature","deckType":"transform","cost":null,"hp":3,"atk":2,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"description":"敵陣最奥列に到達した時、「密命の遂行者」に進化する。","evolution":{"rank":"enemy","to":"密命の遂行者"}},"密命の遂行者":{"type":"creature","deckType":"transform","cost":null,"hp":3,"atk":2,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"description":"このクリーチャーに進化した時、相手の王のHPを0にする。","onEvolution":"defeat_enemy_king"},"占い師":{"type":"creature","deckType":"normal","cost":3,"hp":3,"atk":1,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"description":"攻撃権1回分と2マナを消費し、カードを1枚引く。","abilities":["fortune_draw"],"abilityKinds":{"fortune_draw":"activated"}},"強制的呪術":{"type":"spell","deckType":"normal","cost":2,"deckCount":0,"creaturePair":"opposed","description":"あなたがコントロールするクリーチャー1体と、相手がコントロールするクリーチャー1体を選び、それらを破壊する。"},"ベンケイ":{"type":"creature","deckType":"normal","cost":4,"hp":6,"atk":3,"deckCount":0,"move":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"attack":[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],"description":"通常攻撃後、攻撃対象のクリーチャーのATKを2下げ、自身のATKを2上げる。この増減は、それぞれのクリーチャーが盤上にいる間持続する。","abilities":["attack_exchange_power"],"abilityKinds":{"attack_exchange_power":"triggered"}},"土ゴーレム":{"type":"creature","deckType":"normal","cost":4,"hp":7,"atk":5,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"description":"能力なし。"},"ゴーレム使い":{"type":"creature","deckType":"normal","cost":3,"hp":3,"atk":1,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"description":"移動権と攻撃権、および4マナを消費し、このクリーチャーの上下左右いずれかの空きマスに土ゴーレムを1体生成する。移動権と攻撃権が両方未使用の場合のみ使える。","abilities":["generate_golem"],"abilityKinds":{"generate_golem":"activated"},"generatedCreature":"土ゴーレム"},"槍兵":{"type":"creature","deckType":"normal","cost":2,"hp":4,"atk":4,"deckCount":0,"move":[[0,-1],[-1,0],[0,1]],"attack":[[-1,0],[-2,0]],"description":"前方1マスまたは2マス先を攻撃できる。間にクリーチャーがいる場合、その先は攻撃できない。能力なし。","attackObstructed":true},"ゴブリン":{"type":"creature","deckType":"normal","cost":1,"hp":3,"atk":3,"deckCount":0,"move":[[-1,0],[0,-1],[0,1],[1,0]],"attack":[[-1,0],[0,-1],[0,1],[1,0]],"description":"能力なし。"},"クロスフレイム":{"type":"spell","deckType":"normal","cost":4,"deckCount":0,"targetKind":"cell","description":"盤内のマスを1つ選び、そのマスと上下左右に隣接するマスの全クリーチャーに2点のダメージを与える。敵味方どちらにもダメージを与える。"},"狂信者":{"type":"creature","deckType":"normal","cost":4,"hp":7,"atk":3,"deckCount":0,"move":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"attack":[[0,-1],[-1,-1],[-1,0],[-1,1],[0,1]],"description":"このクリーチャーが通常攻撃で与えたダメージ分、あなたの王のHPを回復する。ただし、攻撃対象の残りHPを超えたダメージは回復量に含めない。","abilities":["attack_heal_king"],"abilityKinds":{"attack_heal_king":"triggered"}},"エネルヴェイト":{"type":"spell","deckType":"normal","cost":3,"deckCount":0,"targetKind":"creature","description":"クリーチャー1体を衰弱状態にする。敵味方どちらも対象にできる。\n(※衰弱状態:自軍ターンの開始時に移動権と攻撃権が回復しない。)"},"チュパカブラ":{"type":"creature","deckType":"normal","cost":3,"hp":4,"atk":1,"deckCount":0,"move":[[-1,-1],[-1,0],[-1,1]],"attack":[[-1,-1],[-1,0],[-1,1]],"description":"通常攻撃後、攻撃したクリーチャーが生存していれば衰弱状態にする。\n(※衰弱状態:自軍ターンの開始時に移動権と攻撃権が回復しない。)","abilities":["attack_paralyze"],"abilityKinds":{"attack_paralyze":"triggered"}}};
 
 // Deck metadata: cards are normal unless explicitly generated/transform-only.
 Object.values(CARD_DEFINITIONS).forEach(card=>{if(!card.deckType)card.deckType="normal"});
 
-const DeckValidation=(function(){const module={exports:{}};
-'use strict';
-// Shared deck data boundary. Strict validation reads raw counts before draft recovery.
-function create(definitions){
- const ids=Object.keys(definitions).filter(id=>definitions[id].deckType==='normal'),SIZE=40,LIMIT=4;
- const aliases={'銀級兵':'銀兵','金級兵':'金兵'};
- function record(raw){try{if(raw===null||typeof raw!=='object'||Array.isArray(raw))return null;const proto=Object.getPrototypeOf(raw);if(proto!==null&&Object.getPrototypeOf(proto)!==null)return null;return Object.getOwnPropertyDescriptors(raw);}catch{return null;}}
- function count(value){if(typeof value!=='number'&&typeof value!=='string')return null;if(typeof value==='string'&&!value.trim())return null;const n=Number(value);return Number.isFinite(n)&&Number.isInteger(n)&&n>=0&&n<=LIMIT?n:null;}
- function inspect(raw){
-  const props=record(raw),counts={},errors=[];if(!props)errors.push('INVALID_STRUCTURE');
-  for(const id of ids){const key=props&&Object.hasOwn(props,id)?id:props&&aliases[id]&&Object.hasOwn(props,aliases[id])?aliases[id]:null;let n=0;if(key){const descriptor=props[key];n=Object.hasOwn(descriptor,'value')?count(descriptor.value):null;if(n===null){errors.push('INVALID_COUNT:'+id);n=0;}}counts[id]=n;}
-  const total=Object.values(counts).reduce((a,n)=>a+n,0);return {counts,total,errors,valid:errors.length===0&&total===SIZE};
- }
- function normalize(raw){return inspect(raw).counts;}
- function defaultCounts(){return normalize(Object.fromEntries(ids.map(id=>[id,definitions[id].deckCount??0])));}
- function valid(raw){return inspect(raw).valid;}
- function toCardIds(raw){const x=inspect(raw);if(!x.valid)return null;const out=[];for(const id of ids)for(let i=0;i<x.counts[id];i++)out.push(id);return out;}
- return {SIZE,LIMIT,isRecord:raw=>record(raw)!==null,inspect,normalize,defaultCounts,valid,toCardIds,total:raw=>inspect(raw).total};
-}
-module.exports={create};
-
-return module.exports.create(CARD_DEFINITIONS);})();
+const DeckValidation=DeckValidationFactory.create(CARD_DEFINITIONS);
 (function(root,factory){const api={create:factory};if(typeof module==='object'&&module.exports)module.exports=api;else root.CardTacticsDeckLibrary=api;})(globalThis,function(rules,storage){
 'use strict';
 // Keys are independent of the product build and shared by CPU / online.
@@ -4124,8 +4130,9 @@ function check(data){
  for(const entry of data.cards){
   if(!Array.isArray(entry)||entry.length!==2||typeof entry[0]!=='string')return fail('カードは識別子と枚数の組で指定してください。');
   const [id,n]=entry;
-  if(!Object.hasOwn(definitions,id))return fail('未知のカード識別子です：'+id);
-  if(definitions[id].deckType!=='normal')return fail('デッキへ投入できないカードです：'+id);
+  const canonical=rules.canonicalId(id);
+  if(!Object.hasOwn(definitions,canonical))return fail('未知のカード識別子です：'+id);
+  if(definitions[canonical].deckType!=='normal')return fail('デッキへ投入できないカードです：'+id);
   if(seen.has(id))return fail('同じカード識別子が重複しています：'+id);
   seen.add(id);counts[id]=n;
  }
@@ -4138,7 +4145,7 @@ function decode(text){if(typeof text!=='string'||text.length>MAX_LENGTH)return f
 function inspectCounts(counts){
  // Validate the original counts before normalization. Unknown/locked IDs are never silently dropped.
  if(!rules.isRecord(counts))return fail('カード枚数の構造が不正です。');
- for(const id of Object.keys(counts))if(!Object.hasOwn(definitions,id)||definitions[id].deckType!=='normal')return fail('不明または投入不可のカードが含まれています。');
+ for(const id of Object.keys(counts).map(rules.canonicalId))if(!Object.hasOwn(definitions,id)||definitions[id].deckType!=='normal')return fail('不明または投入不可のカードが含まれています。');
  const inspected=rules.inspect(counts);if(inspected.errors.length)return fail('カード枚数が不正です。');if(!inspected.valid)return {...fail('合計'+inspected.total+'枚です。'+rules.SIZE+'枚ちょうどのデッキが必要です。'),total:inspected.total};
  return {ok:true,counts:inspected.counts};
 }
@@ -4471,25 +4478,47 @@ const EnchantmentZone={
  onTurnStart(side){for(const e of [...S.enchantments]){if(e.cardId==='封魔'||e.caster!==side||e.createdTurn===S.turn)continue;if(--e.remainingTurns<=0)this.remove(e,'expired');}this.sync();},
  cast(cardId,side,target){return this.attach(cardId,side,target);}
 };
-function a3Temporary(){return [...(S.temporaryEffects||[]),...S.board.flatMap(p=>p?(p.actionRestrictions||[]).map(e=>({...e,temporary:true,target:{kind:'creature',ref:p},source:e,piece:p})):[])].map(e=>({...e,temporary:true,source:e.source||e}));}
-function a3Candidates(target,viewer){return A3Rules.candidates(S.enchantments,a3Temporary(),target,viewer);}
+// CPU presentation and choice adapter for Core's public dispel candidates.
+function cpuDispelEffects(side,target){
+ return R12Core.dispelEffects(R13View.view(S,side),R13View.target(S,target),side);
+}
+async function cpuDispel(){
+ while(!S.gameOver){
+  const index=S.cHand.indexOf('解呪');
+  if(index<0)break;
+  const choices=GameCore.cardQuery('c',index).choices;
+  const candidates=S.board.flatMap((piece,k)=>{
+   if(!piece||!choices.some(a=>a.target?.kind==='creature'&&R13View.atCell(S,a,k)))return [];
+   const target={kind:'creature',ref:piece,k};
+   return cpuDispelEffects('c',target).map(effect=>({piece,k,effect}));
+  });
+  const choice=candidates.find(x=>x.piece.side==='c'&&x.effect.kind==='weakened')||
+   candidates.find(x=>x.piece.side==='p'&&x.effect.kind==='enchantment');
+  if(!choice)break;
+  const name=choice.effect.kind==='weakened'?'衰弱':choice.effect.cardId;
+  msg('CPU：'+choice.piece.type+'の'+name+'を解呪','routine');render();await cpuWait();
+  if(!resolveDispel('c',index,choice.k,choice.effect))break;
+  log('CPUが'+choice.piece.type+'の'+name+'を解呪。');render();await cpuWait();
+ }
+}
+
 function a3Dispel(side,index,target,selected){
-  const r=playCardUnified(side,index,target,{effectId:selected?.instanceId??selected?.id});
+  const r=playCardUnified(side,index,target,{effectId:selected?.effectId??selected?.instanceId??selected?.id});
   if(!r.ok)return null;const removed=r.events.find(e=>e.type==='dispel:resolved')?.removed;return {target,card:removed?(selected||true):null};
  }
 function a3ChooseDispel(target){
  if(!dispelCardStillSelected()||!GameCore.cardQuery('p',S.card,{target:R13View.target(S,target)}).choices.length)return;
  S.dispelTarget=target;S.inspect=null;render();const panel=$('infoContent');panel.innerHTML='';
  const title=document.createElement('div');title.className='infoName';title.textContent='解呪：解除する効果を選択';panel.appendChild(title);
- const choices=GameCore.cardQuery('p',S.card,{target:R13View.target(S,target)}).choices;const ids=new Set(choices.map(a=>String(a.effectId??'')));const c={public:a3Candidates(target,'p').public.filter(e=>ids.has(String(e.instanceId??e.id)))};
+ const c={public:cpuDispelEffects('p',target)};
  function button(label,e){const b=document.createElement('button');b.type='button';b.className='useCardButton';b.textContent=label;b.onclick=()=>a3FinishDispel(target,e);panel.appendChild(b);}
- for(const e of c.public)button(e.temporary?'一時効果：移動・攻撃禁止を解除':`${e.cardId}（残り${e.remainingTurns}ターン）`,e);
+ for(const e of c.public)button(NormalGameUI.dispelEffectLabel(e),e);
  if(!c.public.length)button('使用する（非公開効果があればランダム解除）',null);
  const back=document.createElement('button');back.type='button';back.textContent='取消';back.onclick=()=>{S.dispelTarget=null;render();};panel.appendChild(back);
 }
 function a3FinishDispel(target,e){
  if(!dispelCardStillSelected())return;beginPlayerActionUndo();const r=a3Dispel('p',S.card,target,e);if(!r){cancelPlayerActionUndo();msg('対象が変わりました。選び直してください。');return;}
- S.card=null;S.piece=null;S.dispelTarget=null;log(r.card?'解呪：効果を1つ解除。':'解呪：解除対象なし。カードとコストを消費。');render();commitPlayerActionUndo();
+ S.card=null;S.piece=null;S.dispelTarget=null;log(r.card?(e?.kind==='weakened'?'解呪：衰弱を解除。':'解呪：効果を1つ解除。'):'解呪：解除対象なし。カードとコストを消費。');render();commitPlayerActionUndo();
 }
 function chooseDispelGlobal(){a3ChooseDispel({kind:'global'});}
 
@@ -4985,7 +5014,7 @@ function combatRuntime(){return {resolving:EffectEngine.resolving,queue:EffectEn
 function r10ResolutionBusy(){return !!(EffectEngine.resolving||EffectEngine.queue.length||pendingSummonAbilities.length);}
 function publishCoreCommand(result){
   if(!result.ok)return false;
-  for(const e of result.events){const {type,...detail}=e;GameEvents.emit(type,{...detail,coreResolved:true});}
+  for(const e of result.events){const {type,...detail}=e;GameEvents.emit(type,{...detail,coreResolved:true});if(type==="creature:weakened")log(detail.creature+"が衰弱。");}
   if(S.gameOver){const drawFailed=result.events.some(e=>e.type==='game:over'&&['DRAW_FAILED','DECK_EXHAUSTED'].includes(e.reason));if(S.winner==='p')win(drawFailed?'CPUの山札切れ':'相手の王のHPが0になりました。',true);else lose(drawFailed?'山札切れ':'あなたの王のHPが0になりました。',true);}
   return true;
  }
@@ -6181,16 +6210,7 @@ async function cpu(){if(!TutorialController.active&&["tactical","gachi"].include
     if(mi>=0&&empty.length){const k=empty[Math.floor(GameCore.random()*empty.length)];msg("CPU：マインを設置","routine");render();await cpuWait();if(!playCardUnified("c",mi,{kind:"cell",k}).ok)break;log(`CPUが${Math.floor(k/5)+1}行${k%5+1}列にマインを設置。`);render();await cpuWait();continue}
     break;
   }
-  // CPUも解呪を使用。敵のクリーチャーに付いたエンチャントを1枚解除。
-  while(!S.gameOver&&S.mana>=SPELL.解呪.cost){
-    const ci=S.cHand.indexOf("解呪");if(ci<0)break;
-    const legal=GameCore.cardQuery('c',ci).choices;const targets=S.board.map((p,i)=>({p,i})).filter(x=>x.p?.side==='p'&&EnchantmentZone.attachedToCreature(x.p).length&&legal.some(a=>R13View.atCell(S,a,x.i)));
-    if(!targets.length)break;
-    const target=targets[0],card=EnchantmentZone.attachedToCreature(target.p)[0];
-    msg(`CPU：${target.p.type}の${card.cardId}を解呪`,"routine");render();await cpuWait();
-    if(!resolveDispel("c",ci,target.i,card))break;
-    log(`CPUが${target.p.type}の${card.cardId}を解呪。`);render();await cpuWait();
-  }
+  await cpuDispel();
   // CPUもバーサークを使用。王を攻撃できる駒、次に自軍の駒を優先する。
   while(!S.gameOver&&S.mana>=2){
     const ci=S.cHand.indexOf("バーサーク");if(ci<0)break;

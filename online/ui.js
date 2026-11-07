@@ -48,7 +48,11 @@
   clear();selected={kind:'king',side};render(state);
  }
  function addChoice(parent,o,text){const b=button(text,()=>choose(o),!usable());b.className='useCardButton';b.dataset.choice=o.choiceId;b.dataset.action=o.action.type;if(o.action.cardId)b.dataset.card=o.action.cardId;parent.append(b);}
- function effectName(a){const e=state.view.enchantments.find(e=>e.instanceId===a.effectId);return e?e.cardId+' 残り'+e.remainingTurns+'ターン':a.effectId?'一時効果を解除':'対象に使用';}
+ function effectName(a){
+  if(!a.effectId)return '対象に使用';
+  const v=state.view,e=C.dispelEffects(v,a.target,v.viewer).find(effect=>effect.effectId===a.effectId);
+  return e?N.dispelEffectLabel(e):'一時効果を解除';
+ }
  function describePiece(p,k=state.view.board.indexOf(p)){const v=state.view;return N.creatureDisplay({piece:p,definition:D[p.type],power:v.power[k],pattern:(piece,kind)=>C.combatPattern(piece,D,kind,v),rights:C.combatRights(p,D,v),limit:C.attackLimit(p,D,v)});}
  function renderInfo(){const v=state?.view;if(!v)return;const oldInfoScroll=$('infoContent').scrollTop;const info=$('infoContent'),actions=$('actions');info.replaceChildren();actions.replaceChildren();
   const line=text=>{const e=document.createElement('div');e.className='infoLine';e.textContent=text;info.append(e);};
@@ -105,6 +109,9 @@
     else addChoice(actions,o,'使用する');
    }
   }
+  if(target&&selected?.cardId==='解呪'){
+   const back=button('取消',()=>{target=null;render(state);},!usable());back.className='useCardButton';actions.append(back);
+  }
   const imageType=selected?.kind==='piece'?v.board[selected.cell]?.type:selected?.kind==='card'&&D[selected.cardId].type==='creature'?selected.cardId:null;
   const query=selected?.kind==='card'?options():[];
   const d=selected?.kind==='card'?D[selected.cardId]:null;
@@ -146,7 +153,8 @@
   else if(e.type==='creature:attack-resolved')text=(presentationBefore?.[e.from]?.type||'クリーチャー')+'が'+(e.to==null?'王':presentationBefore?.[e.to]?.type||'クリーチャー')+'を攻撃（-'+e.amount+'）';
   else if(e.type==='creature:ability-used'||e.type==='king:ability-used')text=side(e.side)+'：能力を使用';
   else if(e.type==='king:damaged')text=side(e.side)+'の王に'+e.amount+'ダメージ（HP '+e.hp+'）';
-  else if(e.type==='dispel:resolved')text=side(e.side)+'：解呪';
+  else if(e.type==='dispel:resolved')text=side(e.side)+(e.weakened?'：解呪で衰弱を解除':'：解呪');
+  else if(e.type==='creature:weakened')text=e.creature+'が衰弱';
   else if(e.type==='game:over')text='対戦終了：'+e.reason;
   if(text){const row=document.createElement('div');row.textContent=text;row.dataset.revision=revision;log.append(row);while(log.children.length>100)log.firstChild.remove();}
   if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&(e.type==='creature:attack-resolved'&&e.to!==null&&e.to!==undefined&&e.amount>0||e.type==='king:damaged'&&e.amount>0)){const key=e.type==='king:damaged'?'king-'+e.side:'cell-'+e.to;hitEffects.set(key,{id:'online-'+(++hitSequence),until:performance.now()+710,...(e.type==='king:damaged'?{side:e.side}:{cell:e.to})});}
