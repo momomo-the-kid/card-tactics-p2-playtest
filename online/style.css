@@ -977,6 +977,16 @@ body.creature-names-off .overlayPiece.combatHUD .overlayNameLayer{display:none}
 body.view-left .overlayPiece.combatHUD .overlayCreatureAsset,
 body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%) scale(1.5);transform-origin:50% 100%}
 
+.creatureStatus{position:absolute;right:calc(100% + 2px);top:50%;transform:translateY(-50%);width:17px;height:17px;line-height:17px;text-align:center;font-size:14px;pointer-events:none;animation:status-glow 3s ease-in-out var(--status-delay) infinite}
+.creatureStatus span{position:absolute;inset:0}
+.creatureStatus.both .statusWeak{animation:status-weak 3s steps(1,end) var(--status-delay) infinite}
+.creatureStatus.both .statusPoison{animation:status-poison 3s steps(1,end) var(--status-delay) infinite}
+.compactHUD .creatureStatus{width:13px;height:13px;font-size:11px;line-height:13px}
+@keyframes status-glow{0%,50%,100%{opacity:1}25%,75%{opacity:.65}}
+@keyframes status-weak{0%{visibility:visible}50%,100%{visibility:hidden}}
+@keyframes status-poison{0%{visibility:hidden}50%,100%{visibility:visible}}
+@media(prefers-reduced-motion:reduce){.creatureStatus{animation:none}}
+
 /* Only online chrome: the normal CPU stylesheet supplies the board, overlays,
    kings, hand, detail and ranges verbatim. No in-cell visibility overrides. */
 [hidden]{display:none!important}

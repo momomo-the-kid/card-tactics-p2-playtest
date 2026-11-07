@@ -23,7 +23,7 @@
  function button(text,fn,disabled=false){const b=document.createElement('button');b.type='button';b.textContent=text;b.disabled=disabled;b.onclick=fn;return b;}
  function detailScope(){return JSON.stringify([state?.view?.revision,selected,source,mode,state?.status,state?.inFlight]);}
  function choose(o){if(o&&usable()){const result=B3Poc.choose(o.choiceId);if(result&&!result.ok){N.setNotice('操作を確定できませんでした：'+result.code,detailScope());renderInfo();}}}
- function belongs(o,v){const a=o.action;if(v.choice)return ['chooseTokenCell','choosePromotion','chooseEffectCell'].includes(a.type);if(!selected)return false;
+ function belongs(o,v){const a=o.action;if(v.choice)return ['chooseTokenCell','choosePromotion','chooseEffectCell','chooseGuardian'].includes(a.type);if(!selected)return false;
   if(selected.kind==='card')return a.instanceId===selected.id;
   if(selected.kind==='piece')return (a.from===selected.cell||a.sourceInstanceId===v.board[selected.cell]?.sourceInstanceId)&&(['heal','generate_golem'].includes(mode)?a.abilityId===mode:mode==='ability'?a.type==='activate_ability'&&a.abilityId==='sorcerer_bolt':['move','attack_creature','attack_king'].includes(a.type));
   return selected.kind==='king'&&selected.side===v.viewer&&a.abilityId===(mode==='wind'?'royal_wind':mode==='ability'?'awaken_attack':null);
@@ -132,7 +132,7 @@
   for(const e of document.querySelectorAll('[data-grave]'))e.onclick=()=>{clear();selected={kind:'grave',side:e.dataset.grave==='own'?v.viewer:enemy};render(state);};
   $('showEffects').onclick=()=>{clear();selected={kind:'effects'};render(state);};
   const opts=options(),board=$('board'),combat=enabled&&selected?.kind==='piece'&&mode==='combat'?C.queryCombat(v,selected.cell,v.activeSide,D):null;board.replaceChildren();for(let i=0;i<25;i++){const k=v.viewer==='p'?i:24-i,p=v.board[k],e=button('',()=>cell(k),!enabled);e.className='cell';e.dataset.cell=k;e.setAttribute('aria-label',(Math.floor(k/5)+1)+'行'+(k%5+1)+'列'+(p?' '+p.type+' HP '+p.hp+' ATK '+v.power[k]:''));e.setAttribute('aria-disabled',String(!enabled));
-   if(selected?.kind==='piece'&&selected.cell===k)e.classList.add('selected');const at=enabled?opts.filter(o=>atCell(o.action,k,v)):[],move=at.some(o=>o.action.type==='move'),attack=at.some(o=>['attack_creature','activate_ability'].includes(o.action.type));if(at.length)e.classList.add('legal');const previewMove=!!combat?.moves.includes(k),previewAttack=!!combat?.attackRange.includes(k);if(previewMove||previewAttack)e.classList.add(previewMove&&previewAttack?'bothTarget':previewMove?'moveTarget':'attackTarget');else if(at.length)e.classList.add(move&&attack?'bothTarget':move?'moveTarget':attack?'attackTarget':at.some(o=>['summon','chooseTokenCell'].includes(o.action.type))?'summonTarget':'spellTarget');
+   if(selected?.kind==='piece'&&selected.cell===k)e.classList.add('selected');const at=enabled?opts.filter(o=>atCell(o.action,k,v)):[],move=at.some(o=>o.action.type==='move'),attack=at.some(o=>['attack_creature','activate_ability'].includes(o.action.type));if(at.length)e.classList.add('legal');const previewMove=!!combat?.moves.includes(k),previewAttack=!!combat?.attackRange.includes(k);if(previewMove||previewAttack)e.classList.add(previewMove&&previewAttack?'bothTarget':previewMove?'moveTarget':'attackTarget');else if(at.length)e.classList.add(move&&attack?'bothTarget':move?'moveTarget':attack?'attackTarget':at.some(o=>['summon','chooseTokenCell','chooseGuardian'].includes(o.action.type))?'summonTarget':'spellTarget');
    if(v.enchantments.some(x=>x.cardId==='マイン'&&x.owner===v.viewer&&x.target?.k===k))e.classList.add('mineCell','ownMine');if(v.enchantments.some(x=>x.target?.k===k))e.classList.add('cellEnchanted');board.append(e);
   }
   const hand=$('hand'),handScroll=hand.scrollLeft;hand.replaceChildren();for(const card of v.ownHand){const d=D[card.cardId],e=button('',()=>pickCard(card),!enabled||!!v.choice);e.className='card'+(d.type==='spell'?' spell':d.type==='enchant'?' enchant':'')+(selected?.id===card.instanceId?' selected':'');e.dataset.card=card.cardId;e.dataset.instance=card.instanceId;e.innerHTML=N.cardHTML(card.cardId,d,{spell:d.type==='spell',enchant:d.type==='enchant',text:d.description});hand.append(e);}
@@ -154,6 +154,7 @@
   else if(e.type==='creature:ability-used'||e.type==='king:ability-used')text=side(e.side)+'：能力を使用';
   else if(e.type==='king:damaged')text=side(e.side)+'の王に'+e.amount+'ダメージ（HP '+e.hp+'）';
   else if(e.type==='dispel:resolved')text=side(e.side)+(e.weakened?'：解呪で衰弱を解除':'：解呪');
+  else if(e.type==='damage:guarded')text='献身的なガーディアンが'+e.amount+'ダメージを肩代わり';
   else if(e.type==='creature:weakened')text=e.creature+'が衰弱';
   else if(e.type==='game:over')text='対戦終了：'+e.reason;
   if(text){const row=document.createElement('div');row.textContent=text;row.dataset.revision=revision;log.append(row);while(log.children.length>100)log.firstChild.remove();}

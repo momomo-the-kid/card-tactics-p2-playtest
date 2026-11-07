@@ -69,11 +69,12 @@ function paidAbilityReason(id,p,active,mana){
  return golem?'現在、生成できません。行動制約と上下左右の空きマスを確認してください。':'現在、占いを使用できません。';
 }
 function dispelEffectLabel(effect){
+ if(effect?.kind==='poisoned')return `一時効果：毒（残り${effect.remainingTurns}ターン）を解除`;
  if(effect?.kind==='weakened')return '一時効果：衰弱を解除';
  if(effect?.cardId)return `${effect.cardId}（残り${effect.remainingTurns}ターン）`;
  return '一時効果：移動・攻撃禁止を解除';
 }
-function mandatoryPrompt(kind){return kind==='effectMove'?'竜巻：色の付いた空きマスへ移動してください。支払い・ダメージは解決済みで、取消はできません。':kind==='promotion'?'暗殺者に変身するか選んでください。':kind==='token'?'バリケードの生成先：緑色の空きマスを選んでください。':'';}
+function mandatoryPrompt(kind){return kind==='guardian'?'肩代わり：色の付いたガーディアンを1体選んでください。取消はできません。':kind==='guardianWait'?'相手が肩代わりするガーディアンを選んでいます。':kind==='effectMove'?'竜巻：色の付いた空きマスへ移動してください。支払い・ダメージは解決済みで、取消はできません。':kind==='promotion'?'暗殺者に変身するか選んでください。':kind==='token'?'バリケードの生成先：緑色の空きマスを選んでください。':'';}
 function renderDetailStatus(context){
  const info=$('infoContent');if(!info)return;const changed=detailContext?.scope!==context.scope;detailContext=context;
  if(detailNotice?.scope!==context.scope)detailNotice=null;
@@ -382,6 +383,18 @@ function updateRoyalHealth(){
   track.firstChild.style.width=Math.max(0,Math.min(100,hp/20*100))+'%';hud.dataset.hp=hp;hud.dataset.maxHp=20;stat.style.minWidth=Math.max(2,String(hp).length)+'ch';hud.setAttribute('aria-label',(kind==='player'?'自分':'相手')+'の王 HP '+hp);
  }
 }
+const statusPhase=new Map();
+function statusIcon(piece,index,now,seen,overlayPiece){
+ const weakened=piece.paralyzed,poisoned=piece.poisonTurns>0;
+ if(!weakened&&!poisoned)return '';
+ const key=piece.sourceInstanceId??index;
+ seen.add(key);
+ if(!statusPhase.has(key)||statusPhase.get(key).both!==Boolean(weakened&&poisoned))
+  statusPhase.set(key,{at:now,both:Boolean(weakened&&poisoned)});
+ overlayPiece.style.setProperty('--status-delay',`${statusPhase.get(key).at-now}ms`);
+ const label=weakened&&poisoned?'衰弱・毒':weakened?'衰弱':'毒';
+ return `<span class="creatureStatus${weakened&&poisoned?' both':''}" aria-label="${label}" title="${label}">${weakened?'<span class="statusWeak">😓</span>':''}${poisoned?'<span class="statusPoison">🦠</span>':''}</span>`;
+}
 function renderPieces(model){
  current=model;syncLayout();
  const overlay=$("pieceOverlay"), board=$("board");
@@ -394,6 +407,7 @@ function renderPieces(model){
  const cells=board.querySelectorAll(".cell");
  const cellRects=[...cells].map(c=>c.getBoundingClientRect());
  const pitch=Math.min(Math.max(...cellRects.map(r=>r.right))-Math.min(...cellRects.map(r=>r.left)),Math.max(...cellRects.map(r=>r.bottom))-Math.min(...cellRects.map(r=>r.top)))/5;
+ const now=performance.now(),seenStatuses=new Set();
  const compactHUD=pitch<64;overlay.dataset.hudSize=compactHUD?'compact':'regular';
  cells.forEach((cell,k)=>{
   const index=Number(cell.dataset.cell??k),p=model.board[index];if(!p)return;
@@ -413,7 +427,7 @@ function renderPieces(model){
   v.classList.add('combatHUD');if(compactHUD)v.classList.add('compactHUD');
   v.dataset.hp=display.hp;v.dataset.maxHp=display.maxHp;v.dataset.atk=display.atk;
   if(enchantVisual)v.style.setProperty("--creature-aura",enchantVisual.colors[0]||"#b985ff");
-  v.innerHTML=`<div class="overlayNameLayer" title="${escape(p.type)}">${escape(p.type)}</div>${enchantVisual?'<div class="creatureEnchantVisual"></div>':''}<div class="overlayOrb"></div><img class="overlayCreatureAsset" alt="" aria-hidden="true"><div class="combatStack"><div class="overlayStatsLayer combatFeet"><span class="creatureATK" aria-label="攻撃力 ${display.atk}">${ACTION_SVG.attack}<b>${escape(display.atk)}</b></span><span class="actionBadges">${actionBadge(display.move)}${actionBadge(display.attack)}</span></div><div class="creatureHealth" aria-label="HP ${display.hp} / ${display.maxHp}">${healthHTML(display.hp,display.maxHp)}</div></div>`;
+  v.innerHTML=`<div class="overlayNameLayer" title="${escape(p.type)}">${escape(p.type)}</div>${enchantVisual?'<div class="creatureEnchantVisual"></div>':''}<div class="overlayOrb"></div><img class="overlayCreatureAsset" alt="" aria-hidden="true"><div class="combatStack"><div class="overlayStatsLayer combatFeet"><span class="creatureATK" aria-label="攻撃力 ${display.atk}">${ACTION_SVG.attack}<b>${escape(display.atk)}</b></span><span class="actionBadges">${actionBadge(display.move)}${actionBadge(display.attack)}</span></div><div class="creatureHealth" aria-label="HP ${display.hp} / ${display.maxHp}">${healthHTML(display.hp,display.maxHp)}${statusIcon(p,index,now,seenStatuses,v)}</div></div>`;
   v.querySelector('.hpFill').style.width=(display.maxHp>0?Math.max(0,Math.min(100,display.hp/display.maxHp*100)):0)+'%';
   if(projected&&cell.classList.contains('cellEnchanted')){const badge=document.createElement('span');badge.className='planeCellStatus';badge.textContent=cell.classList.contains('ownMine')?'✹':'🔮';v.append(badge);}
   overlay.appendChild(v);
@@ -422,6 +436,7 @@ function renderPieces(model){
   const assetImg=v.querySelector(".overlayCreatureAsset");
   if(assetImg)bindCreatureAsset(assetImg,v,p.type);
  });
+ for(const key of statusPhase.keys())if(!seenStatuses.has(key))statusPhase.delete(key);
  if(model.afterRender)model.afterRender();
  refreshTutorialGeometry();queueTutorialPresentation();
  if(document.body.classList.contains("projected-board"))refreshCellRings(cells,board.closest(".boardWrap"),board.closest(".boardWrap").querySelector(".boardGrid"));
@@ -549,12 +564,12 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  const infoLine=x=>`<div class="infoLine">${escape(x)}</div>`;
  function attackStatus(piece,limit){const remaining=Math.max(0,limit-(piece.attacksUsed??(piece.a?limit:0)));return limit>1?(remaining?`攻撃 残${remaining}`:'攻撃 済'):(remaining?'攻撃 可':'攻撃 済');}
  function creatureInfoHTML({piece:p,viewer,definition:d,power:current,display,range,abilityHTML='',description='',berserkDescription='基本攻撃力1.5倍（端数切り上げ）、移動・攻撃は前方1マスのみ。',cellEffects=[]}){
-  return `<div class="infoName creatureInfoName">${escape(p.type)}</div><div class="creatureBasics">`+infoLine(`${p.side===viewer?'自軍':'敵軍'} / コスト ${p.generatedToken||d.token?'—':d.cost??'—'}`)+infoLine(`HP ${p.hp} / ${d.hp}　ATK ${current.total}（基本 ${current.base}${current.dancer?` / 踊り子 +${current.dancer}`:''}${current.pack?` / 味方 +${current.pack}`:''}${current.growth?` / 蓄積 ${current.growth>0?'+':''}${current.growth}`:''}）`)+infoLine(`${display.move.label} / ${display.attack.label}`)+range+'</div>'+(p.paralyzed?infoLine('衰弱：次の自軍ターン開始時に移動権・攻撃権が回復しません。'):'')+abilityHTML+(description?`<div class="infoEffect">${escape(description)}</div>`:'')+(p.berserk>0?`<div class="infoEffect">バーサーク：残り${p.berserk}ターン<br>${escape(berserkDescription)}</div>`:'')+(current.battle?`<div class="infoEffect">決戦：${current.battleTurns.map(t=>t+'T').join('・')} / ATK +${current.battle}</div>`:'')+cellEffects.map(e=>`<div class="infoEffect">このマス：${escape(e.cardId)} 残り${e.remainingTurns}ターン<br>${escape(e.description||'')}</div>`).join('');
+  return `<div class="infoName creatureInfoName">${escape(p.type)}</div><div class="creatureBasics">`+infoLine(`${p.side===viewer?'自軍':'敵軍'} / コスト ${p.generatedToken||d.token?'—':d.cost??'—'}`)+infoLine(`HP ${p.hp} / ${d.hp}　ATK ${current.total}（基本 ${current.base}${current.dancer?` / 踊り子 +${current.dancer}`:''}${current.pack?` / 味方 +${current.pack}`:''}${current.growth?` / 蓄積 ${current.growth>0?'+':''}${current.growth}`:''}）`)+infoLine(`${display.move.label} / ${display.attack.label}`)+range+'</div>'+(p.paralyzed?infoLine('衰弱：次の自軍ターン開始時に移動権・攻撃権が回復しません。'):'')+(p.poisonTurns>0?infoLine(`毒：残り${p.poisonTurns}ターン。自軍ターン開始時に1点のダメージ。`):'')+abilityHTML+(description?`<div class="infoEffect">${escape(description)}</div>`:'')+(p.berserk>0?`<div class="infoEffect">バーサーク：残り${p.berserk}ターン<br>${escape(berserkDescription)}</div>`:'')+(current.battle?`<div class="infoEffect">決戦：${current.battleTurns.map(t=>t+'T').join('・')} / ATK +${current.battle}</div>`:'')+cellEffects.map(e=>`<div class="infoEffect">このマス：${escape(e.cardId)} 残り${e.remainingTurns}ターン<br>${escape(e.description||'')}</div>`).join('');
  }
  function graveyardHTML(cards,label){const counts=new Map();for(const c of cards)counts.set(c.cardId,(counts.get(c.cardId)||0)+1);return `<div class="infoName">${escape(label)}の墓地 🪦${cards.length}</div>`+(cards.length?[...counts].map(([id,n])=>infoLine(`${id} ×${n}`)).join(''):infoLine('墓地は空です。'))+infoLine('カードは元の持ち主の墓地に入ります。');}
  function globalEffectsHTML(cards){return `<div class="infoName">全体エンチャント 🔮${cards.length}</div>`+(cards.length?cards.map(c=>`<button type="button" class="globalEnchantButton" data-effect-detail="${escape(c.instanceId)}">《${escape(c.cardId)}》${c.remainingTurns!=null?`　残り${c.remainingTurns}ターン`:''}</button>`).join(''):infoLine('効果中の全体エンチャントはありません。'));}
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();
