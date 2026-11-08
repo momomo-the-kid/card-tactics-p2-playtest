@@ -748,6 +748,11 @@ body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
 /* Artwork stays beneath names/stats and never receives game input. */
 .overlayCreatureAsset{object-fit:contain;user-select:none;-webkit-user-drag:none}
 
+.rangeGrid{grid-template-columns:repeat(var(--range-size,5),minmax(0,1fr))}
+
+.rangeGrid.rangeSize7{--range-size:7}
+.rangeGrid.rangeSize9{--range-size:9}
+
 /* P3 comparison presentation: editable templates own structure; CSS owns viewport layout. */
 .boardPlane{display:block;position:absolute;inset:0;transform-style:flat}.boardGrid,.royalFoot{display:none}
 .planePoint{position:absolute;width:0;height:0;pointer-events:none}

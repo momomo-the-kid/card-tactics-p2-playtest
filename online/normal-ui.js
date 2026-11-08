@@ -357,7 +357,7 @@ function bindCreatureAsset(img,pieceEl,type){
 function creatureDisplay({piece,definition,power,pattern,rights,limit,used=piece.attacksUsed??(piece.a?limit:0)}){
  const patterns={move:pattern(piece,'move'),attack:pattern(piece,'attack')};
  const remaining=Math.max(0,limit-used);
- const reason=(piece.actionRestrictions||[]).some(e=>e.kind==='move-attack-prohibited')?'行動制約（移動・攻撃禁止）':'現在の行動制約';
+ const reason=rights.reason==='mana'?'マナ不足':(piece.actionRestrictions||[]).some(e=>e.kind==='move-attack-prohibited')?'行動制約（移動・攻撃禁止）':'現在の行動制約';
  const action=kind=>{
   const range=patterns[kind];
   if(!range.length)return {kind,state:'none',label:kind==='attack'?'通常攻撃なし':'移動範囲なし'};
@@ -441,13 +441,15 @@ function renderPieces(model){
  refreshTutorialGeometry();queueTutorialPresentation();
  if(document.body.classList.contains("projected-board"))refreshCellRings(cells,board.closest(".boardWrap"),board.closest(".boardWrap").querySelector(".boardGrid"));
 }
-const RANGE_ARROWS={'-1,-1':'↖','-1,0':'↑','-1,1':'↗','0,-1':'←','0,1':'→','1,-1':'↙','1,0':'↓','1,1':'↘',
- '-2,-2':'↖','-2,0':'↑','-2,2':'↗','0,-2':'←','0,2':'→','2,-2':'↙','2,0':'↓','2,2':'↘'};
+const RANGE_ARROWS={'-1,-1':'↖','-1,0':'↑','-1,1':'↗','0,-1':'←','0,1':'→','1,-1':'↙','1,0':'↓','1,1':'↘'};
 function rangeDiagram(p,action,pattern){
  const offsets=pattern(p,action), active=new Map(), through=new Set();
+ let radius=2;
  for(const [dr,dc] of offsets){
-  active.set(`${dr},${dc}`,RANGE_ARROWS[`${dr},${dc}`]||'●');
   const steps=Math.max(Math.abs(dr),Math.abs(dc));
+  radius=Math.max(radius,steps);
+  const straight=dr===0||dc===0||Math.abs(dr)===Math.abs(dc);
+  active.set(`${dr},${dc}`,straight?RANGE_ARROWS[`${Math.sign(dr)},${Math.sign(dc)}`]:'●');
   if(steps>1){for(let i=1;i<steps;i++){
    const r=dr*i/steps,c=dc*i/steps;
    if(Number.isInteger(r)&&Number.isInteger(c))through.add(`${r},${c}`);
@@ -456,14 +458,14 @@ function rangeDiagram(p,action,pattern){
  const title=action==='move'?'移動範囲':'攻撃範囲';
  const kind=action==='move'?'movement':'attack';
  let cells='';
- for(let r=-2;r<=2;r++)for(let c=-2;c<=2;c++){
+ for(let r=-radius;r<=radius;r++)for(let c=-radius;c<=radius;c++){
   const key=`${r},${c}`;
   const origin=r===0&&c===0;
   const arrow=active.get(key);
   const pass=!arrow&&through.has(key);
   cells+=`<span class="rangeCell ${origin?'origin':arrow?'arrow':pass?'pass':''}">${origin?'◯':arrow|| (pass?'・':'')}</span>`;
  }
- return `<div class="rangeSection"><div class="rangeTitle">${title}</div><div class="rangeGrid ${kind}" role="img" aria-label="${title}：前方が上。◯がクリーチャー。">${cells}</div>`+
+ return `<div class="rangeSection"><div class="rangeTitle">${title}</div><div class="rangeGrid ${kind}${radius>2?` rangeSize${2*radius+1}`:''}" role="img" aria-label="${title}：前方が上。◯がクリーチャー。">${cells}</div>`+
   (action==='attack'&&offsets.some(([dr,dc])=>Math.max(Math.abs(dr),Math.abs(dc))>1)?'<div class="rangeNote">・は射程途中のマス（攻撃対象外）</div>':'')+'</div>';
 }
 function rangePair(p,pattern){return `<div class="rangePair">${rangeDiagram(p,'move',pattern)}${rangeDiagram(p,'attack',pattern)}</div>`;}
