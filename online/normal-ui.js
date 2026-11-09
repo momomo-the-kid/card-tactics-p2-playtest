@@ -61,12 +61,17 @@ function creaturePairGuide(rule,second){
  const prompt=rule==='opposed'?(second?'敵軍クリーチャーを選んで破壊を確定。':'自軍クリーチャーを選んでください。'):(second?'2体目を選んで交換を確定。':'1体目を選んでください。');
  return prompt+'カード再タップで取消（未消費）。';
 }
+function paidAbilitySelection(id){
+ if(id==='generate_golem')return {cost:4,use:'土ゴーレムを生成（4マナ）',cancel:'生成先の選択を取消',guide:'上下左右の色の付いた空きマスを選んでください。',unavailable:'現在、生成できません。行動制約と上下左右の空きマスを確認してください。'};
+ if(id==='wind_push')return {cost:3,use:'風を使う（3マナ）',cancel:'対象選択を取消',guide:'色の付いたクリーチャーを選んでください。',unavailable:'現在、風を使用できる対象がありません。'};
+ return null;
+}
 function paidAbilityReason(id,p,active,mana){
- const golem=id==='generate_golem',cost=golem?4:2;
+ const golem=id==='generate_golem',selection=paidAbilitySelection(id),cost=selection?.cost??2;
  if(!active)return '自分の手番に使用できます。';
  if(mana<cost)return `マナ不足：必要 ${cost} / 現在 ${mana}`;
  if(p.a||golem&&(p.m||p.attacksUsed>0))return golem?'移動権と攻撃権が両方必要です。':'攻撃権が必要です。';
- return golem?'現在、生成できません。行動制約と上下左右の空きマスを確認してください。':'現在、占いを使用できません。';
+ return selection?.unavailable??'現在、占いを使用できません。';
 }
 function dispelEffectLabel(effect){
  if(effect?.kind==='poisoned')return `一時効果：毒（残り${effect.remainingTurns}ターン）を解除`;
@@ -74,7 +79,7 @@ function dispelEffectLabel(effect){
  if(effect?.cardId)return `${effect.cardId}（残り${effect.remainingTurns}ターン）`;
  return '一時効果：移動・攻撃禁止を解除';
 }
-function mandatoryPrompt(kind){return kind==='guardian'?'肩代わり：色の付いたガーディアンを1体選んでください。取消はできません。':kind==='guardianWait'?'相手が肩代わりするガーディアンを選んでいます。':kind==='effectMove'?'竜巻：色の付いた空きマスへ移動してください。支払い・ダメージは解決済みで、取消はできません。':kind==='promotion'?'暗殺者に変身するか選んでください。':kind==='token'?'バリケードの生成先：緑色の空きマスを選んでください。':'';}
+function mandatoryPrompt(kind,tokenId='バリケード'){return kind==='guardian'?'肩代わり：色の付いたガーディアンを1体選んでください。取消はできません。':kind==='guardianWait'?'相手が肩代わりするガーディアンを選んでいます。':kind==='effectMove'?'竜巻：色の付いた空きマスへ移動してください。支払い・ダメージは解決済みで、取消はできません。':kind==='promotion'?'暗殺者に変身するか選んでください。':kind==='token'?tokenId+'の生成先：色の付いた空きマスを選んでください。取消はできません。':'';}
 function renderDetailStatus(context){
  const info=$('infoContent');if(!info)return;const changed=detailContext?.scope!==context.scope;detailContext=context;
  if(detailNotice?.scope!==context.scope)detailNotice=null;
@@ -357,7 +362,7 @@ function bindCreatureAsset(img,pieceEl,type){
 function creatureDisplay({piece,definition,power,pattern,rights,limit,used=piece.attacksUsed??(piece.a?limit:0)}){
  const patterns={move:pattern(piece,'move'),attack:pattern(piece,'attack')};
  const remaining=Math.max(0,limit-used);
- const reason=rights.reason==='mana'?'マナ不足':(piece.actionRestrictions||[]).some(e=>e.kind==='move-attack-prohibited')?'行動制約（移動・攻撃禁止）':'現在の行動制約';
+ const reason=rights.reason==='mana'?'マナ不足':rights.reason==='absolute-domain'?'絶対領域':(piece.actionRestrictions||[]).some(e=>e.kind==='move-attack-prohibited')?'行動制約（移動・攻撃禁止）':'現在の行動制約';
  const action=kind=>{
   const range=patterns[kind];
   if(!range.length)return {kind,state:'none',label:kind==='attack'?'通常攻撃なし':'移動範囲なし'};
@@ -567,12 +572,12 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  const infoLine=x=>`<div class="infoLine">${escape(x)}</div>`;
  function attackStatus(piece,limit){const remaining=Math.max(0,limit-(piece.attacksUsed??(piece.a?limit:0)));return limit>1?(remaining?`攻撃 残${remaining}`:'攻撃 済'):(remaining?'攻撃 可':'攻撃 済');}
  function creatureInfoHTML({piece:p,viewer,definition:d,power:current,display,range,abilityHTML='',description='',berserkDescription='基本攻撃力1.5倍（端数切り上げ）、移動・攻撃は前方1マスのみ。',cellEffects=[]}){
-  return `<div class="infoName creatureInfoName">${escape(p.type)}</div><div class="creatureBasics">`+infoLine(`${p.side===viewer?'自軍':'敵軍'} / コスト ${p.generatedToken||d.token?'—':d.cost??'—'}`)+infoLine(`HP ${p.hp} / ${d.hp}　ATK ${current.total}（基本 ${current.base}${current.dancer?` / 踊り子 +${current.dancer}`:''}${current.pack?` / 味方 +${current.pack}`:''}${current.growth?` / 蓄積 ${current.growth>0?'+':''}${current.growth}`:''}）`)+infoLine(`${display.move.label} / ${display.attack.label}`)+range+'</div>'+(p.paralyzed?infoLine('衰弱：次の自軍ターン開始時に移動権・攻撃権が回復しません。'):'')+(p.poisonTurns>0?infoLine(`毒：残り${p.poisonTurns}ターン。自軍ターン開始時に1点のダメージ。`):'')+abilityHTML+(description?`<div class="infoEffect">${escape(description)}</div>`:'')+(p.berserk>0?`<div class="infoEffect">バーサーク：残り${p.berserk}ターン<br>${escape(berserkDescription)}</div>`:'')+(current.battle?`<div class="infoEffect">決戦：${current.battleTurns.map(t=>t+'T').join('・')} / ATK +${current.battle}</div>`:'')+cellEffects.map(e=>`<div class="infoEffect">このマス：${escape(e.cardId)} 残り${e.remainingTurns}ターン<br>${escape(e.description||'')}</div>`).join('');
+  return `<div class="infoName creatureInfoName">${escape(p.type)}</div><div class="creatureBasics">`+infoLine(`${p.side===viewer?'自軍':'敵軍'} / コスト ${p.generatedToken||d.token?'—':d.cost??'—'}`)+infoLine(`HP ${p.hp} / ${d.hp}　ATK ${current.total}（基本 ${current.base}${current.dancer?` / 踊り子 +${current.dancer}`:''}${current.pack?` / 味方 +${current.pack}`:''}${current.commander?` / 戦術指揮官 +${current.commander}`:''}${current.growth?` / 蓄積 ${current.growth>0?'+':''}${current.growth}`:''}）`)+infoLine(`${display.move.label} / ${display.attack.label}`)+range+'</div>'+(p.paralyzed?infoLine('衰弱：次の自軍ターン開始時に移動権・攻撃権が回復しません。'):'')+(p.poisonTurns>0?infoLine(`毒：残り${p.poisonTurns}ターン。自軍ターン開始時に1点のダメージ。`):'')+abilityHTML+(description?`<div class="infoEffect">${escape(description)}</div>`:'')+(p.berserk>0?`<div class="infoEffect">バーサーク：残り${p.berserk}ターン<br>${escape(berserkDescription)}</div>`:'')+(current.battle?`<div class="infoEffect">決戦：${current.battleTurns.map(t=>t+'T').join('・')} / ATK +${current.battle}</div>`:'')+cellEffects.map(e=>`<div class="infoEffect">このマス：${escape(e.cardId)} 残り${e.remainingTurns}ターン<br>${escape(e.description||'')}</div>`).join('');
  }
  function graveyardHTML(cards,label){const counts=new Map();for(const c of cards)counts.set(c.cardId,(counts.get(c.cardId)||0)+1);return `<div class="infoName">${escape(label)}の墓地 🪦${cards.length}</div>`+(cards.length?[...counts].map(([id,n])=>infoLine(`${id} ×${n}`)).join(''):infoLine('墓地は空です。'))+infoLine('カードは元の持ち主の墓地に入ります。');}
  function globalEffectsHTML(cards){return `<div class="infoName">全体エンチャント 🔮${cards.length}</div>`+(cards.length?cards.map(c=>`<button type="button" class="globalEnchantButton" data-effect-detail="${escape(c.instanceId)}">《${escape(c.cardId)}》${c.remainingTurns!=null?`　残り${c.remainingTurns}ターン`:''}</button>`).join(''):infoLine('効果中の全体エンチャントはありません。'));}
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();

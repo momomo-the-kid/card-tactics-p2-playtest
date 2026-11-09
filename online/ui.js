@@ -25,7 +25,7 @@
  function choose(o){if(o&&usable()){const result=B3Poc.choose(o.choiceId);if(result&&!result.ok){N.setNotice('操作を確定できませんでした：'+result.code,detailScope());renderInfo();}}}
  function belongs(o,v){const a=o.action;if(v.choice)return ['chooseTokenCell','choosePromotion','chooseEffectCell','chooseGuardian'].includes(a.type);if(!selected)return false;
   if(selected.kind==='card')return a.instanceId===selected.id;
-  if(selected.kind==='piece')return (a.from===selected.cell||a.sourceInstanceId===v.board[selected.cell]?.sourceInstanceId)&&(['heal','generate_golem'].includes(mode)?a.abilityId===mode:mode==='ability'?a.type==='activate_ability'&&a.abilityId==='sorcerer_bolt':['move','attack_creature','attack_king'].includes(a.type));
+  if(selected.kind==='piece')return (a.from===selected.cell||a.sourceInstanceId===v.board[selected.cell]?.sourceInstanceId)&&(['heal','generate_golem','wind_push'].includes(mode)?a.abilityId===mode:mode==='ability'?a.type==='activate_ability'&&a.abilityId==='sorcerer_bolt':['move','attack_creature','attack_king'].includes(a.type));
   return selected.kind==='king'&&selected.side===v.viewer&&a.abilityId===(mode==='wind'?'royal_wind':mode==='ability'?'awaken_attack':null);
  }
  const atCell=(a,k,v)=>D[a.cardId]?.creaturePair&&source?v.board[k]?.sourceInstanceId===a.sourceInstanceId:a.to===k||a.target?.kind==='cell'&&a.target.k===k||a.target?.kind==='creature'&&v.board[k]?.sourceInstanceId===a.target.instanceId&&a.cardId!=='転移魔法';
@@ -72,17 +72,17 @@
      if(mode==='heal')line('自軍王または回復できる自軍クリーチャーを選んでください。');
     }else line(v.activeSide!==v.viewer?'自分の手番に使用できます。':p.m||p.a?'移動権と攻撃権が両方必要です。':'現在、回復を使用できません。');
    }
-   if(p.side===v.viewer)for(const id of ['fortune_draw','generate_golem']){
+   if(p.side===v.viewer)for(const id of ['fortune_draw','generate_golem','wind_push']){
     if(!d.abilities?.includes(id))continue;
-    const available=abilities.find(o=>o.action.abilityId===id),golem=id==='generate_golem';
+    const available=abilities.find(o=>o.action.abilityId===id),selection=N.paidAbilitySelection(id);
     if(!available){line(N.paidAbilityReason(id,p,v.activeSide===v.viewer,v.players[v.viewer].mana));continue;}
     const selecting=mode===id;
-    const b=button(selecting?'生成先の選択を取消':golem?'土ゴーレムを生成（4マナ）':'占いを使う（2マナ）',()=>{
-     if(!golem){choose(available);return;}
+    const b=button(selection?(selecting?selection.cancel:selection.use):'占いを使う（2マナ）',()=>{
+     if(!selection){choose(available);return;}
      mode=selecting?'combat':id;target=null;render(state);
     },!usable());
     b.className='useCardButton';actions.append(b);
-    if(selecting)line('上下左右の色の付いた空きマスを選んでください。');
+    if(selecting&&selection)line(selection.guide);
    }
    if(abilities.some(o=>o.action.abilityId==='sorcerer_bolt')){const b=button(mode==='ability'?'魔法の選択を解除':'魔法を使用',()=>{mode=mode==='ability'?'combat':'ability';target=null;render(state);},!usable());b.id='useAbility';b.className='useCardButton';actions.append(b);}
   }
@@ -117,7 +117,7 @@
   const d=selected?.kind==='card'?D[selected.cardId]:null;
   const reason=d?N.cardUseReason({available:query.length>0,active:v.activeSide===v.viewer,paused:!usable(),sealed:d.type==='spell'&&C.spellsBlocked(v,v.viewer),cost:d.cost,mana:v.players[v.viewer].mana}):'';
   info.scrollTop=oldInfoScroll;
-  N.renderDetailStatus({reason,choice:N.mandatoryPrompt(v.choice?.kind==='tokenCell'?'token':v.choice?.kind),guide:d?.creaturePair?N.creaturePairGuide(d.creaturePair,!!source):source?'転移先の空きマスを選んでください。':'',scope:detailScope()});updateInfoScroll();
+  N.renderDetailStatus({reason,choice:N.mandatoryPrompt(v.choice?.kind==='tokenCell'?'token':v.choice?.kind,v.choice?.tokenId),guide:d?.creaturePair?N.creaturePairGuide(d.creaturePair,!!source):source?'転移先の空きマスを選んでください。':'',scope:detailScope()});updateInfoScroll();
   if(imageType){const asset=N.requestCreatureAsset(imageType);if(asset?.status==='loaded'){const img=document.createElement('img');img.className='infoCreatureBackdrop';img.alt='';img.src=asset.image.src;info.prepend(img);}}
  }
  function drawPieces(){const v=state?.view;if(!v)return;N.renderPieces({board:v.board,viewer:v.viewer,describe:describePiece,redrawInfo:renderInfo,afterRender:restoreHits,enchantVisual:p=>{const cards=v.enchantments.filter(e=>e.target?.kind==='creature'&&e.target.instanceId===p.sourceInstanceId);return cards.length?{cards,colors:[...new Set(cards.map(e=>D[e.cardId]?.visual?.auraColor||'#b985ff'))]}:null;}});const column=document.querySelector('.boardColumn');if(!document.body.classList.contains('layout-landscape')&&column?.offsetHeight)$('infoPanel').style.setProperty('--panel-height',column.getBoundingClientRect().height+'px');}
