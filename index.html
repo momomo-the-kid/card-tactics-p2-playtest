@@ -970,6 +970,31 @@ body:not(.layout-landscape) #app .manaStat b{font:700 11px/12px ui-monospace,mon
 .detailPrompt{position:relative;z-index:3;box-sizing:border-box;padding:7px 8px;margin:0 0 6px;border:1px solid #927344;border-radius:6px;background:#332c20;color:#ffe0ad;font-size:12px;line-height:1.4;white-space:pre-line;overflow-wrap:anywhere}
 .detailPrompt.required{position:sticky;top:0;background:#17364d;border-color:#76b8ea;color:#eef8ff}
 
+/* Reserve the same compact line whether the battle log is open or collapsed. */
+.latestAction{height:20px;margin:3px 0;padding:0 6px;border:1px solid #536071;border-radius:5px;background:#20252c;color:#e7edf6;font:600 12px/18px system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.latestAction.log-expanded{visibility:hidden}
+body.tutorial-mode .latestAction,body.tutorial-mode #opponentCard,#opponentCard[hidden]{display:none}
+body.layout-landscape:not(.tutorial-mode) #app{grid-template-rows:34px minmax(0,1fr) 20px clamp(80px,14dvh,104px)}
+body.layout-landscape .latestAction{grid-column:1/-1;grid-row:3;margin:0}
+body.layout-landscape:not(.tutorial-mode) .battleStrip{grid-row:4}
+
+/* The card sits over the detail area only. Prompts and controls stay on top. */
+body:not(.tutorial-mode) #infoPanel{position:relative}
+#opponentCard{position:absolute;z-index:2;inset:auto 3px 3px;max-height:calc(100% - 29px);overflow:hidden;pointer-events:none}
+#opponentCard .card{position:relative;width:100%;min-width:0;max-width:none;min-height:0;height:auto;margin:0;padding:6px;overflow:hidden;white-space:normal;overflow-wrap:anywhere;background:#283344;border:1px solid #b3c9e8;border-radius:7px;box-shadow:0 2px 8px #0008}
+#opponentCard .card.spell{background:#233f31}
+#opponentCard .card.enchant{background:#3c2e4d}
+#opponentCard .card > :not(img){position:relative;z-index:1}
+#opponentCard .name{font-size:clamp(14px,4vw,18px);line-height:1.2}
+#opponentCard .cost{font-size:11px;line-height:1.2}
+#opponentCard .desc{font-size:11px;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:8;overflow:hidden}
+#opponentCard .opponentCardArt{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:right;opacity:.22}
+body.layout-landscape #opponentCard{max-width:260px;left:auto;width:calc(100% - 6px)}
+body.layout-landscape #opponentCard .desc{font-size:13px}
+body:not(.tutorial-mode) #infoContent .detailPrompt{z-index:3}
+body:not(.tutorial-mode) #infoContent .useCardButton,#infoPanel #actions{position:relative;z-index:3}
+#infoPanel #actions:not(:empty){background:#222832}
+
 /* Screen-facing public combat information; no hit targets or board geometry. */
 .overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-name:-52px;--hud-foot:0px;transform:translate(-50%,-50%);pointer-events:none}
 /* Match the overlay centre to its foot marker; do not inherit the older -76% projected shift. */
@@ -1045,7 +1070,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-wind-undo-v47">ver p3-wind-undo-v47</div>
+  <div class="titleVersion" data-build="p3-opponent-actions-v48">ver p3-opponent-actions-v48</div>
   <div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -1071,7 +1096,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
     <span class="enemyManaDock" aria-label="相手のマナ"></span><button id="settingsButton" class="settingsTopButton" type="button" aria-label="設定">設定⚙️</button>
   </div>
   <p id="cpuDeckMatchNotice" role="status" hidden></p><div class="status"><span class="badge">ターン: <b id="turn">1</b></span><span class="badge">自分山札: <b id="deck">35</b></span><span class="badge">相手山札: <b id="cpuDeck">35</b></span><span class="badge">相手手札: <b id="cpuHand">5</b>枚</span><button class="badge statusButton" type="button" onclick="showGlobalEnchantments()">全体エンチャント🔮<b id="globalEnchantCount">0</b></button></div><div class="playArea"><div class="boardColumn"><div id="turnIndicator" class="turnIndicator" role="status" hidden></div><div class="kingZone enemy"><span class="kingStat">❤️HP<b id="cHp">20</b></span><button class="graveButton" type="button" onclick="showGraveyard('c')">🪦<b id="cGrave">0</b></button><div class="king" onclick="clickKing('c')">相手の王</div><span class="kingStat manaStat"><span class="manaOwner">相手</span><span class="manaGlyph" aria-hidden="true">💧</span><b id="cpuMana">2/2</b></span></div><div class="boardWrap"><div class="boardPlane"><div id="board" class="board" aria-label="5行5列の戦闘盤面"></div><svg class="boardGrid" viewBox="0 0 5 5" aria-hidden="true"><path data-grid-axis="column" d="M0 0V5"/><path data-grid-axis="column" d="M1 0V5"/><path data-grid-axis="column" d="M2 0V5"/><path data-grid-axis="column" d="M3 0V5"/><path data-grid-axis="column" d="M4 0V5"/><path data-grid-axis="column" d="M5 0V5"/><path data-grid-axis="row" d="M0 0H5"/><path data-grid-axis="row" d="M0 1H5"/><path data-grid-axis="row" d="M0 2H5"/><path data-grid-axis="row" d="M0 3H5"/><path data-grid-axis="row" d="M0 4H5"/><path data-grid-axis="row" d="M0 5H5"/></svg><span class="royalFoot enemy" aria-hidden="true"></span><span class="royalFoot player" aria-hidden="true"></span></div><div id="pieceOverlay" aria-hidden="true"></div><button id="enemyPedestal" class="royalPedestal enemy" type="button" onclick="clickKing('c')" aria-label="相手の王"><div class="crownModel" aria-hidden="true"><svg class="crownSvg" viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="goldA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a1805"/><stop offset=".13" stop-color="#9c681d"/><stop offset=".27" stop-color="#f2cc69"/><stop offset=".39" stop-color="#6c4310"/><stop offset=".53" stop-color="#d7a33b"/><stop offset=".69" stop-color="#fff0a3"/><stop offset=".78" stop-color="#8a5818"/><stop offset="1" stop-color="#251505"/></linearGradient><linearGradient id="goldB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8dc7a"/><stop offset=".22" stop-color="#a66b1c"/><stop offset=".48" stop-color="#e3b449"/><stop offset=".72" stop-color="#5a350d"/><stop offset="1" stop-color="#d8a13a"/></linearGradient><radialGradient id="gem" cx="35%" cy="25%"><stop offset="0" stop-color="#fff4aa"/><stop offset=".35" stop-color="#d7a42e"/><stop offset="1" stop-color="#5a3208"/></radialGradient><filter id="metal"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#000" flood-opacity=".8"/></filter></defs><g filter="url(#metal)" stroke="#211304" stroke-width="4" stroke-linejoin="round"><path fill="url(#goldA)" d="M25 143 C25 121 31 101 43 72 L69 109 L89 48 L118 103 L150 14 L182 103 L211 48 L231 109 L257 72 C269 101 275 121 275 143 Z"/><path fill="#160d04" opacity=".58" d="M41 133 C55 116 66 110 83 121 C101 132 114 119 126 105 C137 92 145 86 150 86 C156 86 165 94 175 106 C188 121 201 132 218 121 C236 109 248 117 260 133 L260 146 L41 146Z"/><path fill="none" stroke="url(#goldB)" stroke-width="8" d="M37 132 C61 107 77 108 96 126 C113 141 126 116 150 91 C174 116 187 141 204 126 C223 108 239 107 263 132"/><path fill="url(#goldB)" d="M22 137 Q150 151 278 137 L274 171 Q150 186 26 171Z"/><path fill="none" stroke="#f4d574" stroke-width="3" opacity=".7" d="M31 148 Q150 159 269 148"/><path fill="none" stroke="#51300c" stroke-width="5" d="M31 162 Q150 175 269 162"/></g><g fill="url(#gem)" stroke="#241504" stroke-width="3"><path d="M150 27 l11 17 -11 18 -11-18z"/><path d="M90 61 l9 14 -9 15 -9-15z"/><path d="M210 61 l9 14 -9 15 -9-15z"/><circle cx="48" cy="91" r="7"/><circle cx="252" cy="91" r="7"/><circle cx="150" cy="126" r="9"/></g><g fill="none" stroke="#d9a63d" stroke-width="5" stroke-linecap="round"><path d="M57 139 C57 117 79 115 84 133 C88 147 105 145 110 132 C116 115 135 113 142 132"/><path d="M243 139 C243 117 221 115 216 133 C212 147 195 145 190 132 C184 115 165 113 158 132"/></g><g fill="#1b1005" opacity=".95"><circle cx="62" cy="155" r="4"/><circle cx="88" cy="158" r="4"/><circle cx="116" cy="160" r="4"/><circle cx="150" cy="162" r="5"/><circle cx="184" cy="160" r="4"/><circle cx="212" cy="158" r="4"/><circle cx="238" cy="155" r="4"/></g><path d="M34 169 Q150 183 266 169" fill="none" stroke="#f4cf64" stroke-width="3" opacity=".6"/></svg></div><span class="kingLabel">相手の王</span></button><button id="playerPedestal" class="royalPedestal player" type="button" onclick="clickKing('p')" aria-label="あなたの王"><div class="crownModel" aria-hidden="true"><svg class="crownSvg" viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="goldA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a1805"/><stop offset=".13" stop-color="#9c681d"/><stop offset=".27" stop-color="#f2cc69"/><stop offset=".39" stop-color="#6c4310"/><stop offset=".53" stop-color="#d7a33b"/><stop offset=".69" stop-color="#fff0a3"/><stop offset=".78" stop-color="#8a5818"/><stop offset="1" stop-color="#251505"/></linearGradient><linearGradient id="goldB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8dc7a"/><stop offset=".22" stop-color="#a66b1c"/><stop offset=".48" stop-color="#e3b449"/><stop offset=".72" stop-color="#5a350d"/><stop offset="1" stop-color="#d8a13a"/></linearGradient><radialGradient id="gem" cx="35%" cy="25%"><stop offset="0" stop-color="#fff4aa"/><stop offset=".35" stop-color="#d7a42e"/><stop offset="1" stop-color="#5a3208"/></radialGradient><filter id="metal"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#000" flood-opacity=".8"/></filter></defs><g filter="url(#metal)" stroke="#211304" stroke-width="4" stroke-linejoin="round"><path fill="url(#goldA)" d="M25 143 C25 121 31 101 43 72 L69 109 L89 48 L118 103 L150 14 L182 103 L211 48 L231 109 L257 72 C269 101 275 121 275 143 Z"/><path fill="#160d04" opacity=".58" d="M41 133 C55 116 66 110 83 121 C101 132 114 119 126 105 C137 92 145 86 150 86 C156 86 165 94 175 106 C188 121 201 132 218 121 C236 109 248 117 260 133 L260 146 L41 146Z"/><path fill="none" stroke="url(#goldB)" stroke-width="8" d="M37 132 C61 107 77 108 96 126 C113 141 126 116 150 91 C174 116 187 141 204 126 C223 108 239 107 263 132"/><path fill="url(#goldB)" d="M22 137 Q150 151 278 137 L274 171 Q150 186 26 171Z"/><path fill="none" stroke="#f4d574" stroke-width="3" opacity=".7" d="M31 148 Q150 159 269 148"/><path fill="none" stroke="#51300c" stroke-width="5" d="M31 162 Q150 175 269 162"/></g><g fill="url(#gem)" stroke="#241504" stroke-width="3"><path d="M150 27 l11 17 -11 18 -11-18z"/><path d="M90 61 l9 14 -9 15 -9-15z"/><path d="M210 61 l9 14 -9 15 -9-15z"/><circle cx="48" cy="91" r="7"/><circle cx="252" cy="91" r="7"/><circle cx="150" cy="126" r="9"/></g><g fill="none" stroke="#d9a63d" stroke-width="5" stroke-linecap="round"><path d="M57 139 C57 117 79 115 84 133 C88 147 105 145 110 132 C116 115 135 113 142 132"/><path d="M243 139 C243 117 221 115 216 133 C212 147 195 145 190 132 C184 115 165 113 158 132"/></g><g fill="#1b1005" opacity=".95"><circle cx="62" cy="155" r="4"/><circle cx="88" cy="158" r="4"/><circle cx="116" cy="160" r="4"/><circle cx="150" cy="162" r="5"/><circle cx="184" cy="160" r="4"/><circle cx="212" cy="158" r="4"/><circle cx="238" cy="155" r="4"/></g><path d="M34 169 Q150 183 266 169" fill="none" stroke="#f4cf64" stroke-width="3" opacity=".6"/></svg></div><span class="kingLabel">あなたの王</span></button></div>
-<div class="kingZone player"><span class="kingStat">❤️HP<b id="pHp">20</b></span><button class="graveButton" type="button" onclick="showGraveyard('p')">🪦<b id="pGrave">0</b></button><div class="king" onclick="clickKing('p')">あなたの王</div><span class="kingStat manaStat"><span class="manaOwner">自分</span><span class="manaGlyph" aria-hidden="true">💧</span><b id="mana">1/1</b></span></div></div><aside id="infoPanel" aria-live="polite"><div class="infoHeading">選択中の情報</div><div id="infoContent" class="infoContent"></div></aside></div><div class="handTitle">手札（タップして使用）</div><div class="handScroller"><button type="button" class="layoutHandScroll" data-scroll-hand="-1" aria-label="手札を左へ">◀</button><div id="hand" class="hand"></div><button type="button" class="layoutHandScroll" data-scroll-hand="1" aria-label="手札を右へ">▶</button></div><div class="battleStrip" aria-label="手札と対戦操作"><div class="stripLeft"></div><div class="stripRight"><div class="stripButtons"></div><div class="stripEnd"></div></div></div><div class="controls"><span class="manaDock" aria-label="自分のマナ"></span><details class="layoutLog"><summary>戦闘ログ</summary><div class="logPanel"><div id="log"></div></div></details><button id="endTurn">ターン終了</button><button id="undoOne" class="secondary" disabled>1手戻る</button></div></div>
+<div class="kingZone player"><span class="kingStat">❤️HP<b id="pHp">20</b></span><button class="graveButton" type="button" onclick="showGraveyard('p')">🪦<b id="pGrave">0</b></button><div class="king" onclick="clickKing('p')">あなたの王</div><span class="kingStat manaStat"><span class="manaOwner">自分</span><span class="manaGlyph" aria-hidden="true">💧</span><b id="mana">1/1</b></span></div></div><aside id="infoPanel" aria-live="polite"><div class="infoHeading">選択中の情報</div><div id="infoContent" class="infoContent"></div><aside id="opponentCard" class="opponentCard" aria-label="相手が使用したカード" hidden></aside></aside></div><div id="latestAction" class="latestAction" role="status" aria-label="最新の行動">直近の行動はありません</div><div class="handTitle">手札（タップして使用）</div><div class="handScroller"><button type="button" class="layoutHandScroll" data-scroll-hand="-1" aria-label="手札を左へ">◀</button><div id="hand" class="hand"></div><button type="button" class="layoutHandScroll" data-scroll-hand="1" aria-label="手札を右へ">▶</button></div><div class="battleStrip" aria-label="手札と対戦操作"><div class="stripLeft"></div><div class="stripRight"><div class="stripButtons"></div><div class="stripEnd"></div></div></div><div class="controls"><span class="manaDock" aria-label="自分のマナ"></span><details class="layoutLog"><summary>戦闘ログ</summary><div class="logPanel"><div id="log"></div></div></details><button id="endTurn">ターン終了</button><button id="undoOne" class="secondary" disabled>1手戻る</button></div></div>
 <div id="settingsOverlay" aria-hidden="true"><div class="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="settingsHead"><b id="settingsTitle">⚙️ 設定</b><button id="settingsClose" type="button">×</button></div><div class="settingsGroup"><div class="settingsLabel">視点比較（試作）</div><div class="settingsChoices" data-setting="view"><button type="button" data-value="current">A：現行方向</button><button type="button" data-value="left">B：左回転俯瞰</button></div><div class="settingsNote">横画面で比較します。端末だけの表示設定です。Bは正式採用前の試作です。</div></div><div class="settingsGroup"><div class="settingsLabel">ボード</div><div class="settingsChoices" data-setting="board"><button type="button" data-value="rich">リッチ</button><button type="button" data-value="simple">シンプル</button><button type="button" data-value="antique">アンティーク</button><button type="button" data-value="light">ライト</button></div></div><div class="settingsGroup"><div class="settingsLabel">王アイコン</div><div class="settingsChoices kingChoices" data-setting="king"><button type="button" data-value="simple1">デフォルト</button><button type="button" data-value="dark">ダーク</button><button type="button" data-value="default">ゴージャス</button><button type="button" data-value="simple2">シンプル</button><button type="button" data-value="oldking">老王1</button><button type="button" data-value="oldking2">老王2</button><button type="button" data-value="youngking">若王</button></div><div class="settingsNote">王冠画像アセットを切り替えます。ゲームルールには影響しません。</div></div><div class="settingsGroup"><div class="settingsLabel">BGM</div><div class="settingsChoices"><button type="button" data-bgm-enabled="true">ON</button><button type="button" data-bgm-enabled="false">OFF</button></div><div class="bgmVolumeRow"><label for="bgmVolume">音量</label><input id="bgmVolume" type="range" min="0" max="100" step="1" value="50" aria-describedby="bgmStatus"><output id="bgmVolumeValue" for="bgmVolume">50％</output></div><div id="bgmStatus" class="settingsNote">対戦中にループ再生します。音量0％は無音です。</div></div><div class="settingsGroup"><div class="settingsLabel">クリーチャー名称表示</div><div class="settingsChoices" id="creatureNameChoices"><button type="button" data-name-visible="true">ON</button><button type="button" data-name-visible="false">OFF</button></div><div class="settingsNote">盤上のクリーチャー名称のみ表示・非表示を切り替えます。</div></div><!-- CPU_SETTINGS_START --><div class="settingsGroup"><div class="settingsLabel">CPU演出</div><div id="cpuPresentationChoices" class="settingsChoices"><button type="button" data-cpu-speed="normal" aria-pressed="true">通常</button><button type="button" data-cpu-speed="fast" aria-pressed="false">高速</button><button type="button" data-cpu-speed="skip" aria-pressed="false">演出スキップ</button></div><div class="settingsNote">思考・ルール結果を変えず、CPUの演出待ちだけを変更します。</div></div><div class="settingsGroup"><div class="settingsLabel">CPUの強さ</div><div class="settingsChoices" data-setting="cpuDifficulty"><button type="button" data-value="weak">よわい</button><button type="button" data-value="strong">普通</button><button type="button" data-value="tactical">つよい</button><button type="button" data-value="gachi">ガチ</button></div><div class="settingsNote">「ガチ」は相手の応手と味方の反撃まで読み、駒の交換や配置を判断します。</div></div><div class="settingsGroup">
   <label class="settingsLabel" for="cpuDeckChoice">CPUの使用デッキ</label>
   <select id="cpuDeckChoice" aria-describedby="cpuDeckHelp cpuDeckStatus"></select>
@@ -1336,11 +1361,86 @@ landscapeQuery.addEventListener('change',queuePresentation);
 window.visualViewport?.addEventListener('resize',queuePresentation);
 function bindPresentation(){
  bindHandScroll();
- const log=document.querySelector('.layoutLog');if(log){log.open=false;log.addEventListener('toggle',()=>{positionBattleLog();queueTutorialPresentation();});if(typeof ResizeObserver!=='undefined')new ResizeObserver(positionBattleLog).observe(log.querySelector('.logPanel'));}
+ const log=document.querySelector('.layoutLog');if(log){log.open=false;log.addEventListener('toggle',()=>{$('latestAction').classList.toggle('log-expanded',log.open);positionBattleLog();queueTutorialPresentation();});if(typeof ResizeObserver!=='undefined')new ResizeObserver(positionBattleLog).observe(log.querySelector('.logPanel'));}
  const wrap=$('board')?.closest('.boardWrap');if(wrap&&typeof ResizeObserver!=='undefined')new ResizeObserver(queuePresentation).observe(wrap);
  syncLayout();
 }
-function startPlayPresentation(){detailContext=null;detailNotice=null;const log=document.querySelector('.layoutLog');if(log)log.open=false;previousLogExplanation=false;tutorialExplanation=null;}
+function startPlayPresentation(){
+ detailContext=null;detailNotice=null;
+ const log=document.querySelector('.layoutLog');if(log)log.open=false;
+ setLatestAction();clearOpponentCards();
+ previousLogExplanation=false;tutorialExplanation=null;
+}
+// The projected stream also includes the legacy identity of a face-down Mine.
+function visibleCardUse(event,viewer){return event.cardId!=='マイン'||event.side===viewer;}
+function primaryBattleAction(events,{viewer,activeSide,before,definitions}){
+ const first=(...types)=>events.find(event=>types.includes(event.type));
+ const card=events.find(e=>e.type==='card:played'&&visibleCardUse(e,viewer)&&Object.hasOwn(definitions,e.cardId));
+ const event=card||first('turn:started')||first('creature:ability-used','king:ability-used','king:attack-targeted')
+  ||first('creature:attacked','creature:attack-resolved')||first('creature:moved')||first('game:over');
+ if(!event)return null;
+ const piece=before?.[event.from],label=side=>side===viewer?'あなた':'相手';
+ const side=event.type==='creature:moved'?activeSide:piece?.side??event.side??activeSide;
+ let text=label(side)+'：';
+ if(event===card)text+=card.cardId+(definitions[card.cardId].type==='creature'?'を召喚':'を使用');
+ else if(event.type==='turn:started')text=label(side)+'のターン開始';
+ else if(event.type==='creature:moved')text+=(piece?.type||'クリーチャー')+(piece&&piece.side!==side?'を移動':'が移動');
+ else if(event.type==='creature:attacked'||event.type==='creature:attack-resolved')
+  text+=(piece?.type||'クリーチャー')+'が'+(event.to==null?'王':before?.[event.to]?.type||'クリーチャー')+'を攻撃';
+ else if(event.type==='game:over')text='対戦終了：'+event.reason;
+ else text+=(event.type==='creature:ability-used'?piece?.type||'クリーチャー':'王')+'の能力を使用';
+ return {event,card,text};
+}
+function setLatestAction(text='直近の行動はありません'){$('latestAction').textContent=text;}
+function restoreLatestAction(){
+ const rows=$('log').querySelectorAll('[data-battle-action]');
+ setLatestAction(rows[rows.length-1]?.textContent);
+}
+function presentBattleAction(events,context){
+ const action=primaryBattleAction(events,context);
+ if(!action)return null;
+ const row=document.createElement('div');
+ row.dataset.battleAction='';row.dataset.revision=context.revision;
+ row.textContent=action.text;$('log').append(row);setLatestAction(action.text);
+ if(context.animate&&action.card&&action.card.side!==context.viewer&&['p','c'].includes(action.card.side)&&document.visibilityState==='visible'){
+  const {cardId}=action.card,definition=context.definitions[cardId];
+  if((definition.deckType??'normal')==='normal'&&['creature','spell','enchant'].includes(definition.type))enqueueOpponentCard(cardId,definition);
+ }
+ return action.event;
+}
+
+const opponentCardDuration=1200,opponentCards=[];
+let opponentCardTimer=null;
+function clearOpponentCards(){
+ clearTimeout(opponentCardTimer);opponentCardTimer=null;opponentCards.length=0;
+ const panel=$('opponentCard');if(panel){panel.hidden=true;panel.replaceChildren();}
+}
+function enqueueOpponentCard(cardId,definition){
+ opponentCards.push({cardId,definition});
+ if(opponentCardTimer===null)showOpponentCard();
+}
+function showOpponentCard(){
+ const panel=$('opponentCard'),next=opponentCards.shift();
+ if(!next||document.visibilityState!=='visible'){clearOpponentCards();return;}
+ const {cardId,definition:d}=next;
+ const card=document.createElement('div');
+ card.className='card'+(d.type==='spell'?' spell':d.type==='enchant'?' enchant':'');
+ card.dataset.card=cardId;
+ card.innerHTML=cardHTML(cardId,d);
+ if(d.type==='creature'){
+  card.querySelector('.cost').prepend('クリーチャー / ');
+  renderCreatureDetailImage(card,cardId,'opponentCardArt');
+ }
+ panel.replaceChildren(card);panel.hidden=false;
+ if(!matchMedia('(prefers-reduced-motion: reduce)').matches)card.animate([
+  {opacity:0,transform:'translateY(3px)'},{opacity:1,transform:'none',offset:.1},
+  {opacity:1,transform:'none',offset:.9},{opacity:0,transform:'none'}
+ ],{duration:opponentCardDuration,fill:'both'});
+ opponentCardTimer=setTimeout(showOpponentCard,opponentCardDuration);
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')clearOpponentCards();});
+window.addEventListener('pagehide',clearOpponentCards);
+document.addEventListener('p2b1:exit',clearOpponentCards);
 function positionBattleLog(){
  const log=document.querySelector('.layoutLog'),panel=log?.querySelector('.logPanel');if(!panel)return;
  // Portrait is ordinary document flow. Never retain popup geometry, even closed.
@@ -1683,6 +1783,7 @@ bindPresentation();VisualSettings.load();return VisualSettings;
 
 }
 function renderTurn({activeSide,viewer,paused=false,ended=false}){
+ if(paused||ended)clearOpponentCards();
  const e=$('turnIndicator');if(!e)return;e.hidden=paused||ended;
  const own=activeSide===viewer;e.textContent=own?'あなたのターン中':'相手ターン中';
  e.classList.toggle('ownTurn',own);e.classList.toggle('enemyTurn',!own);
@@ -1722,7 +1823,7 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,visibleCardUse,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearOpponentCards();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();
 </script><script>
 (function(){const modules={"./game-core.cjs":function(module,exports,require){
@@ -4795,7 +4896,7 @@ function undoOneAction(){
  Object.defineProperties(S,{mana:{configurable:true,get(){return this.manaBySide[this.side]},set(v){this.manaBySide[this.side]=v}},maxMana:{configurable:true,get(){return this.maxManaBySide[this.side]},set(v){this.maxManaBySide[this.side]=v}}});
  pendingSummonAbilities.splice(0,pendingSummonAbilities.length,...snap.summonQueue);EffectEngine.queue=snap.queue;EffectEngine.resolving=false;S.eventHistory=snap.history;
  S.card=null;S.piece=null;S.inspect=null;S.cpuPreview=null;S.teleportSource=null;delete S.teleportIdentity;S.dispelTarget=null;S.kingAttackMode=false;S.sorcererMode=false;
- $("log").innerHTML=snap.logHTML;NormalGameUI.setNotice('',cpuNoticeScope(),'routine');
+ $("log").innerHTML=snap.logHTML;NormalGameUI.setNotice('',cpuNoticeScope(),'routine');restoreCpuBattleAction();
  document.body.classList.remove('result-open');$("overlay")?.classList.remove('show');
  render();updateUndoButton();return true;
 }
@@ -4989,6 +5090,21 @@ function syncCpuSelectionStatus(){
  NormalGameUI.renderDetailStatus({reason,choice,guide:CARD_DEFINITIONS[card]?.creaturePair?NormalGameUI.creaturePairGuide(CARD_DEFINITIONS[card].creaturePair,S.teleportSource!=null):card&&S.teleportSource!=null?'転移先の空きマスを選んでください。':'',scope:cpuNoticeScope()});
 }
 
+let cpuBattleBefore=[],cpuBattleRevision=-1;
+function rememberCpuBattleBoard(){cpuBattleBefore=S.board.map(piece=>piece&&{type:piece.type,side:piece.side});}
+function restoreCpuBattleAction(){
+ cpuBattleRevision=S.revision??-1;
+ NormalGameUI.restoreLatestAction();
+}
+function presentCpuBattleAction(result){
+ const revision=result.state?.revision;
+ if(TutorialController.active||$('app').classList.contains('gameScreenHidden')||!Number.isSafeInteger(revision)||revision<=cpuBattleRevision)return;
+ cpuBattleRevision=revision;
+ const events=R12Core.projectEvents(result.events,'p');
+ NormalGameUI.presentBattleAction(events,{viewer:'p',activeSide:S.side,before:cpuBattleBefore,definitions:CARD_DEFINITIONS,revision,animate:!S.gameOver});
+ rememberCpuBattleBoard();
+}
+
 function draw(side="p"){let d=side==="p"?S.deck:S.cDeck,h=side==="p"?S.hand:S.cHand;if(!d.length){if(side==="p")lose("山札切れ");else win("CPUの山札切れ");return false}R3Cards.draw(S,side);return true}
 function maxManaFor(side){return Math.min(10,S.turn+(side==="c"?1:0)+S.manaBonus[side])}
 function a5r1AbilityPort(){return {
@@ -5170,7 +5286,7 @@ for(const [side,id] of [['enemy','enemyPedestal'],['player','playerPedestal']]){
 let pieceOverlayResizeQueued=false;
 window.addEventListener("resize",()=>{if(pieceOverlayResizeQueued)return;pieceOverlayResizeQueued=true;requestAnimationFrame(()=>{pieceOverlayResizeQueued=false;renderPieceOverlay()})});
 
-function render(){CardTacticsBGM.setActive(!S.gameOver&&!document.getElementById("app").classList.contains("gameScreenHidden"));NormalGameUI.renderTurn({activeSide:S.side,viewer:"p",ended:S.gameOver}); const targetHighlights=GameCore.selectedTargets();const combatHighlights=S.piece!==null||S.cpuPreview?GameCore.queryCombat(S.cpuPreview?.from??S.piece):null;updateUndoButton();$("pGrave").textContent=S.graveyards.p.length;$("cGrave").textContent=S.graveyards.c.length;$("pHp").textContent=S.pHp;$("cHp").textContent=S.cHp;document.querySelectorAll(".kingZone").forEach(z=>{const side=z.classList.contains("player")?"p":"c";z.querySelector(".king").textContent=(side==="p"?"あなたの王":"相手の王")+(spellsBlocked(side)?" 🔒封魔":"")});$("mana").textContent=S.manaBySide.p+"/"+S.maxManaBySide.p;$("cpuMana").textContent=S.manaBySide.c+"/"+S.maxManaBySide.c;$("turn").textContent=S.turn;$("deck").textContent=S.deck.length;$("cpuDeck").textContent=S.cDeck.length;$("cpuHand").textContent=S.cHand.length;$("globalEnchantCount").textContent=activeGlobalEnchantments().length;document.querySelector(".kingZone.enemy").classList.toggle("attackable",S.side==="p"&&S.piece!==null&&!!S.board[S.piece]&&kingAtk(S.board[S.piece],S.piece));
+function render(){CardTacticsBGM.setActive(!S.gameOver&&!document.getElementById("app").classList.contains("gameScreenHidden"));NormalGameUI.renderTurn({activeSide:S.side,viewer:"p",ended:S.gameOver});rememberCpuBattleBoard(); const targetHighlights=GameCore.selectedTargets();const combatHighlights=S.piece!==null||S.cpuPreview?GameCore.queryCombat(S.cpuPreview?.from??S.piece):null;updateUndoButton();$("pGrave").textContent=S.graveyards.p.length;$("cGrave").textContent=S.graveyards.c.length;$("pHp").textContent=S.pHp;$("cHp").textContent=S.cHp;document.querySelectorAll(".kingZone").forEach(z=>{const side=z.classList.contains("player")?"p":"c";z.querySelector(".king").textContent=(side==="p"?"あなたの王":"相手の王")+(spellsBlocked(side)?" 🔒封魔":"")});$("mana").textContent=S.manaBySide.p+"/"+S.maxManaBySide.p;$("cpuMana").textContent=S.manaBySide.c+"/"+S.maxManaBySide.c;$("turn").textContent=S.turn;$("deck").textContent=S.deck.length;$("cpuDeck").textContent=S.cDeck.length;$("cpuHand").textContent=S.cHand.length;$("globalEnchantCount").textContent=activeGlobalEnchantments().length;document.querySelector(".kingZone.enemy").classList.toggle("attackable",S.side==="p"&&S.piece!==null&&!!S.board[S.piece]&&kingAtk(S.board[S.piece],S.piece));
 document.querySelectorAll('.kingZone').forEach(z=>{const side=z.classList.contains('enemy')?'c':'p';z.classList.toggle('spellTarget',S.side==='p'&&(targetHighlights.choices.some(a=>R13View.atKing(a,side))||targetHighlights.stage==='none'&&S.card!=null&&S.hand[S.card]==='マナ'&&side==='p'&&targetHighlights.choices.length>0));});
 for(const [id,side] of [['enemyPedestal','enemy'],['playerPedestal','player']]){
  const pedestal=$(id),zone=document.querySelector('.kingZone.'+side);
@@ -5402,6 +5518,7 @@ function combatRuntime(){return {resolving:EffectEngine.resolving,queue:EffectEn
 function r10ResolutionBusy(){return !!(EffectEngine.resolving||EffectEngine.queue.length||pendingSummonAbilities.length);}
 function publishCoreCommand(result){
   if(!result.ok)return false;
+  presentCpuBattleAction(result);
   for(const e of result.events){const {type,...detail}=e;GameEvents.emit(type,{...detail,coreResolved:true});if(type==="damage:guarded")log("献身的なガーディアンが"+detail.amount+"ダメージを肩代わり。");if(type==="creature:weakened")log(detail.creature+"が衰弱。");}
   if(S.gameOver){const drawFailed=result.events.some(e=>e.type==='game:over'&&['DRAW_FAILED','DECK_EXHAUSTED'].includes(e.reason));if(S.winner==='p')win(drawFailed?'CPUの山札切れ':'相手の王のHPが0になりました。',true);else lose(drawFailed?'山札切れ':'あなたの王のHPが0になりました。',true);}
   return true;
@@ -6569,6 +6686,7 @@ async function runTacticalCpu(difficulty) {
 }
 
 function describeTacticalCpuAction(action, events, actor) {
+  if (!NormalGameUI.visibleCardUse({side:action.side,cardId:action.cardId}, 'p')) return;
   const text = action.type === 'summon' ? action.cardId + 'を召喚。'
     : action.cardId ? action.cardId + 'を使用。'
     : action.type === 'move' ? actor + 'が移動。'
@@ -6631,7 +6749,7 @@ async function cpu(){if(!TutorialController.active&&["tactical","gachi"].include
     if(bi>=0&&GameCore.cardQuery("c",bi).choices.length){msg("CPU：決戦を使用","routine");render();await cpuWait();if(!playCardUnified("c",bi,{kind:"global"}).ok)break;log("CPUが決戦を使用。全クリーチャー攻撃力+1。");render();await cpuWait();continue}
     if(di>=0&&GameCore.cardQuery("c",di).choices.length){const own=S.board.map((p,i)=>({p,i})).filter(x=>x.p?.side==="c");const k=(own.length?own[Math.floor(GameCore.random()*own.length)].i:Math.floor(GameCore.random()*25));msg("CPU：防御結界を使用","routine");render();await cpuWait();if(!playCardUnified("c",di,{kind:"cell",k}).ok)break;log(`CPUが${Math.floor(k/5)+1}行${k%5+1}列に防御結界を付与。`);render();await cpuWait();continue}
     const empty=mi<0?[]:GameCore.cardQuery('c',mi).choices.map(a=>a.target.k);
-    if(mi>=0&&empty.length){const k=empty[Math.floor(GameCore.random()*empty.length)];msg("CPU：マインを設置","routine");render();await cpuWait();if(!playCardUnified("c",mi,{kind:"cell",k}).ok)break;log(`CPUが${Math.floor(k/5)+1}行${k%5+1}列にマインを設置。`);render();await cpuWait();continue}
+    if(mi>=0&&empty.length){const k=empty[Math.floor(GameCore.random()*empty.length)];msg("CPU：マインを設置","routine");render();await cpuWait();if(!playCardUnified("c",mi,{kind:"cell",k}).ok)break;render();await cpuWait();continue}
     break;
   }
   await cpuDispel();

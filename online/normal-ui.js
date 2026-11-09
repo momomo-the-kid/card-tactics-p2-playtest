@@ -193,11 +193,86 @@ landscapeQuery.addEventListener('change',queuePresentation);
 window.visualViewport?.addEventListener('resize',queuePresentation);
 function bindPresentation(){
  bindHandScroll();
- const log=document.querySelector('.layoutLog');if(log){log.open=false;log.addEventListener('toggle',()=>{positionBattleLog();queueTutorialPresentation();});if(typeof ResizeObserver!=='undefined')new ResizeObserver(positionBattleLog).observe(log.querySelector('.logPanel'));}
+ const log=document.querySelector('.layoutLog');if(log){log.open=false;log.addEventListener('toggle',()=>{$('latestAction').classList.toggle('log-expanded',log.open);positionBattleLog();queueTutorialPresentation();});if(typeof ResizeObserver!=='undefined')new ResizeObserver(positionBattleLog).observe(log.querySelector('.logPanel'));}
  const wrap=$('board')?.closest('.boardWrap');if(wrap&&typeof ResizeObserver!=='undefined')new ResizeObserver(queuePresentation).observe(wrap);
  syncLayout();
 }
-function startPlayPresentation(){detailContext=null;detailNotice=null;const log=document.querySelector('.layoutLog');if(log)log.open=false;previousLogExplanation=false;tutorialExplanation=null;}
+function startPlayPresentation(){
+ detailContext=null;detailNotice=null;
+ const log=document.querySelector('.layoutLog');if(log)log.open=false;
+ setLatestAction();clearOpponentCards();
+ previousLogExplanation=false;tutorialExplanation=null;
+}
+// The projected stream also includes the legacy identity of a face-down Mine.
+function visibleCardUse(event,viewer){return event.cardId!=='マイン'||event.side===viewer;}
+function primaryBattleAction(events,{viewer,activeSide,before,definitions}){
+ const first=(...types)=>events.find(event=>types.includes(event.type));
+ const card=events.find(e=>e.type==='card:played'&&visibleCardUse(e,viewer)&&Object.hasOwn(definitions,e.cardId));
+ const event=card||first('turn:started')||first('creature:ability-used','king:ability-used','king:attack-targeted')
+  ||first('creature:attacked','creature:attack-resolved')||first('creature:moved')||first('game:over');
+ if(!event)return null;
+ const piece=before?.[event.from],label=side=>side===viewer?'あなた':'相手';
+ const side=event.type==='creature:moved'?activeSide:piece?.side??event.side??activeSide;
+ let text=label(side)+'：';
+ if(event===card)text+=card.cardId+(definitions[card.cardId].type==='creature'?'を召喚':'を使用');
+ else if(event.type==='turn:started')text=label(side)+'のターン開始';
+ else if(event.type==='creature:moved')text+=(piece?.type||'クリーチャー')+(piece&&piece.side!==side?'を移動':'が移動');
+ else if(event.type==='creature:attacked'||event.type==='creature:attack-resolved')
+  text+=(piece?.type||'クリーチャー')+'が'+(event.to==null?'王':before?.[event.to]?.type||'クリーチャー')+'を攻撃';
+ else if(event.type==='game:over')text='対戦終了：'+event.reason;
+ else text+=(event.type==='creature:ability-used'?piece?.type||'クリーチャー':'王')+'の能力を使用';
+ return {event,card,text};
+}
+function setLatestAction(text='直近の行動はありません'){$('latestAction').textContent=text;}
+function restoreLatestAction(){
+ const rows=$('log').querySelectorAll('[data-battle-action]');
+ setLatestAction(rows[rows.length-1]?.textContent);
+}
+function presentBattleAction(events,context){
+ const action=primaryBattleAction(events,context);
+ if(!action)return null;
+ const row=document.createElement('div');
+ row.dataset.battleAction='';row.dataset.revision=context.revision;
+ row.textContent=action.text;$('log').append(row);setLatestAction(action.text);
+ if(context.animate&&action.card&&action.card.side!==context.viewer&&['p','c'].includes(action.card.side)&&document.visibilityState==='visible'){
+  const {cardId}=action.card,definition=context.definitions[cardId];
+  if((definition.deckType??'normal')==='normal'&&['creature','spell','enchant'].includes(definition.type))enqueueOpponentCard(cardId,definition);
+ }
+ return action.event;
+}
+
+const opponentCardDuration=1200,opponentCards=[];
+let opponentCardTimer=null;
+function clearOpponentCards(){
+ clearTimeout(opponentCardTimer);opponentCardTimer=null;opponentCards.length=0;
+ const panel=$('opponentCard');if(panel){panel.hidden=true;panel.replaceChildren();}
+}
+function enqueueOpponentCard(cardId,definition){
+ opponentCards.push({cardId,definition});
+ if(opponentCardTimer===null)showOpponentCard();
+}
+function showOpponentCard(){
+ const panel=$('opponentCard'),next=opponentCards.shift();
+ if(!next||document.visibilityState!=='visible'){clearOpponentCards();return;}
+ const {cardId,definition:d}=next;
+ const card=document.createElement('div');
+ card.className='card'+(d.type==='spell'?' spell':d.type==='enchant'?' enchant':'');
+ card.dataset.card=cardId;
+ card.innerHTML=cardHTML(cardId,d);
+ if(d.type==='creature'){
+  card.querySelector('.cost').prepend('クリーチャー / ');
+  renderCreatureDetailImage(card,cardId,'opponentCardArt');
+ }
+ panel.replaceChildren(card);panel.hidden=false;
+ if(!matchMedia('(prefers-reduced-motion: reduce)').matches)card.animate([
+  {opacity:0,transform:'translateY(3px)'},{opacity:1,transform:'none',offset:.1},
+  {opacity:1,transform:'none',offset:.9},{opacity:0,transform:'none'}
+ ],{duration:opponentCardDuration,fill:'both'});
+ opponentCardTimer=setTimeout(showOpponentCard,opponentCardDuration);
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')clearOpponentCards();});
+window.addEventListener('pagehide',clearOpponentCards);
+document.addEventListener('p2b1:exit',clearOpponentCards);
 function positionBattleLog(){
  const log=document.querySelector('.layoutLog'),panel=log?.querySelector('.logPanel');if(!panel)return;
  // Portrait is ordinary document flow. Never retain popup geometry, even closed.
@@ -540,6 +615,7 @@ bindPresentation();VisualSettings.load();return VisualSettings;
 
 }
 function renderTurn({activeSide,viewer,paused=false,ended=false}){
+ if(paused||ended)clearOpponentCards();
  const e=$('turnIndicator');if(!e)return;e.hidden=paused||ended;
  const own=activeSide===viewer;e.textContent=own?'あなたのターン中':'相手ターン中';
  e.classList.toggle('ownTurn',own);e.classList.toggle('enemyTurn',!own);
@@ -579,5 +655,5 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,visibleCardUse,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearOpponentCards();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();
