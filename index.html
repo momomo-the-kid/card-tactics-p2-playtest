@@ -1045,7 +1045,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-deck-input-default-v45">ver p3-deck-input-default-v45</div>
+  <div class="titleVersion" data-build="p3-wind-undo-v47">ver p3-wind-undo-v47</div>
   <div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -5579,11 +5579,17 @@ function togglePaidTarget(id){
 }
 function usePaidAbility(id,target){
  if(!GameCore.abilityAllowed('p',id,S.piece,target))return;
+ const undoable=id==='wind_push';
+ if(undoable)beginPlayerActionUndo();
  const result=finishR5Command(R5Command.activate(S,'p',id,S.piece,target,CARD_DEFINITIONS));
- if(!result.ok)return;
+ if(!result.ok){
+  if(undoable)cancelPlayerActionUndo();
+  return;
+ }
  S.sorcererMode=false;
- clearOneStepUndo();
+ if(!undoable)clearOneStepUndo();
  render();
+ if(undoable)commitPlayerActionUndo();
 }
 function paidAbilityDetail(piece,cell,line){
  if(piece.side!=='p')return '';
