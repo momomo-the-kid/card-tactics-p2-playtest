@@ -18,9 +18,13 @@ function note(event,fields={}){
 function valid(s){return s?.version===1&&Array.isArray(s.slots)&&s.slots.length>=1&&s.slots.length<=5&&new Set(s.slots.map(x=>x?.id)).size===s.slots.length&&s.slots.every(x=>typeof x?.id==='string'&&/^deck-[1-5]$/.test(x.id)&&validName(x.name)&&rules.isRecord(x.draft)&&rules.inspect(x.draft).errors.length===0)&&s.slots.some(x=>x.id===s.active?.slotId)&&validName(s.active?.name)&&rules.valid(s.active.counts);}
 function parse(raw){try{const state=JSON.parse(raw);return valid(state)?state:null;}catch{return null;}}
 function normalize(state){state=copy(state);for(const slot of state.slots)slot.draft=rules.normalize(slot.draft);state.active.counts=rules.normalize(state.active.counts);return state;}
-function standard(){const counts=rules.defaultCounts(),name='標準デッキ';return {version:1,slots:[{id:'deck-1',name,draft:copy(counts)}],active:{slotId:'deck-1',name,counts:copy(counts)}};}
+function firstSlot(name,counts){return {version:1,slots:[{id:'deck-1',name,draft:copy(counts)}],active:{slotId:'deck-1',name,counts:copy(counts)}};}
+const initialCounts=Object.freeze({
+ オルトロス:2,ソーサラー:2,チャリオット:2,ディアブロ:2,バーサーク:2,ファイヤーボルト:2,ホープ:4,マナ:2,
+ 凱旋の英雄:1,剣聖:1,占い師:1,戦狼:2,盗賊:2,突風:2,踊り子:2,転移魔法:1,金級兵:4,銀級兵:4,隠密:2
+});
 function legacy(){
- const c=get(oldConfirmed),d=get(oldDraft),state=standard();let error='';
+ const c=get(oldConfirmed),d=get(oldDraft),state=firstSlot('標準デッキ',rules.defaultCounts());let error='';
  for(const x of [c,d])if(x.status==='error')error='旧形式の保存データを読み込めません。新規利用とは扱わず、上書き保存を停止しています。';
  let confirmed=null,draft=null;
  try{if(c.status==='present'){confirmed=JSON.parse(c.raw);if(!rules.valid(confirmed))throw Error();}}catch{error='旧形式の確定デッキが不正です。原文を保持し、上書き保存を停止しています。';}
@@ -34,7 +38,17 @@ function read(){
  const p=get(key),b=get(backupKey),h=get(historyKey),backup=journal(b.raw),primary=parse(p.raw);
  let state=primary,source='primary',error='',migration=false;
  if(!state&&backup){state=parse(backup.confirmed)||parse(backup.previous);source='backup';}
- if(!state){const old=legacy();state=old.state;source=old.source;if(p.status==='missing'&&b.status==='missing'&&h.status==='missing'){error=old.error;migration=!error;}note('legacy-read',{confirmed:old.legacyConfirmed,draft:old.legacyDraft,result:old.error?'blocked':'ok'});}
+ if(!state){
+  const old=legacy();state=old.state;source=old.source;
+  if([p,b,h].every(x=>x.status==='missing')){
+   error=old.error;
+   if(!error&&source==='default'&&rules.valid(initialCounts)){
+    state=firstSlot('初期デッキ',rules.normalize(initialCounts));source='initial';
+   }
+   migration=!error;
+  }
+  note('legacy-read',{confirmed:old.legacyConfirmed,draft:old.legacyDraft,result:old.error?'blocked':'ok'});
+ }
  if([p,b,h].some(x=>x.status==='error'))error='保存データを読み込めません。表示は代替内容です。上書き保存を停止しています。';
  else if(p.status==='present'&&!primary)error='複数デッキ保存が破損しています。原文を保持し、上書き保存を停止しています。';
  else if(p.status==='missing'&&(b.status!=='missing'||h.status!=='missing'))error='以前の保存履歴がありますが、本体が見つかりません。新規デッキで上書きせず停止しています。表示はバックアップ／代替内容です。';
@@ -45,7 +59,7 @@ function read(){
  note('read',{primary:p.status,backup:b.status,history:h.status,validation:primary?'ok':p.status==='present'?'invalid':'none',result:error?'blocked':'ok',source,migration});
  return {state:normalize(state),raw:p.raw,backupRaw:b.raw,historyRaw:h.raw,blocked:!!error,migration,error,source};
 }
-function unchanged(s){return storage.getItem(key)===s.raw&&storage.getItem(backupKey)===s.backupRaw&&storage.getItem(historyKey)===s.historyRaw;}
+function unchanged(s){return storage.getItem(key)===s.raw&&storage.getItem(backupKey)===s.backupRaw&&storage.getItem(historyKey)===s.historyRaw&&(s.source!=='initial'||storage.getItem(oldConfirmed)===null&&storage.getItem(oldDraft)===null);}
 function setBackup(s,value){const raw=JSON.stringify(value);storage.setItem(backupKey,raw);s.backupRaw=raw;}
 function fail(event,error){note(event,{result:'failed'});return {ok:false,error};}
 function protect(s){
