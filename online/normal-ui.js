@@ -86,9 +86,10 @@ function renderDetailStatus(context){
  info.querySelectorAll('.detailPrompt').forEach(e=>e.remove());
  const {choice='',reason='',guide=''}=context,error=detailNotice?.text||'';
  const text=choice?(choice+(error?'\n操作エラー：'+error:'')):reason||guide||(error?'操作エラー：'+error:'');
- if(!text)return;
+ if(!text){positionOpponentCard();return;}
  const el=document.createElement('div');el.className='detailPrompt'+(choice?' required':'');el.dataset.kind=choice?'required':reason?'reason':guide?'guide':'error';el.setAttribute('role',error&&!reason&&!guide?'alert':'status');el.textContent=text;info.prepend(el);
  if(changed)info.scrollTop=0;
+ positionOpponentCard();
 }
 function restoreNativePlane(board,wrap){
  // Release all presentation-owned projection state before any geometry reads.
@@ -178,6 +179,7 @@ function syncLayout(){
  const enemyZone=column?.querySelector(".kingZone.enemy"),enemyDock=app.querySelector(".enemyManaDock"),enemyMana=enemyZone?.querySelector(".manaStat")||enemyDock?.querySelector(".manaStat");
  if(enemyMana&&enemyDock&&enemyZone)(landscape?enemyDock:enemyZone).append(enemyMana);
  if(projected)fitProjection(wrap,infoDock);
+ positionBattleLog();
 }
 function screenPoint(element,relative){const r=element.getBoundingClientRect(),o=relative.getBoundingClientRect();return {x:r.left-o.left,y:r.top-o.top};}
 function mark(cell,name,x,y){let e=cell.querySelector('[data-plane-point="'+name+'"]');if(!e){e=document.createElement('span');e.className='planePoint';e.dataset.planePoint=name;e.setAttribute('aria-hidden','true');cell.append(e);}e.style.left=x+'%';e.style.top=y+'%';return e;}
@@ -193,7 +195,17 @@ landscapeQuery.addEventListener('change',queuePresentation);
 window.visualViewport?.addEventListener('resize',queuePresentation);
 function bindPresentation(){
  bindHandScroll();
- const log=document.querySelector('.layoutLog');if(log){log.open=false;log.addEventListener('toggle',()=>{$('latestAction').classList.toggle('log-expanded',log.open);positionBattleLog();queueTutorialPresentation();});if(typeof ResizeObserver!=='undefined')new ResizeObserver(positionBattleLog).observe(log.querySelector('.logPanel'));}
+ $('infoContent')?.addEventListener('scroll',positionOpponentCard,{passive:true});
+ const log=document.querySelector('.layoutLog');
+ if(log){
+  log.open=false;
+  log.addEventListener('toggle',()=>{
+   positionBattleLog();
+   if(log.open&&!document.body.classList.contains('tutorial-mode'))$('log').scrollTop=$('log').scrollHeight;
+   queueTutorialPresentation();
+  });
+  if(typeof ResizeObserver!=='undefined')new ResizeObserver(positionBattleLog).observe(log.querySelector('.logPanel'));
+ }
  const wrap=$('board')?.closest('.boardWrap');if(wrap&&typeof ResizeObserver!=='undefined')new ResizeObserver(queuePresentation).observe(wrap);
  syncLayout();
 }
@@ -223,7 +235,10 @@ function primaryBattleAction(events,{viewer,activeSide,before,definitions}){
  else text+=(event.type==='creature:ability-used'?piece?.type||'クリーチャー':'王')+'の能力を使用';
  return {event,card,text};
 }
-function setLatestAction(text='直近の行動はありません'){$('latestAction').textContent=text;}
+function setLatestAction(text='直近の行動はありません'){
+ $('latestActionText').textContent=text;
+ if(landscapeQuery.matches)positionBattleLog();
+}
 function restoreLatestAction(){
  const rows=$('log').querySelectorAll('[data-battle-action]');
  setLatestAction(rows[rows.length-1]?.textContent);
@@ -241,7 +256,7 @@ function presentBattleAction(events,context){
  return action.event;
 }
 
-const opponentCardDuration=1200,opponentCards=[];
+const opponentCardDuration=1000,opponentCards=[];
 let opponentCardTimer=null;
 function clearOpponentCards(){
  clearTimeout(opponentCardTimer);opponentCardTimer=null;opponentCards.length=0;
@@ -263,27 +278,101 @@ function showOpponentCard(){
   card.querySelector('.cost').prepend('クリーチャー / ');
   renderCreatureDetailImage(card,cardId,'opponentCardArt');
  }
- panel.replaceChildren(card);panel.hidden=false;
+ panel.replaceChildren(card);panel.hidden=false;positionOpponentCard();
  if(!matchMedia('(prefers-reduced-motion: reduce)').matches)card.animate([
   {opacity:0,transform:'translateY(3px)'},{opacity:1,transform:'none',offset:.1},
   {opacity:1,transform:'none',offset:.9},{opacity:0,transform:'none'}
  ],{duration:opponentCardDuration,fill:'both'});
  opponentCardTimer=setTimeout(showOpponentCard,opponentCardDuration);
 }
+function positionOpponentCard(){
+ const panel=$('opponentCard');if(!panel||panel.hidden)return;
+ const info=$('infoPanel').getBoundingClientRect(),viewport=window.visualViewport;
+ const x=viewport?.offsetLeft||0,y=viewport?.offsetTop||0;
+ const right=Math.min(info.right-4,x+(viewport?.width||innerWidth)-6);
+ let bottom=Math.min(info.bottom-4,y+(viewport?.height||innerHeight)-6);
+ const width=Math.max(1,Math.min(info.width-8,landscapeQuery.matches?260:Infinity));
+ panel.style.width=width+'px';
+ const height=panel.offsetHeight;
+ const detail=$('infoContent'),clip=detail.getBoundingClientRect();
+ const controls=[...document.querySelectorAll('#infoContent .detailPrompt,#infoContent .useCardButton,#actions:not(:empty)')]
+  .map(el=>{
+   const r=el.getBoundingClientRect();
+   return detail.contains(el)?{left:r.left,right:r.right,top:Math.max(r.top,clip.top),bottom:Math.min(r.bottom,clip.bottom)}:r;
+  }).filter(r=>r.right>r.left&&r.bottom>r.top);
+ const obstacles=[...document.querySelectorAll('.royalPedestal,.royalHP,.crownModel,.graveButton,#turnIndicator,#hand,#endTurn')]
+  .map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height);
+ // Keep the right edge. Move above controls that reach the anchor, or lift
+ // a little to clear nearby king/status elements before reducing the size.
+ for(const r of controls)if(r.left<right&&r.right>right-width&&r.bottom+3>=bottom&&r.top<bottom)bottom=r.top-3;
+ const liftFloor=bottom-32;
+ for(const r of obstacles){
+  if(r.left<right&&r.right+3>right-width*1.5&&r.bottom+3>bottom-height*1.5&&r.top<bottom&&r.top-3>=liftFloor)bottom=r.top-3;
+ }
+ let scale=Math.min(1.5,(right-x-6)/width,(bottom-y-6)/height);
+ for(const r of [...obstacles,...controls]){
+  if(r.left>=right||r.top>=bottom)continue;
+  scale=Math.min(scale,Math.max((right-r.right-3)/width,(bottom-r.bottom-3)/height));
+ }
+ panel.style.visibility=scale>0?'visible':'hidden';
+ panel.style.left=(right-width)+'px';
+ panel.style.top=(bottom-height)+'px';
+ panel.style.transform='scale('+Math.max(0,scale)+')';
+}
+function positionBattleOverlays(){positionBattleLog();positionOpponentCard();}
+window.addEventListener('resize',positionBattleOverlays);
+window.visualViewport?.addEventListener('resize',positionBattleOverlays);
+window.visualViewport?.addEventListener('scroll',positionBattleOverlays);
+window.addEventListener('scroll',positionBattleOverlays,{passive:true});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')clearOpponentCards();});
 window.addEventListener('pagehide',clearOpponentCards);
 document.addEventListener('p2b1:exit',clearOpponentCards);
+function fitLatestAction(latest,left,bottom){
+ latest.style.removeProperty('max-width');
+ const wrap=$('board')?.closest('.boardWrap'),max=latest.offsetWidth;
+ const size=parseFloat(wrap?.style.getPropertyValue('--logical-board'));
+ if(!max||!size)return;
+ const rect=wrap.getBoundingClientRect();
+ const origin=(axis,length)=>length/2+parseFloat(wrap.style.getPropertyValue('--plane-offset-'+axis));
+ const x=rect.left+origin('x',wrap.clientWidth),y=rect.top+origin('y',wrap.clientHeight);
+ const board=projectionShapes(size,presentationView==='left'?-45:0)[0].map(p=>({x:x+p.x,y:y+p.y}));
+ // Keep the two-line envelope in the gap beside the drawn board, even for a short headline.
+ const top=bottom-36;
+ let upper=max;
+ for(const el of document.querySelectorAll('.royalPedestal,.royalHP,.royalGrave .graveButton')){
+  const r=el.getBoundingClientRect();
+  if(r.width&&r.left>left&&r.bottom>top&&r.top<bottom)upper=Math.min(upper,r.left-left-2);
+ }
+ const overlaps=width=>intersectsRect(board,{x1:left-2,x2:left+width+2,y1:top,y2:bottom+2});
+ if(overlaps(upper)){
+  let low=0;
+  for(let i=0;i<9;i++){const mid=(low+upper)/2;if(overlaps(mid))upper=mid;else low=mid;}
+  upper=low;
+ }
+ latest.style.maxWidth=Math.max(16,Math.floor(upper))+'px';
+}
 function positionBattleLog(){
  const log=document.querySelector('.layoutLog'),panel=log?.querySelector('.logPanel');if(!panel)return;
- // Portrait is ordinary document flow. Never retain popup geometry, even closed.
- if(!landscapeQuery.matches||!log.open){for(const k of ['width','left','top','max-height','--log-space'])panel.style.removeProperty(k);return;}
- const r=log.querySelector('summary').getBoundingClientRect(),explaining=document.body.classList.contains('tutorial-mode')&&tutorialExplanation?.step===4&&tutorialExplanation.glow?.includes('#log');
+ const latest=$('latestAction');
+ if(!landscapeQuery.matches){
+  for(const key of ['left','top','max-width'])latest.style.removeProperty(key);
+ }
+ if(!landscapeQuery.matches||!log.open)for(const key of ['width','left','top','max-height','--log-space'])panel.style.removeProperty(key);
+ if(!landscapeQuery.matches)return;
+ const r=log.querySelector('summary').getBoundingClientRect();
+ const explaining=document.body.classList.contains('tutorial-mode')&&tutorialExplanation?.step===4&&tutorialExplanation.glow?.includes('#log');
  const width=Math.min(360,innerWidth-16,explaining?tutorialLogWidthCap??Infinity:Infinity);
- panel.style.width=width+'px';panel.style.left=Math.max(8,Math.min((explaining?tutorialLogLeft:null)??r.left,innerWidth-width-8))+'px';
+ const left=Math.max(8,Math.min((explaining?tutorialLogLeft:null)??r.left,innerWidth-width-8));
+ if(!log.open){
+  latest.style.left=left+'px';
+  fitLatestAction(latest,left,r.top-6);
+  latest.style.top=Math.max(8,r.top-6-latest.offsetHeight)+'px';
+  return;
+ }
+ panel.style.width=width+'px';panel.style.left=left+'px';
  let space=Math.max(64,Math.min(190,r.top-16));if(tutorialLogHeightCap!==null&&explaining)space=Math.min(space,tutorialLogHeightCap);
  panel.style.maxHeight=space+'px';panel.style.setProperty('--log-space',space+'px');panel.style.top=Math.max(8,Math.min(r.top-6,explaining&&tutorialLogBottomLimit!==null?tutorialLogBottomLimit:Infinity)-panel.offsetHeight)+'px';
 }
-window.addEventListener('resize',positionBattleLog);window.visualViewport?.addEventListener('resize',positionBattleLog);window.addEventListener('scroll',positionBattleLog,{passive:true});
 function tutorialSelectors(selectors){return selectors.map(selector=>{
  if(selector==='.kingZone.enemy .kingStat:not(.manaStat)')return '.royalHP.enemy';
  if(selector==='.kingZone.player .kingStat:not(.manaStat)')return '.royalHP.player';
@@ -518,6 +607,8 @@ function renderPieces(model){
  });
  for(const key of statusPhase.keys())if(!seenStatuses.has(key))statusPhase.delete(key);
  if(model.afterRender)model.afterRender();
+ if(landscapeQuery.matches&&!$('latestAction').closest('details').open)positionBattleLog();
+ positionOpponentCard();
  refreshTutorialGeometry();queueTutorialPresentation();
  if(document.body.classList.contains("projected-board"))refreshCellRings(cells,board.closest(".boardWrap"),board.closest(".boardWrap").querySelector(".boardGrid"));
 }

@@ -925,17 +925,15 @@ body:not(.layout-landscape) #app .manaStat b{font:700 11px/12px ui-monospace,mon
 .detailPrompt{position:relative;z-index:3;box-sizing:border-box;padding:7px 8px;margin:0 0 6px;border:1px solid #927344;border-radius:6px;background:#332c20;color:#ffe0ad;font-size:12px;line-height:1.4;white-space:pre-line;overflow-wrap:anywhere}
 .detailPrompt.required{position:sticky;top:0;background:#17364d;border-color:#76b8ea;color:#eef8ff}
 
-/* Reserve the same compact line whether the battle log is open or collapsed. */
-.latestAction{height:20px;margin:3px 0;padding:0 6px;border:1px solid #536071;border-radius:5px;background:#20252c;color:#e7edf6;font:600 12px/18px system-ui;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.latestAction.log-expanded{visibility:hidden}
-body.tutorial-mode .latestAction,body.tutorial-mode #opponentCard,#opponentCard[hidden]{display:none}
-body.layout-landscape:not(.tutorial-mode) #app{grid-template-rows:34px minmax(0,1fr) 20px clamp(80px,14dvh,104px)}
-body.layout-landscape .latestAction{grid-column:1/-1;grid-row:3;margin:0}
-body.layout-landscape:not(.tutorial-mode) .battleStrip{grid-row:4}
+/* A compact overlay shares the expanded log's anchor without reserving a row. */
+.layoutLog summary{position:relative}
+.latestAction{position:absolute;z-index:1100;top:calc(100% + 4px);left:0;width:min(calc(20em + 14px),calc(100vw - 16px));padding:1px 6px;border:1px solid #536071;border-radius:5px;background:#20252c;color:#e7edf6;font:600 12px/15px system-ui;pointer-events:none}
+.latestAction>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;max-height:30px;overflow:hidden;overflow-wrap:anywhere}
+body.layout-landscape .latestAction{position:fixed}
+.layoutLog[open] .latestAction,body.tutorial-mode .latestAction,body.tutorial-mode #opponentCard,#opponentCard[hidden]{display:none}
 
-/* The card sits over the detail area only. Prompts and controls stay on top. */
-body:not(.tutorial-mode) #infoPanel{position:relative}
-#opponentCard{position:absolute;z-index:2;inset:auto 3px 3px;max-height:calc(100% - 29px);overflow:hidden;pointer-events:none}
+/* The existing card is magnified from the info panel's bottom-right outside its clipping box. */
+#opponentCard{position:fixed;z-index:910;transform-origin:right bottom;pointer-events:none}
 #opponentCard .card{position:relative;width:100%;min-width:0;max-width:none;min-height:0;height:auto;margin:0;padding:6px;overflow:hidden;white-space:normal;overflow-wrap:anywhere;background:#283344;border:1px solid #b3c9e8;border-radius:7px;box-shadow:0 2px 8px #0008}
 #opponentCard .card.spell{background:#233f31}
 #opponentCard .card.enchant{background:#3c2e4d}
@@ -944,10 +942,9 @@ body:not(.tutorial-mode) #infoPanel{position:relative}
 #opponentCard .cost{font-size:11px;line-height:1.2}
 #opponentCard .desc{font-size:11px;line-height:1.3;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:8;overflow:hidden}
 #opponentCard .opponentCardArt{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:right;opacity:.22}
-body.layout-landscape #opponentCard{max-width:260px;left:auto;width:calc(100% - 6px)}
 body.layout-landscape #opponentCard .desc{font-size:13px}
-body:not(.tutorial-mode) #infoContent .detailPrompt{z-index:3}
-body:not(.tutorial-mode) #infoContent .useCardButton,#infoPanel #actions{position:relative;z-index:3}
+body:not(.tutorial-mode) #infoContent .detailPrompt{z-index:920}
+body:not(.tutorial-mode) #infoContent .useCardButton,#infoPanel #actions{position:relative;z-index:920}
 #infoPanel #actions:not(:empty){background:#222832}
 
 /* Screen-facing public combat information; no hit targets or board geometry. */
