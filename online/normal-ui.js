@@ -303,13 +303,13 @@ function positionOpponentCard(){
  const obstacles=[...document.querySelectorAll('.royalPedestal,.royalHP,.crownModel,.graveButton,#turnIndicator,#hand,#endTurn')]
   .map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height);
  // Keep the right edge. Move above controls that reach the anchor, or lift
- // a little to clear nearby king/status elements before reducing the size.
+ // a little to clear nearby king/status elements before shrinking to fit.
  for(const r of controls)if(r.left<right&&r.right>right-width&&r.bottom+3>=bottom&&r.top<bottom)bottom=r.top-3;
  const liftFloor=bottom-32;
  for(const r of obstacles){
-  if(r.left<right&&r.right+3>right-width*1.5&&r.bottom+3>bottom-height*1.5&&r.top<bottom&&r.top-3>=liftFloor)bottom=r.top-3;
+  if(r.left<right&&r.right+3>right-width&&r.bottom+3>bottom-height&&r.top<bottom&&r.top-3>=liftFloor)bottom=r.top-3;
  }
- let scale=Math.min(1.5,(right-x-6)/width,(bottom-y-6)/height);
+ let scale=Math.min(1,(right-x-6)/width,(bottom-y-6)/height);
  for(const r of [...obstacles,...controls]){
   if(r.left>=right||r.top>=bottom)continue;
   scale=Math.min(scale,Math.max((right-r.right-3)/width,(bottom-r.bottom-3)/height));
@@ -317,7 +317,7 @@ function positionOpponentCard(){
  panel.style.visibility=scale>0?'visible':'hidden';
  panel.style.left=(right-width)+'px';
  panel.style.top=(bottom-height)+'px';
- panel.style.transform='scale('+Math.max(0,scale)+')';
+ panel.style.transform=scale<1?'scale('+Math.max(0,scale)+')':'';
 }
 function positionBattleOverlays(){positionBattleLog();positionOpponentCard();}
 window.addEventListener('resize',positionBattleOverlays);
