@@ -947,6 +947,11 @@ body:not(.tutorial-mode) #infoContent .detailPrompt{z-index:920}
 body:not(.tutorial-mode) #infoContent .useCardButton,#infoPanel #actions{position:relative;z-index:920}
 #infoPanel #actions:not(:empty){background:#222832}
 
+#log:has([data-battle-action]){overflow-anchor:none}
+.battleLogTurn{border-top:1px solid #536071;padding-top:3px;margin-top:3px}
+.battleLogHeading{font-weight:600}
+.battleLogResult{padding-left:.65em}
+
 /* Screen-facing public combat information; no hit targets or board geometry. */
 .overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-name:-52px;--hud-foot:0px;transform:translate(-50%,-50%);pointer-events:none}
 /* Match the overlay centre to its foot marker; do not inherit the older -76% projected shift. */

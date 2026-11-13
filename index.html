@@ -992,6 +992,11 @@ body:not(.tutorial-mode) #infoContent .detailPrompt{z-index:920}
 body:not(.tutorial-mode) #infoContent .useCardButton,#infoPanel #actions{position:relative;z-index:920}
 #infoPanel #actions:not(:empty){background:#222832}
 
+#log:has([data-battle-action]){overflow-anchor:none}
+.battleLogTurn{border-top:1px solid #536071;padding-top:3px;margin-top:3px}
+.battleLogHeading{font-weight:600}
+.battleLogResult{padding-left:.65em}
+
 /* Screen-facing public combat information; no hit targets or board geometry. */
 .overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-name:-52px;--hud-foot:0px;transform:translate(-50%,-50%);pointer-events:none}
 /* Match the overlay centre to its foot marker; do not inherit the older -76% projected shift. */
@@ -1067,7 +1072,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-creature-balance-v53">ver p3-creature-balance-v53</div>
+  <div class="titleVersion" data-build="p3-battle-log-v54">ver p3-battle-log-v54</div>
   <p id="benchmarkTrialLabel">クリーチャー基準・試験版</p><div class="titleMenu">
     <button type="button" disabled aria-describedby="tutorialTrialNotice">チュートリアル</button><p id="tutorialTrialNotice">バランス試験中のためチュートリアルは一時停止しています</p>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -1382,43 +1387,257 @@ function startPlayPresentation(){
 }
 // The projected stream also includes the legacy identity of a face-down Mine.
 function visibleCardUse(event,viewer){return event.cardId!=='マイン'||event.side===viewer;}
-function primaryBattleAction(events,{viewer,activeSide,before,definitions}){
- const first=(...types)=>events.find(event=>types.includes(event.type));
+// Only format public fields. In online play, a before/after difference is a
+// net change, not an individual hit or proof that a missing token was defeated.
+function describeBattleAction(events,{viewer,activeSide,before,after,turn,definitions}){
+ const sides=['p','c'],other=side=>side==='p'?'c':'p';
+ const label=side=>side===viewer?'あなた':'相手';
+ const name=(piece,fallback='クリーチャー')=>piece?.type||fallback;
+ const unit=(piece,fallback)=>sides.includes(piece?.side)?label(piece.side)+'の'+name(piece,fallback):name(piece,fallback);
+ const king=side=>label(side)+'の王';
+ const board=(before?.board||[]).slice();
+ const finalBoard=after?.board||[];
+ const initialBoard=board.slice();
+ const hpText=(from,to)=>Number.isFinite(from)&&Number.isFinite(to)?'（HP '+Math.max(0,from)+'→'+Math.max(0,to)+'）':'';
+ const kingHP=Object.fromEntries(sides.map(side=>[side,before?.players?.[side]?.kingHp]));
+ const find=(pieces,id)=>id==null?null:pieces.find(p=>p?.sourceInstanceId===id);
+ const publicEnchant=e=>e&&!e.hidden&&e.cardId!=='マイン';
+ const priorEnchant=new Map((before?.enchantments||[]).filter(publicEnchant).map(e=>[e.instanceId,e]));
+ const finalEnchant=new Map((after?.enchantments||[]).filter(publicEnchant).map(e=>[e.instanceId,e]));
+ const shownEffects=new Set(),shownWeak=new Set(),shownDamage=new Map(),shownDefeat=new Set(),shownToken=new Set();
+ const manaEvents=new Set();
+ const first=(...types)=>events.find(e=>types.includes(e.type));
  const card=events.find(e=>e.type==='card:played'&&visibleCardUse(e,viewer)&&Object.hasOwn(definitions,e.cardId));
- const event=card||first('turn:started')||first('creature:ability-used','king:ability-used','king:attack-targeted')
-  ||first('creature:attacked','creature:attack-resolved')||first('creature:moved')||first('game:over');
- if(!event)return null;
- const piece=before?.[event.from],label=side=>side===viewer?'あなた':'相手';
- const side=event.type==='creature:moved'?activeSide:piece?.side??event.side??activeSide;
- let text=label(side)+'：';
- if(event===card)text+=card.cardId+(definitions[card.cardId].type==='creature'?'を召喚':'を使用');
- else if(event.type==='turn:started')text=label(side)+'のターン開始';
- else if(event.type==='creature:moved')text+=(piece?.type||'クリーチャー')+(piece&&piece.side!==side?'を移動':'が移動');
- else if(event.type==='creature:attacked'||event.type==='creature:attack-resolved')
-  text+=(piece?.type||'クリーチャー')+'が'+(event.to==null?'王':before?.[event.to]?.type||'クリーチャー')+'を攻撃';
- else if(event.type==='game:over')text='対戦終了：'+event.reason;
- else text+=(event.type==='creature:ability-used'?piece?.type||'クリーチャー':'王')+'の能力を使用';
- return {event,card,text};
+ const hiddenCard=events.some(e=>e.type==='card:played'&&!visibleCardUse(e,viewer));
+ const start=first('turn:started'),turnEnd=first('turn:ended');
+ const attack=first('creature:attacked','creature:attack-resolved');
+ const ability=first('creature:ability-used','king:ability-used','king:attack-targeted'),move=first('creature:moved');
+ const end=first('game:over');
+ const primary=card||start||ability||attack||move;
+ const lines=[],defeated=[];
+ let title='',short='',drawSide=null,drawCount=0;
+ const add=(text,summary='')=>lines.push({text,summary});
+ function flushDraw(){
+  if(drawCount)add(label(drawSide)+'が'+drawCount+'枚ドロー');
+  drawCount=0;
+ }
+ const position=k=>Math.floor((viewer==='p'?k:24-k)/5)+1+'行'+((viewer==='p'?k:24-k)%5+1)+'列';
+ const targetName=(target,pieces)=>target?.kind==='king'?king(target.side)
+  :target?.kind==='creature'?unit(find(pieces,target.instanceId))
+  :target?.kind==='cell'?position(target.k):target?.kind==='global'?'盤面全体':'';
+ const pieceFor=(k,id)=>find(board,id)||find(initialBoard,id)||find(finalBoard,id)||board[k];
+ const knownTarget=e=>e.targetKind==='king'||e.to===null?king(e.side||other(e.attacker?.side||board[e.from]?.side||activeSide))
+  :unit(e.target||board[e.to]);
+ const causeNames={salamander_counter:'反撃',attack_destroy_damaged:'破壊能力'};
+ if(card)title=label(card.side)+'：'+card.cardId+(definitions[card.cardId].type==='creature'?'を召喚':'を使用');
+ else if(start)title='ターン '+(turn??after?.turn??'')+'｜'+label(start.side)+'のターン開始';
+ else if(ability){
+  const source=ability.type==='creature:ability-used'?name(board[ability.from]):'王';
+  title=label(ability.side)+'：'+source+(ability.type==='king:attack-targeted'?'が'+unit(board[ability.cell])+'を攻撃':'の能力を使用');
+  if(ability.type==='king:attack-targeted')short=label(ability.side)+'：王が攻撃';
+ }else if(attack){
+  const actor=attack.attacker||board[attack.from];
+  const subject=label(actor?.side||activeSide)+'：'+name(actor);
+  title=subject+'が'+knownTarget(attack)+'を攻撃';
+  short=subject+'が攻撃';
+ }else if(move){
+  const piece=board[move.from];
+  title=label(activeSide)+'：'+(piece?.side===activeSide?name(piece)+'が移動':unit(piece)+'を移動');
+ }else if(turnEnd)title=label(turnEnd.side)+'のターン終了';
+ function resource(side,from,to){
+  if(!from||!to)return;
+  const changes=[['mana','未使用マナ'],['maxMana','最大マナ']].flatMap(([key,label])=>
+   !Number.isFinite(from[key])||!Number.isFinite(to[key])||from[key]===to[key]?[]:[label+' '+from[key]+'→'+to[key]]);
+  if(changes.length)add(label(side)+'の'+changes.join('、'));
+ }
+ let priorMove=null;
+ for(const e of events){
+  if(e.type==='card:drawn'){
+   if(drawCount&&e.side!==drawSide)flushDraw();
+   drawSide=e.side;drawCount++;continue;
+  }
+  // Consecutive draws can be counted together. Other results retain event order.
+  flushDraw();
+  switch(e.type){
+   case 'creature:moved': {
+    const swapping=priorMove?.displaced&&priorMove.from===e.to&&priorMove.to===e.from;
+    const piece=swapping?priorMove.displaced:board[e.from];
+    if(e!==primary&&piece)add(unit(piece)+'が移動');
+    const displaced=board[e.to];board[e.to]=piece;
+    if(!swapping)board[e.from]=null;
+    priorMove={from:e.from,to:e.to,displaced};break;
+   }
+   case 'creature:summoned': {
+    const final=finalBoard[e.cell],id=final?.type===e.cardId&&final.side===e.side?final.sourceInstanceId:
+     events.find(d=>d.type==='creature:defeated'&&d.cell===e.cell&&d.cardId===e.cardId)?.instanceId;
+    board[e.cell]={type:e.cardId,side:e.side,sourceInstanceId:id,hp:definitions[e.cardId]?.hp};
+    if(e.token){add(unit(board[e.cell])+'を生成');if(id!=null)shownToken.add(id);}
+    break;
+   }
+   case 'damage:guarded':
+    add(unit(board[e.guardian])+'が'+unit(board[e.cell])+'への'+e.amount+'ダメージを肩代わり');break;
+   case 'creature:damaged': {
+    const piece=board[e.cell],old=piece?.hp,next=Number.isFinite(old)?old-e.amount:undefined;
+    const target=unit(piece);
+    const entry={text:target+'に'+e.amount+'ダメージ'+hpText(old,next),summary:target+'に'+e.amount+'ダメージ'};
+    lines.push(entry);shownDamage.set(e.cell,entry);
+    if(piece)board[e.cell]={...piece,hp:next};
+    break;
+   }
+   case 'creature:defeated': {
+    const piece=pieceFor(e.cell,e.instanceId),target=unit(piece&&{...piece,type:e.cardId||piece.type},e.cardId);
+    const hit=shownDamage.get(e.cell);
+    if(hit&&lines.at(-1)===hit){hit.text+='、撃破';hit.summary='';}
+    else add(target+'を撃破');
+    defeated.push(target);
+    shownDefeat.add(e.instanceId);shownDamage.delete(e.cell);board[e.cell]=null;break;
+   }
+   case 'king:damaged':
+    add(king(e.side)+'に'+e.amount+'ダメージ'+hpText(kingHP[e.side],e.hp),king(e.side)+'に'+e.amount+'ダメージ');
+    kingHP[e.side]=e.hp;break;
+   case 'king:hp-set':
+    if(e.before!==e.after)add(king(e.side)+'のHP '+e.before+'→'+e.after);
+    kingHP[e.side]=e.after;break;
+   case 'creature:healed':
+   case 'king:healed': {
+    const piece=find(board,e.instanceId),target=e.type==='king:healed'?king(e.side):unit(piece);
+    if(e.amount>0)add(target+'を'+e.amount+'回復'+hpText(e.hp-e.amount,e.hp));
+    if(piece)board[board.indexOf(piece)]={...piece,hp:e.hp};
+    else if(e.type==='king:healed')kingHP[e.side]=e.hp;
+    break;
+   }
+   case 'mana:gained':
+   case 'mana:changed':
+    if(e.before?.mana!==e.after?.mana||e.before?.maxMana!==e.after?.maxMana){
+     resource(e.side,e.before,e.after);
+     manaEvents.add(e.side);
+    }
+    break;
+   case 'creature:weakened': {
+    const changed=finalBoard.filter(p=>p?.type===e.creature&&p.paralyzed&&
+     !find(initialBoard,p.sourceInstanceId)?.paralyzed&&!shownWeak.has(p.sourceInstanceId));
+    if(changed.length===1){shownWeak.add(changed[0].sourceInstanceId);add(unit(changed[0])+'に衰弱を付与');}
+    else if(changed.length===0&&!finalBoard.some(p=>p?.type===e.creature&&shownWeak.has(p.sourceInstanceId)))add(e.creature+'に衰弱を付与');
+    break;
+   }
+   case 'creature:controller-changed':
+   case 'creature:promoted': {
+    const old=e.before,next=e.after;
+    if(e.type==='creature:promoted')add(unit(old)+'が'+e.to+'に変身'+hpText(old?.hp,next?.hp));
+    else add(unit(old)+'の支配権が'+label(e.to)+'へ移動');
+    if(board[e.cell]?.sourceInstanceId===old?.sourceInstanceId)board[e.cell]=next;
+    break;
+   }
+   case 'enchantment:cast':
+   case 'enchantment:removed':
+   case 'enchantment:expired': {
+    if(e.cardId==='マイン')break;
+    const cast=e.type==='enchantment:cast',effect=(cast?finalEnchant:priorEnchant).get(e.instanceId);
+    const target=targetName(effect?.target,cast?finalBoard:initialBoard);
+    const verb=cast?'を付与':e.reason==='dispelled'?'を解除':e.reason==='creature-defeated'||e.reason==='invalid-target'?'が解除':'の効果が終了（期限切れ）';
+    add((target?target+'の':'')+e.cardId+verb);
+    shownEffects.add(e.instanceId);break;
+   }
+   case 'enchantment:triggered':
+    if(e.cardId==='マイン')add('マインが発動');break;
+   case 'ability:triggered':
+    if(causeNames[e.ability])add(unit(board[e.cell])+'の'+causeNames[e.ability]+'が発動');break;
+   case 'dispel:resolved':
+    if(!e.removed)add('解除できる効果なし');break;
+   case 'pressure:resolved':
+    if(!e.success)add('圧殺の発動条件を満たさず不発');break;
+  }
+ }
+ flushDraw();
+ if(after){
+  for(const next of finalBoard){
+   if(!next)continue;
+   const id=next.sourceInstanceId,old=find(initialBoard,id),tracked=find(board,id);
+   if(old&&tracked&&tracked.type!==next.type)add(unit(tracked)+'が'+next.type+'に変身');
+   if(old&&tracked&&tracked.side!==next.side)add(unit(tracked)+'の支配権が'+label(next.side)+'へ移動');
+   if(old&&tracked?.type===next.type&&tracked.hp!==next.hp){
+    const change=unit(next)+'のHP '+tracked.hp+'→'+next.hp;
+    add(change,change);
+   }
+   if(!old&&!shownToken.has(id)&&definitions[next.type]?.token)add(unit(next)+'を生成');
+   if(!shownWeak.has(id)&&!!old?.paralyzed!==!!next.paralyzed)add(unit(next)+(next.paralyzed?'に衰弱を付与':'の衰弱が解除'));
+   if((next.poisonTurns||0)>(old?.poisonTurns||0))add(unit(next)+'に毒を付与');
+   else if(old?.poisonTurns&&!next.poisonTurns)add(unit(next)+'の毒が解除');
+  }
+  // A matching public graveyard instance is evidence of defeat on the
+  // current rules path. A disappearance by itself has no such meaning.
+  const graveyard=new Map(sides.flatMap(side=>(after.players?.[side]?.graveyard||[]).map(card=>[card.instanceId,card])));
+  for(const old of initialBoard){
+   if(!old||shownDefeat.has(old.sourceInstanceId)||find(finalBoard,old.sourceInstanceId))continue;
+   if(graveyard.get(old.sourceInstanceId)?.cardId===old.type){
+    add(unit(old)+'を撃破');defeated.push(unit(old));
+   }else add(unit(old)+'が戦場から離れました');
+  }
+  for(const [id,e] of finalEnchant)if(!priorEnchant.has(id)&&!shownEffects.has(id)){
+   const target=targetName(e.target,finalBoard);
+   add((target?target+'の':'')+e.cardId+'を付与');
+  }
+  for(const [id,e] of priorEnchant)if(!finalEnchant.has(id)&&!shownEffects.has(id))add(e.cardId+'の効果が終了');
+  for(const side of sides){
+   if(!hiddenCard&&!manaEvents.has(side))resource(side,before?.players?.[side],after.players?.[side]);
+   const next=after.players?.[side]?.kingHp,old=kingHP[side];
+   if(Number.isFinite(old)&&Number.isFinite(next)&&old!==next)add(king(side)+'のHP '+old+'→'+next);
+  }
+ }
+ if(end){
+  const outcome=end.winner==null?'引き分け':end.winner===viewer?'あなたの勝利':'相手の勝利';
+  const reasons={KING_HP_ZERO:'王のHPが0',DECK_EXHAUSTED:'山札切れ',DRAW_FAILED:'山札切れ',SURRENDER:label(other(end.winner))+'が投了',
+   SIMULTANEOUS_LOSS:'双方が敗北条件を満たした',SEQUENTIAL_LOSS:'敗北条件を満たした',STATE_LOSS:'敗北条件を満たした'};
+  const text='対戦終了｜'+outcome+(reasons[end.reason]?'（'+reasons[end.reason]+'）':'');
+  if(title)add(text,outcome);else title=text;
+ }
+ if(!title&&lines.length)title=lines.shift().text;
+ if(!title)return null;
+ const result=defeated.length?defeated[0]+'が撃破された'+(defeated.length>1?'（計'+defeated.length+'体）':'')
+  :lines.find(line=>line.summary)?.summary;
+ return {title,summary:result?(short||title)+' → '+result:title,lines,card,turn:!!start};
 }
+
 function setLatestAction(text='直近の行動はありません'){
  $('latestActionText').textContent=text;
  if(landscapeQuery.matches)positionBattleLog();
 }
 function restoreLatestAction(){
  const rows=$('log').querySelectorAll('[data-battle-action]');
- setLatestAction(rows[rows.length-1]?.textContent);
+ setLatestAction(rows[rows.length-1]?.dataset.summary);
+}
+function appendBattleLog(row){
+ const log=$('log');
+ const atEnd=log.scrollHeight-log.clientHeight-log.scrollTop<=3;
+ const top=log.scrollTop;
+ // Take offsets before changing the bounded history so a reader can stay
+ // on the same surviving line when old entries are removed.
+ const remove=Math.max(0,log.children.length-99);
+ const removedHeight=remove?(log.children[remove]?.offsetTop??0)-log.firstElementChild.offsetTop:0;
+ log.append(row);
+ for(let i=0;i<remove;i++)log.firstElementChild.remove();
+ log.scrollTop=atEnd?log.scrollHeight:Math.max(0,top-removedHeight);
+}
+function battleLogNotice(text){
+ const row=document.createElement('div');
+ row.textContent=text;appendBattleLog(row);
 }
 function presentBattleAction(events,context){
- const action=primaryBattleAction(events,context);
- if(!action)return null;
- const row=document.createElement('div');
- row.dataset.battleAction='';row.dataset.revision=context.revision;
- row.textContent=action.text;$('log').append(row);setLatestAction(action.text);
+ const action=describeBattleAction(events,context);
+ if(!action)return;
+ const row=document.createElement('div'),heading=document.createElement('div');
+ row.dataset.battleAction='';row.dataset.revision=context.revision;row.dataset.summary=action.summary;
+ if(action.turn)row.className='battleLogTurn';
+ heading.className='battleLogHeading';heading.textContent=action.title;row.append(heading);
+ for(const line of action.lines){
+  const result=document.createElement('div');
+  result.className='battleLogResult';result.textContent='→ '+line.text;row.append(result);
+ }
+ appendBattleLog(row);setLatestAction(action.summary);
  if(context.animate&&action.card&&action.card.side!==context.viewer&&['p','c'].includes(action.card.side)&&document.visibilityState==='visible'){
   const {cardId}=action.card,definition=context.definitions[cardId];
   if((definition.deckType??'normal')==='normal'&&['creature','spell','enchant'].includes(definition.type))enqueueOpponentCard(cardId,definition);
  }
- return action.event;
 }
 
 const opponentCardDuration=1000,opponentCards=[];
@@ -1911,7 +2130,7 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,visibleCardUse,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearOpponentCards();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearOpponentCards();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst});
 })();
 </script><script>
 (function(){const modules={"./game-core.cjs":function(module,exports,require){
@@ -5167,7 +5386,7 @@ function sh(a){for(let i=a.length-1;i;i--){let j=Math.floor(GameCore.random()*(i
 function defaultDeck(){const a=Object.entries(CARD_DEFINITIONS).filter(([,card])=>card.deckType==="normal").flatMap(([name,card])=>Array(card.deckCount||0).fill(name));if(a.length!==40)throw Error("標準デッキ枚数が40枚ではありません: "+a.length);return sh(a)}
 function playerDeck(){const a=DeckRepository.toCardIds(DeckRepository.loadConfirmed());if(!a||a.length!==40)return defaultDeck();return sh(a)}
 function deck(){return defaultDeck()}
-function log(x){$("log").innerHTML+="<div>"+x+"</div>";$("log").scrollTop=$("log").scrollHeight}
+function log(x){if(!TutorialController.active)return;$("log").innerHTML+="<div>"+x+"</div>";$("log").scrollTop=$("log").scrollHeight}
 // CPU presentation adapter. Core candidates determine availability; reasons only explain it.
 function cpuNoticeScope(){return JSON.stringify([S.side,S.turn,S.card,S.hand[S.card],S.piece,S.board[S.piece]?.sourceInstanceId,S.inspect,S.teleportSource,S.sorcererMode,S.kingAttackMode,S.tokenPlacement?.cell,S.pendingChoice?.type,S.gameOver,S.manaBySide,S.board.map(p=>p?[p.sourceInstanceId,p.hp,p.m,p.a]:null),S.enchantments,TutorialController.active?TutorialController.phase:null]);}
 function msg(x,kind='error'){NormalGameUI.setNotice(x,cpuNoticeScope(),kind);}
@@ -5179,18 +5398,30 @@ function syncCpuSelectionStatus(){
  NormalGameUI.renderDetailStatus({reason,choice,guide:CARD_DEFINITIONS[card]?.creaturePair?NormalGameUI.creaturePairGuide(CARD_DEFINITIONS[card].creaturePair,S.teleportSource!=null):card&&S.teleportSource!=null?'転移先の空きマスを選んでください。':'',scope:cpuNoticeScope()});
 }
 
-let cpuBattleBefore=[],cpuBattleRevision=-1;
-function rememberCpuBattleBoard(){cpuBattleBefore=S.board.map(piece=>piece&&{type:piece.type,side:piece.side});}
+let cpuBattleBefore=null,cpuBattleRevision=-1;
+function rememberCpuBattleBoard(){
+ if(S.pendingChoice?.type==='guardian')return;
+ const board=S.board.map(p=>p&&{...p});
+ const players=Object.fromEntries(['p','c'].map(side=>[side,{kingHp:S[side+'Hp'],mana:S.manaBySide[side],maxMana:S.maxManaBySide[side]}]));
+ const enchantments=S.enchantments.filter(e=>!e.hidden&&e.cardId!=='マイン').map(e=>({
+  ...e,instanceId:String(e.instanceId),
+  target:e.target?.kind==='creature'?{kind:'creature',instanceId:e.target.ref?.sourceInstanceId}:e.target
+ }));
+ cpuBattleBefore={board,players,enchantments};
+}
 function restoreCpuBattleAction(){
  cpuBattleRevision=S.revision??-1;
  NormalGameUI.restoreLatestAction();
 }
-function presentCpuBattleAction(result){
- const revision=result.state?.revision;
- if(TutorialController.active||$('app').classList.contains('gameScreenHidden')||!Number.isSafeInteger(revision)||revision<=cpuBattleRevision)return;
+function presentCpuBattleAction(result,initial=false){
+ const state=result.state,revision=state?.revision;
+ if(TutorialController.active||(!initial&&$('app').classList.contains('gameScreenHidden'))||!Number.isSafeInteger(revision)||revision<=cpuBattleRevision)return;
  cpuBattleRevision=revision;
- const events=R12Core.projectEvents(result.events,'p');
- NormalGameUI.presentBattleAction(events,{viewer:'p',activeSide:S.side,before:cpuBattleBefore,definitions:CARD_DEFINITIONS,revision,animate:!S.gameOver});
+ const events=initial?[{type:'turn:started',side:state.activeSide}]:result.events;
+ // An empty guardian revision is a staged choice. Keep the pre-command
+ // snapshot until the committed events for the original action arrive.
+ if(events.length)NormalGameUI.presentBattleAction(events,{viewer:'p',activeSide:state.activeSide,before:initial?null:cpuBattleBefore,
+  after:state,definitions:CARD_DEFINITIONS,revision,animate:!S.gameOver});
  rememberCpuBattleBoard();
 }
 
@@ -5605,10 +5836,10 @@ function decodeResolutionState(core){return R11Exchange.importState(core,{resolv
 function combatStateView(){return {board:S.board,players:{p:{mana:S.manaBySide.p},c:{mana:S.manaBySide.c}},enchantments:S.enchantments||[],abilityControls:S.abilityControls,modifiers:S.modifiers,activeSide:S.side,server:{gameOver:S.gameOver,pendingChoice:S.pendingChoice,pendingSummon:S.pendingSummon||S.tokenPlacement,pendingEntry:S.pendingEntry||S.pendingEntryHtml,effectQueue:S.effectQueue,pendingCardTransfers:S.pendingCardTransfers}};}
 function combatRuntime(){return {resolving:EffectEngine.resolving,queue:EffectEngine.queue,summonQueue:pendingSummonAbilities};}
 function r10ResolutionBusy(){return !!(EffectEngine.resolving||EffectEngine.queue.length||pendingSummonAbilities.length);}
-function publishCoreCommand(result){
+function publishCoreCommand(result,initial=false){
   if(!result.ok)return false;
-  presentCpuBattleAction(result);
-  for(const e of result.events){const {type,...detail}=e;GameEvents.emit(type,{...detail,coreResolved:true});if(type==="damage:guarded")log("献身的なガーディアンが"+detail.amount+"ダメージを肩代わり。");if(type==="creature:weakened")log(detail.creature+"が衰弱。");}
+  presentCpuBattleAction(result,initial);
+  for(const e of result.events){const {type,...detail}=e;GameEvents.emit(type,{...detail,coreResolved:true});}
   if(S.gameOver){const drawFailed=result.events.some(e=>e.type==='game:over'&&['DRAW_FAILED','DECK_EXHAUSTED'].includes(e.reason));if(S.winner==='p')win(drawFailed?'CPUの山札切れ':'相手の王のHPが0になりました。',true);else lose(drawFailed?'山札切れ':'あなたの王のHPが0になりました。',true);}
   return true;
  }
@@ -6748,12 +6979,10 @@ async function runTacticalCpu(difficulty) {
         finishCpuTurn();
         return;
       }
-      const actor = S.board[action.from]?.type;
       const result = R4Command.execute(S, action, CARD_DEFINITIONS);
       if (!result.ok) throw Error(result.code);
       played++;
       publishCoreCommand(result);
-      describeTacticalCpuAction(action, result.events, actor);
       render();
       if (!alive()) return;
       for (const event of result.events) {
@@ -6771,27 +7000,6 @@ async function runTacticalCpu(difficulty) {
     if (!S.pendingChoice && !S.pendingSummon && !S.tokenPlacement && !S.pendingEntry && !S.pendingEntryHtml) finishCpuTurn();
   } finally {
     if (tacticalCpuEpoch === epoch) tacticalCpuEpoch = null;
-  }
-}
-
-function describeTacticalCpuAction(action, events, actor) {
-  if (!NormalGameUI.visibleCardUse({side:action.side,cardId:action.cardId}, 'p')) return;
-  const text = action.type === 'summon' ? action.cardId + 'を召喚。'
-    : action.cardId ? action.cardId + 'を使用。'
-    : action.type === 'move' ? actor + 'が移動。'
-    : action.type === 'attack_king' ? actor + 'が王を攻撃。'
-    : action.type === 'attack_creature' ? actor + 'がクリーチャーを攻撃。'
-    : action.type === 'chooseEffectCell' ? '移動先を確定。'
-    : action.type === 'chooseTokenCell' ? '生成先を確定。'
-    : action.type === 'choosePromotion' ? (action.accept ? '暗殺者に変身。' : '変身しない。')
-    : (actor || '王') + 'の能力を使用。';
-  log((action.side === 'c' ? 'CPU：' : 'あなた：') + text);
-  for (const event of events) {
-    if (event.type === 'king:damaged') {
-      log((event.side === 'p' ? 'あなた' : 'CPU') + 'の王に' + event.amount + 'ダメージ。');
-    } else if (event.type === 'creature:damaged') {
-      log((event.cardId || 'クリーチャー') + 'に' + event.amount + 'ダメージ。');
-    }
   }
 }
 
@@ -6945,7 +7153,7 @@ $("playAgain").onclick=()=>{
   sessionStorage.setItem("cardTacticsStartInGame","1");
   location.reload();
 };
-function initializeCpuDeckMatch(){initializeMatchRandom();S.deck=playerDeck();S.cDeck=CpuDeckSettings.forMatch();publishCoreCommand(R12Core.initializeLegacyMatch(S));log("ゲーム開始。初期手札"+S.hand.length+"枚。");render();}
+function initializeCpuDeckMatch(){initializeMatchRandom();S.deck=playerDeck();S.cDeck=CpuDeckSettings.forMatch();publishCoreCommand(R12Core.initializeLegacyMatch(S),true);render();}
 
 
 // Visual settings: deliberately independent from game rules/state.
@@ -7039,7 +7247,7 @@ $('undoOne').onclick=()=>undoOneAction();
  }
  function resetSession(){session++;operation=null;sent=false;pending=false;inFlight=false;ended=false;reason=null;appliedSide=null;close();}
  entry.onclick=open;keep.onclick=cancel;document.getElementById('surrenderClose').onclick=cancel;confirm.onclick=submit;dialog.addEventListener('cancel',e=>{e.preventDefault();cancel();});
- const originalPublisher=publishCoreCommand;publishCoreCommand=function(result){const ok=originalPublisher(result);refresh();if(ok&&S.gameOver&&reason==='SURRENDER')document.getElementById('resultText').textContent=appliedSide==='p'?'投了しました。':'相手が投了しました。';return ok;};
+ const originalPublisher=publishCoreCommand;publishCoreCommand=function(result,initial){const ok=originalPublisher(result,initial);refresh();if(ok&&S.gameOver&&reason==='SURRENDER')document.getElementById('resultText').textContent=appliedSide==='p'?'投了しました。':'相手が投了しました。';return ok;};
  const originalRender=render;render=function(...args){const result=originalRender.apply(this,args);refresh();return result;};
  const originalTutorialStart=TutorialController.start;TutorialController.start=function(...args){resetSession();return originalTutorialStart.apply(this,args);};
  GameEvents.on('surrender:applied',e=>{appliedSide=e.detail.side;});GameEvents.on('game:over',e=>{reason=e.detail.reason;refresh();});
