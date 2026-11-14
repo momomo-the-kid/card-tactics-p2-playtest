@@ -20,8 +20,8 @@ function parse(raw){try{const state=JSON.parse(raw);return valid(state)?state:nu
 function normalize(state){state=copy(state);for(const slot of state.slots)slot.draft=rules.normalize(slot.draft);state.active.counts=rules.normalize(state.active.counts);return state;}
 function firstSlot(name,counts){return {version:1,slots:[{id:'deck-1',name,draft:copy(counts)}],active:{slotId:'deck-1',name,counts:copy(counts)}};}
 const initialCounts=Object.freeze({
- オルトロス:2,ソーサラー:2,チャリオット:2,ディアブロ:2,バーサーク:2,ファイヤーボルト:2,ホープ:4,マナ:2,
- 凱旋の英雄:1,剣聖:1,占い師:1,戦狼:2,盗賊:2,突風:2,踊り子:2,転移魔法:1,金級兵:4,銀級兵:4,隠密:2
+ オルトロス:2,ソーサラー:2,チャリオット:2,ディアブロ:1,バーサーク:1,ファイヤーボルト:2,ホープ:4,前線兵:2,
+ 剣聖:1,占い師:1,戦術指揮官:1,槍兵:2,盗賊:2,竜巻:2,精鋭兵:2,踊り子:2,転移魔法:1,金級兵:4,銀級兵:4,隠密:2
 });
 function legacy(){
  const c=get(oldConfirmed),d=get(oldDraft),state=firstSlot('標準デッキ',rules.defaultCounts());let error='';
