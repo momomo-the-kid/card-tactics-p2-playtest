@@ -1168,7 +1168,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-attack-damage-v66">ver p3-attack-damage-v66</div>
+  <div class="titleVersion" data-build="p3-self-damage-v67">ver p3-self-damage-v67</div>
   <p id="benchmarkTrialLabel">クリーチャー基準・試験版</p><div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -1799,20 +1799,28 @@ function showDamageNumber(target,amount){
  positionAttackDamage();
  layer.append(element);
 }
-function presentAttackDamage(events,viewer){
+function presentDamageNumbers(events,viewer){
  if(document.visibilityState!=='visible')return;
- for(const [i,attack] of events.entries()){
-  if(attack.type!=='creature:attacked')continue;
+ for(const [i,event] of events.entries()){
+  if(event.selfInflicted===true){
+   if(event.type==='king:damaged'&&['p','c'].includes(event.side))
+    showDamageNumber(event.side===viewer?'player':'enemy',event.amount);
+   if(event.type==='creature:damaged'&&Number.isInteger(event.cell)&&event.cell>=0&&event.cell<25)
+    showDamageNumber(event.cell,event.amount);
+   continue;
+  }
+  if(event.type!=='creature:attacked')continue;
+  const attack=event;
   const next=events[i+1];
   if(attack.targetKind==='king'||attack.to===null){
-   if(next?.type==='king:damaged'&&['p','c'].includes(next.side))
+   if(next?.type==='king:damaged'&&next.selfInflicted!==true&&['p','c'].includes(next.side))
     showDamageNumber(next.side===viewer?'player':'enemy',next.amount);
    continue;
   }
   if(!Number.isInteger(attack.to)||attack.to<0||attack.to>=25)continue;
   const guard=next?.type==='damage:guarded'&&next.cell===attack.to?next:null;
   const target=guard?guard.guardian:attack.to,hit=guard?events[i+2]:next;
-  if(hit?.type==='creature:damaged'&&hit.cell===target)showDamageNumber(target,hit.amount);
+  if(hit?.type==='creature:damaged'&&hit.selfInflicted!==true&&hit.cell===target)showDamageNumber(target,hit.amount);
   // Core emits no creature damage event when reduction cancels the whole hit.
   else if(!guard&&hit?.type==='creature:attack-resolved'&&hit.from===attack.from&&hit.to===attack.to)
    showDamageNumber(target,0);
@@ -2615,7 +2623,7 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,presentAttackDamage,clearAttackDamage,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearAttackDamage();clearOpponentCards();cancelTurnPresentation();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst,showOpening,showTurn,turnPresentationBusy,cancelTurnPresentation,clearOpponentCards});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,presentDamageNumbers,clearAttackDamage,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearAttackDamage();clearOpponentCards();cancelTurnPresentation();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst,showOpening,showTurn,turnPresentationBusy,cancelTurnPresentation,clearOpponentCards});
 })();
 </script><script>
 (function(){const modules={"./game-core.cjs":function(module,exports,require){
@@ -2676,9 +2684,9 @@ function projectEvents(events,viewer){
   if(e.type==='creature:damaged'){
    const previous=events[i-1],guard=previous?.type==='damage:guarded'?previous:null;
    const attack=guard?events[i-2]:previous;
-   // Only the direct hit of a normal attack needs this public value.
-   if(attack?.type==='creature:attacked'&&(guard?attack.to===guard.cell&&guard.guardian===e.cell:attack.to===e.cell))
-    out.push({type:e.type,cell:e.cell,amount:e.amount});
+   const direct=attack?.type==='creature:attacked'&&(guard?attack.to===guard.cell&&guard.guardian===e.cell:attack.to===e.cell);
+   if(direct||e.selfInflicted===true)
+    out.push({type:e.type,cell:e.cell,amount:e.amount,...(e.selfInflicted===true?{selfInflicted:true}:{})});
    continue;
   }
   if(e.type==='card:played'){out.push({type:e.type,side:e.side,cardId:e.cardId});continue;}
@@ -2693,7 +2701,7 @@ function projectEvents(events,viewer){
   if(e.type==='king:hp-set'){out.push({type:e.type,side:e.side,before:e.before,after:e.after,reason:e.reason});continue;}
   if(e.type==='mana:gained'){out.push({type:e.type,side:e.side,before:{maxMana:e.before.maxMana,mana:e.before.mana},after:{maxMana:e.after.maxMana,mana:e.after.mana}});continue;}
   if(e.type==='pressure:resolved'){out.push({type:e.type,side:e.side,countAtCommit:e.countAtCommit,success:e.success,target:e.target});continue;}
-  if(e.type==='king:damaged'){out.push({type:e.type,side:e.side,amount:e.amount,hp:e.hp});continue;}
+  if(e.type==='king:damaged'){out.push({type:e.type,side:e.side,amount:e.amount,hp:e.hp,...(e.selfInflicted===true?{selfInflicted:true}:{})});continue;}
   if(e.type==='creature:moved'){out.push({type:e.type,from:e.from,to:e.to});continue;}
   if(['creature:attacked','creature:attack-resolved'].includes(e.type)){out.push({type:e.type,from:e.from,to:e.to,targetKind:e.targetKind,amount:e.amount});continue;}
  }
@@ -3020,8 +3028,8 @@ function resolve(jobs,port,result){
   const recipient=usesRecipient&&result?.hpLost>0&&result.recipientInstanceId?port.findCreature(result.recipientInstanceId):-1;
   if(usesRecipient&&recipient<0)continue;
   port.trace?.({type:'ability:triggered',ability:job.id,triggerController:job.controller,cell:job.cell,instanceId:job.source.sourceInstanceId});
-  if(job.id==='diablo_turn_start')port.damageKing(job.controller,2);
-  if(job.id==='orthros_self_damage')port.damageKing(job.controller,1);
+  if(job.id==='diablo_turn_start')port.damageKing(job.controller,2,{selfInflicted:true});
+  if(job.id==='orthros_self_damage')port.damageKing(job.controller,1,{selfInflicted:true});
   if(job.id==='thief_attack_mana')port.gainAttackMana(job.controller); // Independent cap fix belongs to A2.
   if(job.id==='attack_exchange_power'){
    port.adjustAttack?.(job.context.target?.sourceInstanceId,-2);
@@ -3477,10 +3485,10 @@ function makePort(state,definitions,events){return {
   for(const e of defeated)record(state,events,e);
   require('./effect-events.cjs').dispatchGroup(state,defeated,definitions,events);
  },
- damageKing:(side,amount)=>{
+ damageKing:(side,amount,{selfInflicted}={})=>{
   if(state.server.gameOver)return {amount:0,hpLost:0,defeated:state.players[side].kingHp<=0};
   const p=state.players[side];const hit=require('./damage-engine.cjs').damageKing(state,side,amount);
-  record(state,events,{type:'king:damaged',side,amount:hit.amount,hp:p.kingHp});
+  record(state,events,{type:'king:damaged',side,amount:hit.amount,hp:p.kingHp,...(selfInflicted?{selfInflicted:true}:{})});
   require('./resolution-boundary.cjs').settleBoundary(state,events,p.kingHp<=0?[{side,reason:'KING_HP_ZERO'}]:[]);
   return hit;
  },
@@ -5921,7 +5929,7 @@ function presentCpuBattleAction(result,initial=false){
  if((!initial&&$('app').classList.contains('gameScreenHidden'))||!Number.isSafeInteger(revision)||revision<=cpuBattleRevision)return;
  cpuBattleRevision=revision;
  const events=initial?[{type:'turn:started',side:state.activeSide}]:result.events;
- NormalGameUI.presentAttackDamage(events,'p');
+ NormalGameUI.presentDamageNumbers(events,'p');
  if(TutorialController.active)return;
  // An empty guardian revision is a staged choice. Keep the pre-command
  // snapshot until the committed events for the original action arrive.

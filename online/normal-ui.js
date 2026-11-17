@@ -532,20 +532,28 @@ function showDamageNumber(target,amount){
  positionAttackDamage();
  layer.append(element);
 }
-function presentAttackDamage(events,viewer){
+function presentDamageNumbers(events,viewer){
  if(document.visibilityState!=='visible')return;
- for(const [i,attack] of events.entries()){
-  if(attack.type!=='creature:attacked')continue;
+ for(const [i,event] of events.entries()){
+  if(event.selfInflicted===true){
+   if(event.type==='king:damaged'&&['p','c'].includes(event.side))
+    showDamageNumber(event.side===viewer?'player':'enemy',event.amount);
+   if(event.type==='creature:damaged'&&Number.isInteger(event.cell)&&event.cell>=0&&event.cell<25)
+    showDamageNumber(event.cell,event.amount);
+   continue;
+  }
+  if(event.type!=='creature:attacked')continue;
+  const attack=event;
   const next=events[i+1];
   if(attack.targetKind==='king'||attack.to===null){
-   if(next?.type==='king:damaged'&&['p','c'].includes(next.side))
+   if(next?.type==='king:damaged'&&next.selfInflicted!==true&&['p','c'].includes(next.side))
     showDamageNumber(next.side===viewer?'player':'enemy',next.amount);
    continue;
   }
   if(!Number.isInteger(attack.to)||attack.to<0||attack.to>=25)continue;
   const guard=next?.type==='damage:guarded'&&next.cell===attack.to?next:null;
   const target=guard?guard.guardian:attack.to,hit=guard?events[i+2]:next;
-  if(hit?.type==='creature:damaged'&&hit.cell===target)showDamageNumber(target,hit.amount);
+  if(hit?.type==='creature:damaged'&&hit.selfInflicted!==true&&hit.cell===target)showDamageNumber(target,hit.amount);
   // Core emits no creature damage event when reduction cancels the whole hit.
   else if(!guard&&hit?.type==='creature:attack-resolved'&&hit.from===attack.from&&hit.to===attack.to)
    showDamageNumber(target,0);
@@ -1348,5 +1356,5 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,presentAttackDamage,clearAttackDamage,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearAttackDamage();clearOpponentCards();cancelTurnPresentation();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst,showOpening,showTurn,turnPresentationBusy,cancelTurnPresentation,clearOpponentCards});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,presentDamageNumbers,clearAttackDamage,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearAttackDamage();clearOpponentCards();cancelTurnPresentation();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst,showOpening,showTurn,turnPresentationBusy,cancelTurnPresentation,clearOpponentCards});
 })();

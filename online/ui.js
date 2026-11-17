@@ -176,7 +176,7 @@
   presentedRevision=revision;
   const before=presentationBefore;
   if(!awaitingGuardian(v)){
-   N.presentAttackDamage(events,v.viewer);
+   N.presentDamageNumbers(events,v.viewer);
    N.presentBattleAction(events,{viewer:v.viewer,activeSide:v.activeSide,before,after:v,definitions:D,revision,animate:!v.gameOver&&!state.aborted});
   }
   for(const e of events){
