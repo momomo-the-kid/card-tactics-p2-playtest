@@ -7,7 +7,7 @@
  const opposite=s=>s==='p'?'c':'p';
  let state=null,selected=null,source=null,target=null,mode='combat',lastRevision=null,lastStatus=null,hadMatch=false,renderedRevision=null,renderGeneration=0;
  function clear(){if($('infoContent'))$('infoContent').scrollTop=0;selected=null;source=null;target=null;mode='combat';}
- const usable=()=>!!state?.view&&state.status==='connected'&&!state.inFlight&&!state.view.gameOver&&!state.aborted;
+ const usable=()=>!!state?.view&&state.status==='connected'&&!state.inFlight&&!state.view.gameOver&&!state.aborted&&!N.turnPresentationBusy();
  // Presentation only: the existing usable()/submit guards remain authoritative.
  let responseTimer=null,responseSlow=false;
  const awaitingResponse=()=>!!state?.view&&state.status==='connected'&&state.inFlight&&!state.view.gameOver&&!state.aborted&&!state.view.surrenderPending;
@@ -122,9 +122,24 @@
  }
  function drawPieces(){const v=state?.view;if(!v)return;N.renderPieces({board:v.board,viewer:v.viewer,describe:describePiece,redrawInfo:renderInfo,afterRender:restoreHits,enchantVisual:p=>{const cards=v.enchantments.filter(e=>e.target?.kind==='creature'&&e.target.instanceId===p.sourceInstanceId);return cards.length?{cards,colors:[...new Set(cards.map(e=>D[e.cardId]?.visual?.auraColor||'#b985ff'))]}:null;}});const column=document.querySelector('.boardColumn');if(!document.body.classList.contains('layout-landscape')&&column?.offsetHeight)$('infoPanel').style.setProperty('--panel-height',column.getBoundingClientRect().height+'px');}
  const awaitingGuardian=view=>['guardian','guardianWait'].includes(view?.choice?.kind);
+ function syncTurnPresentation(current,prior,view,priorView){
+  if(current.status!=='connected'||current.waitingRecovery||view.gameOver||current.aborted){
+   N.cancelTurnPresentation();N.clearOpponentCards();return;
+  }
+  if(document.visibilityState!=='visible')return;
+  const finished=()=>render(state);
+  if(!hadMatch&&view.revision===0){
+   N.showOpening({seed:current.matchId,first:view.assignment.first,viewer:view.viewer,activeSide:view.activeSide},finished);
+  }else if(hadMatch&&prior?.status==='connected'&&priorView&&
+      (priorView.activeSide!==view.activeSide||priorView.turn!==view.turn)){
+   N.showTurn(view.activeSide,view.viewer,finished);
+  }
+ }
+
  function render(current){const priorState=state,priorView=state?.view;
   if(priorView&&current.view?.revision!==priorView.revision&&!awaitingGuardian(priorView))presentationBefore=priorView;
   state=current;globalThis.CardTacticsBGM?.setActive(!!current.view&&!current.view.gameOver&&!current.aborted);renderRequestStatus();const waiting=!!current.waitingRecovery;$('recoveryExit').hidden=!waiting;if(!waiting&&$('recoveryExitDialog').open)$('recoveryExitDialog').close();const v=current.view;$('match').hidden=!v;document.body.classList.toggle('online-playing',!!v);if(!v){$('turnIndicator').hidden=true;$('settingsOverlay').classList.remove('show');$('settingsOverlay').setAttribute('aria-hidden','true');clear();N.clear();$('overlay').classList.remove('show');lastRevision=null;lastStatus=null;hadMatch=false;if($('surrenderDialog').open)$('surrenderDialog').close();for(const id of ['board','pieceOverlay','hand','enemyHand','actions','infoContent','result'])$(id).replaceChildren();$('matchStatus').textContent='';$('log').replaceChildren();presentedRevision=-1;hitEffects.clear();clearTimeout(hitCleanup);hitCleanup=null;presentationBefore=null;renderedRevision=null;return;}
+  syncTurnPresentation(current,priorState,v,priorView);
   if(!hadMatch){
    N.startPlayPresentation();$('connectionPanel').open=false;hadMatch=true;
    if(v.revision===0)N.presentBattleAction([{type:'turn:started',side:v.activeSide}],
