@@ -852,7 +852,6 @@ body:not(.layout-landscape) #tutorialCoach.tutorialAtLog{position:static;display
 body.layout-landscape .layoutLog{margin-left:auto;z-index:1100}
 body.layout-landscape .controls #endTurn{margin-left:0}
 body.layout-landscape .layoutLog summary{padding:7px 6px;font-size:11px;min-height:32px}
-body.layout-landscape.projected-board .royalPedestal .crownModel{bottom:11px!important;width:40px!important;height:24px!important}
 body.layout-landscape #onlineHeader{margin:0;font-size:11px}.online-playing.layout-landscape #onlineHeader{display:none}
 body.layout-landscape.online-playing #connectionPanel{margin:0;font-size:10px}
 body.layout-landscape.online-playing #connectionPanel>summary{padding:2px 8px}
@@ -872,8 +871,6 @@ body.projected-board .overlayCreatureAsset{top:47%;width:88%;height:68%}
 body.projected-board .overlayOrb{top:47%;width:55%}
 body.projected-board .overlayDot{top:21%;width:8px;height:8px}.projected-board .overlayDot.attack{right:12%}.projected-board .overlayDot.move{right:-2%}
 body.projected-board .royalPedestal{transform:translate(-50%,-50%)!important;border-radius:8px!important;min-height:32px;padding:0 3px;align-items:flex-end}
-body.projected-board .royalPedestal .kingLabel{font-size:10px;margin-bottom:2px;line-height:1.1}
-body.projected-board .royalPedestal .crownModel{bottom:18px!important;width:56px!important;height:40px!important;transform:translateX(-50%)!important}
 body.projected-board .overlayPiece .overlayNameLayer{color:#fff!important;-webkit-text-fill-color:#fff!important;-webkit-text-stroke-width:0!important;text-shadow:none!important}
 body.layout-landscape.tutorial-mode #app{padding-bottom:2px}
 body.layout-landscape #tutorialCoach{transform:none;box-sizing:border-box;min-width:0;z-index:1000;overflow:auto;padding:8px 10px}
@@ -899,9 +896,6 @@ body.projected-board .cell.cellEnchanted::after,body.projected-board .cell.mineC
 .royalHP{position:absolute;width:44px;height:24px;display:flex;align-items:center;justify-content:center;z-index:700;pointer-events:none;background:#151b24ee;border:1px solid #657080;border-radius:6px;white-space:nowrap}
 .royalHP .kingStat{font-size:12px!important;padding:0!important;line-height:1.2}
 body #app .royalPedestal{transform:translate(-50%,-50%)!important;border-radius:8px!important;min-height:36px}
-body #app .royalPedestal .crownModel{bottom:11px!important;width:40px!important;height:24px!important;transform:translateX(-50%)!important}
-body #app .royalPedestal .kingLabel{font-size:10px;margin-bottom:2px;line-height:1.1}
-body:not(.layout-landscape) #app .royalPedestal .crownModel{left:25%!important;width:24px!important;height:20px!important;bottom:14px!important}
 body:not(.layout-landscape) .royalHP{width:28px;height:18px;border:0;background:transparent}
 body:not(.layout-landscape) .royalHP .kingStat{font-size:10px!important}
 
@@ -990,6 +984,38 @@ body:not(.tutorial-mode) #infoContent .useCardButton,#infoPanel #actions{positio
 .battleLogTurn{border-top:1px solid #536071;padding-top:3px;margin-top:3px}
 .battleLogHeading{font-weight:600}
 .battleLogResult{padding-left:.65em}
+
+
+/* One visible platform and one native king button per side. Only the painted
+   polygon accepts a pointer, including either end of the three-column band. */
+html body #app .royalPedestal{
+ transform:none!important;min-height:0;padding:0;pointer-events:none;
+ border:0!important;background:none!important;box-shadow:none!important;outline:0;
+ animation:none!important
+}
+.royalPlatform{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.royalPlatform polygon{pointer-events:visiblePainted;fill:#5d4832;stroke:#d1a45d;stroke-width:2;stroke-linejoin:round;cursor:pointer}
+.royalPedestal.player .royalPlatform polygon{fill:#33485d;stroke:#8db2da}
+.board-light .royalPlatform polygon{fill:#e2c991;stroke:#8c6835}
+.board-simple .royalPlatform polygon{fill:#6a7075;stroke:#d4d8dc}
+.royalPedestal:is(.attackable,.spellTarget,:focus-visible,.tutorialGlow) .royalPlatform polygon{stroke-width:3}
+.royalPedestal.attackable .royalPlatform polygon{stroke:#f08080}
+.royalPedestal.spellTarget .royalPlatform polygon{stroke:#ffad4e}
+.royalPedestal:is(:focus-visible,.tutorialGlow) .royalPlatform polygon{stroke:#ffe277}
+html body #app .royalPedestal .crownModel{
+ position:absolute;left:var(--royal-art-x)!important;top:var(--royal-art-y)!important;bottom:auto!important;
+ width:36px!important;height:24px!important;transform:translate(-50%,-50%)!important;
+ background-position:center!important;background-size:contain!important;pointer-events:none
+}
+.royalDetails{
+ position:absolute;z-index:702;transform:translate(-50%,-50%);display:flex;align-items:center;gap:4px;
+ padding:2px 4px;border:1px solid #657080;border-radius:6px;background:#151b24ee;color:#fff;
+ font:700 11px/1.2 system-ui;white-space:nowrap;pointer-events:none
+}
+.royalDetails .royalHP{
+ position:relative;width:38px;height:17px;border:0;background:transparent;flex:none
+}
+.royalDetails .kingLabel{position:static;white-space:nowrap}
 
 /* Screen-facing public combat information; no hit targets or board geometry. */
 .overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-name:-52px;--hud-foot:0px;transform:translate(-50%,-50%);pointer-events:none}

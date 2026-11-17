@@ -12,7 +12,6 @@ const landscapeQuery=matchMedia('(orientation: landscape) and (min-width: 640px)
 function fixedProject(x,y,size,yaw){const a=yaw*Math.PI/180,t=55*Math.PI/180,u=(x*Math.cos(a)-y*Math.sin(a))*size,v=(x*Math.sin(a)+y*Math.cos(a))*size,w=1-v*Math.sin(t)/1000;return {x:u/w,y:v*Math.cos(t)/w};}
 // Central-column ray meets the outer edge; the complete 64x36 royal target
 // stays outside its supporting half-plane. This is presentation geometry only.
-function hpOnLeft(name){return !landscapeQuery.matches&&presentationView==='left'?name==='player':name==='enemy';}
 function royalAnchor(name,size,yaw){
  const y=name==='enemy'?-.5:.5,edge=fixedProject(0,y,size,yaw),a=fixedProject(-.1,y,size,yaw),b=fixedProject(.1,y,size,yaw),outside=fixedProject(0,y*1.2,size,yaw);
  let nx=-(b.y-a.y),ny=b.x-a.x;const len=Math.hypot(nx,ny);nx/=len;ny/=len;
@@ -685,7 +684,7 @@ function positionOpponentCard(){
    const r=el.getBoundingClientRect();
    return detail.contains(el)?{left:r.left,right:r.right,top:Math.max(r.top,clip.top),bottom:Math.min(r.bottom,clip.bottom)}:r;
   }).filter(r=>r.right>r.left&&r.bottom>r.top);
- const obstacles=[...document.querySelectorAll('.royalPedestal,.royalHP,.crownModel,.graveButton,#turnIndicator,#hand,#endTurn')]
+ const obstacles=[...document.querySelectorAll('.royalPedestal,.royalDetails,.crownModel,.graveButton,#turnIndicator,#hand,#endTurn')]
   .map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height);
  // Keep the right edge. Move above controls that reach the anchor, or lift
  // a little to clear nearby king/status elements before shrinking to fit.
@@ -724,7 +723,7 @@ function fitLatestAction(latest,left,bottom){
  // Keep the two-line envelope in the gap beside the drawn board, even for a short headline.
  const top=bottom-36;
  let upper=max;
- for(const el of document.querySelectorAll('.royalPedestal,.royalHP,.royalGrave .graveButton')){
+ for(const el of document.querySelectorAll('.royalPedestal,.royalDetails,.royalGrave .graveButton')){
   const r=el.getBoundingClientRect();
   if(r.width&&r.left>left&&r.bottom>top&&r.top<bottom)upper=Math.min(upper,r.left-left-2);
  }
@@ -789,7 +788,7 @@ function positionTutorialLog(coach){
  const area=column.getBoundingClientRect(),anchor=entry.getBoundingClientRect(),vv=window.visualViewport,gap=8;
  const left=Math.max(area.left+6,vv?.offsetLeft||0),right=Math.min(area.right-6,(vv?.offsetLeft||0)+(vv?.width||innerWidth)),top=Math.max(area.top+4,vv?.offsetTop||0),bottom=Math.min(anchor.top-6,(vv?.offsetTop||0)+(vv?.height||innerHeight)-8);
  const rect=e=>e.getBoundingClientRect(),intersects=(a,b)=>a.left<b.right+gap&&a.right>b.left-gap&&a.top<b.bottom+gap&&a.bottom>b.top-gap;
- const obstacles=[coach,...document.querySelectorAll('#infoPanel,.royalPedestal,.royalHP,.royalGrave,.enemyInfoDock,.battleInfoDock')].filter(e=>e.getClientRects().length).map(rect),maxWidth=Math.min(360,right-left);
+ const obstacles=[coach,...document.querySelectorAll('#infoPanel,.royalPedestal,.royalDetails,.royalGrave,.enemyInfoDock,.battleInfoDock')].filter(e=>e.getClientRects().length).map(rect),maxWidth=Math.min(360,right-left);
  let best=null;
  for(const width of [...new Set([maxWidth,Math.min(300,maxWidth),Math.min(260,maxWidth),Math.min(220,maxWidth)])])for(const cap of [190,140,100,72]){
   tutorialLogWidthCap=width;tutorialLogHeightCap=cap;positionBattleLog();const height=panel.offsetHeight;
@@ -837,30 +836,91 @@ function pieceLabel(name){
  const restSize=Math.max(5,Math.min(12,Math.floor(38/Math.max(1,Array.from(rest).length))));
  return `<div class="pname"><span class="pnameLead">${escapeHTML(lead)}</span><span class="pnameRest" style="--rest-size:${restSize}px">${escapeHTML(rest)}</span></div>`;
 }
-function positionRoyalPedestals(){
- const wrap=$('board')?.closest('.boardWrap'), cells=$('board')?.querySelectorAll('.cell');
- if(!wrap||!cells||cells.length!==25||!wrap.clientWidth||!wrap.clientHeight)return;
- for(const [kind,id]of [['enemy','enemyPedestal'],['player','playerPedestal']]){let hud=wrap.querySelector('.royalHP.'+kind);if(!hud){hud=document.createElement('span');hud.className='royalHP '+kind;hud.setAttribute('aria-label',kind==='enemy'?'相手の王HP':'自分の王HP');wrap.append(hud);}const stat=document.querySelector('.kingZone.'+kind+' .kingStat:not(.manaStat)');if(stat){stat.firstChild.textContent='❤️';hud.append(stat);}}
- if(document.body.classList.contains('projected-board')){
-  for(const [id,kind]of [['enemyPedestal','enemy'],['playerPedestal','player']]){
-   const el=$(id),anchor=wrap.querySelector('.royalFoot.'+kind);if(!el||!anchor)continue;
-   const point=screenPoint(anchor,wrap),width=64;
-   el.style.left=point.x+'px';el.style.top=point.y+'px';el.style.width=width+'px';el.style.height='36px';el.style.zIndex=String(100+Math.round(point.y));
-  }positionRoyalHP(wrap);return;
- }
- const wr=wrap.getBoundingClientRect();
- // Portrait A keeps the existing CSS perspective. Use the real non-zero
- // central cell border boxes, not zero-area descendants inside preserve-3d.
- // In this direction the near/far edges are horizontal in screen space.
- for(const [id,index,dir] of [['enemyPedestal',2,-1],['playerPedestal',22,1]]){
-  const pedestal=$(id);if(!pedestal)continue;
-  const cell=cells[index].getBoundingClientRect();if(!cell.width||!cell.height)return;
-  const x=(cell.left+cell.right)/2-wr.left,edge=dir<0?cell.top:cell.bottom;
-  pedestal.style.left=x+'px';pedestal.style.top=(edge-wr.top+dir*28)+'px';
-  pedestal.style.width='64px';pedestal.style.height='36px';
- }positionRoyalHP(wrap);
+function royalPlatform(cells,kind,wrap){
+ const far=kind==='enemy',row=far?0:20,left=cells[row+1],right=cells[row+3];
+ const corner=(cell,position)=>screenPoint(cell.querySelector('[data-plane-point='+position+']'),wrap);
+ const a=corner(left,far?'nw':'sw'),b=corner(right,far?'ne':'se');
+ const inA=corner(left,far?'sw':'nw'),inB=corner(right,far?'se':'ne');
+ const center={x:(a.x+b.x)/2,y:(a.y+b.y)/2},length=Math.hypot(b.x-a.x,b.y-a.y);
+ if(!length)return null;
+ // The ends follow the two projected column boundaries as the band moves
+ // outward. This is a screen-space continuation of the rendered quadrilateral.
+ let nx=-(b.y-a.y)/length,ny=(b.x-a.x)/length;
+ if(nx*(a.x-inA.x)+ny*(a.y-inA.y)<0){nx=-nx;ny=-ny;}
+ const shift=(p,n)=>({x:p.x+nx*n,y:p.y+ny*n});
+ const outside=(p,q,depth)=>{
+  const scale=depth/((p.x-q.x)*nx+(p.y-q.y)*ny);
+  return {x:p.x+(p.x-q.x)*scale,y:p.y+(p.y-q.y)*scale};
+ };
+ const gap=3,depth=24;
+ const shape=[shift(a,gap),shift(b,gap),shift(outside(b,inB,depth),gap),shift(outside(a,inA,depth),gap)];
+ return {shape,center,nx,ny};
 }
-function positionRoyalHP(wrap){for(const [kind,id]of [['enemy','enemyPedestal'],['player','playerPedestal']]){const hud=wrap.querySelector('.royalHP.'+kind),b=$(id).getBoundingClientRect(),w=wrap.getBoundingClientRect();hud.style.left=(!landscapeQuery.matches?b.left-w.left+32:hpOnLeft(kind)?b.left-w.left-48:b.right-w.left+4)+'px';hud.style.top=(b.top-w.top+(!landscapeQuery.matches?4:(b.height-24)/2))+'px';const grave=wrap.querySelector('.royalGrave.'+kind);if(landscapeQuery.matches&&grave){grave.style.left=(kind==='enemy'?b.left-w.left-86:b.right-w.left+52)+'px';grave.style.top=(b.top-w.top+2)+'px';}}}
+function royalDetails(wrap,kind,pedestal){
+ let details=wrap.querySelector('.royalDetails.'+kind);
+ if(!details){
+  details=document.createElement('div');details.className='royalDetails '+kind;
+  const hp=document.createElement('span');hp.className='royalHP '+kind;
+  details.append(pedestal.querySelector('.kingLabel'),hp);wrap.append(details);
+ }
+ const stat=document.querySelector('.kingZone.'+kind+' .kingStat:not(.manaStat)');
+ if(stat){stat.firstChild.textContent='❤️';details.querySelector('.royalHP').append(stat);}
+ return details;
+}
+function positionRoyalPedestals(){
+ const board=$('board'),wrap=board?.closest('.boardWrap'),cells=board?.querySelectorAll('.cell');
+ if(!wrap||cells.length!==25||!wrap.clientWidth||!wrap.clientHeight)return;
+ const wr=wrap.getBoundingClientRect(),landscape=landscapeQuery.matches;
+ const royals=[['enemy','enemyPedestal'],['player','playerPedestal']].map(([kind,id])=>({
+  kind,pedestal:$(id),platform:royalPlatform(cells,kind,wrap)
+ }));
+ // Keep graveyards in the existing reservations unless a wider band reaches one.
+ if(landscape)for(const {kind,platform} of royals){
+  const grave=wrap.querySelector('.royalGrave.'+kind),point=screenPoint(wrap.querySelector('.royalFoot.'+kind),wrap);
+  let x=point.x+(kind==='enemy'?-118:84);const y=point.y-16;
+  if(platform&&intersectsRect(platform.shape,{x1:x-4,y1:y-4,x2:x+38,y2:y+36})){
+   const {x1,x2}=shapeBounds([platform.shape]);
+   const alternatives=kind==='enemy'?[x1-40,x2+6]:[x2+6,x1-40];
+   x=alternatives.find(x=>x>=0&&x+34<=wrap.clientWidth)??x;
+  }
+  grave.style.left=x+'px';grave.style.top=y+'px';
+ }
+ const obstacles=[...document.querySelectorAll('.graveButton,.manaStat,#turnIndicator,.statusButton,#hand,.layoutLog,#infoPanel,.battleStrip,.gameTopBar button,.appHeader button')]
+  .map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height);
+ for(const {kind,pedestal,platform} of royals){
+  if(!platform)continue;
+  const {shape,center,nx,ny}=platform,{x1,y1,x2,y2}=shapeBounds([shape]);
+  const width=x2-x1,height=y2-y1;
+  Object.assign(pedestal.style,{left:x1+'px',top:y1+'px',width:width+'px',height:height+'px'});
+  const svg=pedestal.querySelector('.royalPlatform');
+  svg.setAttribute('viewBox','0 0 '+width+' '+height);
+  svg.firstElementChild.setAttribute('points',shape.map(({x,y})=>(x-x1)+','+(y-y1)).join(' '));
+  const art=shape.reduce((p,q)=>({x:p.x+q.x/4,y:p.y+q.y/4}),{x:0,y:0});
+  pedestal.style.setProperty('--royal-art-x',art.x-x1+'px');pedestal.style.setProperty('--royal-art-y',art.y-y1+'px');
+
+  const details=royalDetails(wrap,kind,pedestal),w=details.offsetWidth,h=details.offsetHeight;
+  const normalExtent=Math.abs(nx)*w/2+Math.abs(ny)*h/2;
+  const clampX=x=>Math.min(innerWidth-wr.left-w/2-2,Math.max(w/2+2-wr.left,x));
+  const clampY=y=>Math.min(innerHeight-wr.top-h/2-2,Math.max(h/2+2-wr.top,y));
+  // Prefer the nearest readable position outside the board and away from the
+  // centered art. A short slide along the edge can clear an existing dock.
+  const positions=[];
+  for(const outward of [4,12,22,31])for(const along of [0,-.45,.45,-.8,.8,-1.2,1.2]){
+   const distance=normalExtent+outward;
+   positions.push({x:clampX(center.x+nx*distance-ny*w*along),y:clampY(center.y+ny*distance+nx*w*along)});
+  }
+  positions.sort((a,b)=>Math.hypot(a.x-art.x,a.y-art.y)-Math.hypot(b.x-art.x,b.y-art.y));
+  const readable=({x,y})=>(x-center.x)*nx+(y-center.y)*ny>=normalExtent+2&&
+   (Math.abs(x-art.x)>=w/2+20||Math.abs(y-art.y)>=h/2+14);
+  const clearDock=({x,y})=>{
+   const left=wr.left+x-w/2,right=left+w,top=wr.top+y-h/2,bottom=top+h;
+   return !obstacles.some(r=>r.left<right&&r.right>left&&r.top<bottom&&r.bottom>top);
+  };
+  // The latest action row already adjusts to the final HUD rectangles.
+  const position=positions.find(p=>readable(p)&&clearDock(p))||positions.find(readable)||positions[0];
+  details.style.left=position.x+'px';details.style.top=position.y+'px';
+ }
+}
 
 const CREATURE_ASSET_IDS={
  "歩兵":"infantry","銀級兵":"silver","金級兵":"gold","チャリオット":"chariot","アーチャー":"archer",

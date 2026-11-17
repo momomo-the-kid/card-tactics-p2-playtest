@@ -897,7 +897,6 @@ body:not(.layout-landscape) #tutorialCoach.tutorialAtLog{position:static;display
 body.layout-landscape .layoutLog{margin-left:auto;z-index:1100}
 body.layout-landscape .controls #endTurn{margin-left:0}
 body.layout-landscape .layoutLog summary{padding:7px 6px;font-size:11px;min-height:32px}
-body.layout-landscape.projected-board .royalPedestal .crownModel{bottom:11px!important;width:40px!important;height:24px!important}
 body.layout-landscape #onlineHeader{margin:0;font-size:11px}.online-playing.layout-landscape #onlineHeader{display:none}
 body.layout-landscape.online-playing #connectionPanel{margin:0;font-size:10px}
 body.layout-landscape.online-playing #connectionPanel>summary{padding:2px 8px}
@@ -917,8 +916,6 @@ body.projected-board .overlayCreatureAsset{top:47%;width:88%;height:68%}
 body.projected-board .overlayOrb{top:47%;width:55%}
 body.projected-board .overlayDot{top:21%;width:8px;height:8px}.projected-board .overlayDot.attack{right:12%}.projected-board .overlayDot.move{right:-2%}
 body.projected-board .royalPedestal{transform:translate(-50%,-50%)!important;border-radius:8px!important;min-height:32px;padding:0 3px;align-items:flex-end}
-body.projected-board .royalPedestal .kingLabel{font-size:10px;margin-bottom:2px;line-height:1.1}
-body.projected-board .royalPedestal .crownModel{bottom:18px!important;width:56px!important;height:40px!important;transform:translateX(-50%)!important}
 body.projected-board .overlayPiece .overlayNameLayer{color:#fff!important;-webkit-text-fill-color:#fff!important;-webkit-text-stroke-width:0!important;text-shadow:none!important}
 body.layout-landscape.tutorial-mode #app{padding-bottom:2px}
 body.layout-landscape #tutorialCoach{transform:none;box-sizing:border-box;min-width:0;z-index:1000;overflow:auto;padding:8px 10px}
@@ -944,9 +941,6 @@ body.projected-board .cell.cellEnchanted::after,body.projected-board .cell.mineC
 .royalHP{position:absolute;width:44px;height:24px;display:flex;align-items:center;justify-content:center;z-index:700;pointer-events:none;background:#151b24ee;border:1px solid #657080;border-radius:6px;white-space:nowrap}
 .royalHP .kingStat{font-size:12px!important;padding:0!important;line-height:1.2}
 body #app .royalPedestal{transform:translate(-50%,-50%)!important;border-radius:8px!important;min-height:36px}
-body #app .royalPedestal .crownModel{bottom:11px!important;width:40px!important;height:24px!important;transform:translateX(-50%)!important}
-body #app .royalPedestal .kingLabel{font-size:10px;margin-bottom:2px;line-height:1.1}
-body:not(.layout-landscape) #app .royalPedestal .crownModel{left:25%!important;width:24px!important;height:20px!important;bottom:14px!important}
 body:not(.layout-landscape) .royalHP{width:28px;height:18px;border:0;background:transparent}
 body:not(.layout-landscape) .royalHP .kingStat{font-size:10px!important}
 
@@ -1036,6 +1030,38 @@ body:not(.tutorial-mode) #infoContent .useCardButton,#infoPanel #actions{positio
 .battleLogHeading{font-weight:600}
 .battleLogResult{padding-left:.65em}
 
+
+/* One visible platform and one native king button per side. Only the painted
+   polygon accepts a pointer, including either end of the three-column band. */
+html body #app .royalPedestal{
+ transform:none!important;min-height:0;padding:0;pointer-events:none;
+ border:0!important;background:none!important;box-shadow:none!important;outline:0;
+ animation:none!important
+}
+.royalPlatform{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.royalPlatform polygon{pointer-events:visiblePainted;fill:#5d4832;stroke:#d1a45d;stroke-width:2;stroke-linejoin:round;cursor:pointer}
+.royalPedestal.player .royalPlatform polygon{fill:#33485d;stroke:#8db2da}
+.board-light .royalPlatform polygon{fill:#e2c991;stroke:#8c6835}
+.board-simple .royalPlatform polygon{fill:#6a7075;stroke:#d4d8dc}
+.royalPedestal:is(.attackable,.spellTarget,:focus-visible,.tutorialGlow) .royalPlatform polygon{stroke-width:3}
+.royalPedestal.attackable .royalPlatform polygon{stroke:#f08080}
+.royalPedestal.spellTarget .royalPlatform polygon{stroke:#ffad4e}
+.royalPedestal:is(:focus-visible,.tutorialGlow) .royalPlatform polygon{stroke:#ffe277}
+html body #app .royalPedestal .crownModel{
+ position:absolute;left:var(--royal-art-x)!important;top:var(--royal-art-y)!important;bottom:auto!important;
+ width:36px!important;height:24px!important;transform:translate(-50%,-50%)!important;
+ background-position:center!important;background-size:contain!important;pointer-events:none
+}
+.royalDetails{
+ position:absolute;z-index:702;transform:translate(-50%,-50%);display:flex;align-items:center;gap:4px;
+ padding:2px 4px;border:1px solid #657080;border-radius:6px;background:#151b24ee;color:#fff;
+ font:700 11px/1.2 system-ui;white-space:nowrap;pointer-events:none
+}
+.royalDetails .royalHP{
+ position:relative;width:38px;height:17px;border:0;background:transparent;flex:none
+}
+.royalDetails .kingLabel{position:static;white-space:nowrap}
+
 /* Screen-facing public combat information; no hit targets or board geometry. */
 .overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-name:-52px;--hud-foot:0px;transform:translate(-50%,-50%);pointer-events:none}
 /* Match the overlay centre to its foot marker; do not inherit the older -76% projected shift. */
@@ -1111,7 +1137,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-turn-center-v60">ver p3-turn-center-v60</div>
+  <div class="titleVersion" data-build="p3-royal-platform-v61">ver p3-royal-platform-v61</div>
   <p id="benchmarkTrialLabel">クリーチャー基準・試験版</p><div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -1136,7 +1162,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
     <button type="button" onclick="returnToTitle()">タイトルへ戻る</button>
     <span class="enemyManaDock" aria-label="相手のマナ"></span><button id="settingsButton" class="settingsTopButton" type="button" aria-label="設定">設定⚙️</button>
   </div>
-  <p id="cpuDeckMatchNotice" role="status" hidden></p><div class="status"><span class="badge">ターン: <b id="turn">1</b></span><span class="badge">自分山札: <b id="deck">35</b></span><span class="badge">相手山札: <b id="cpuDeck">35</b></span><span class="badge">相手手札: <b id="cpuHand">5</b>枚</span><button class="badge statusButton" type="button" onclick="showGlobalEnchantments()">全体エンチャント🔮<b id="globalEnchantCount">0</b></button></div><div class="playArea"><div class="boardColumn"><div id="turnIndicator" class="turnIndicator" role="status" hidden></div><div class="kingZone enemy"><span class="kingStat">❤️HP<b id="cHp">20</b></span><button class="graveButton" type="button" onclick="showGraveyard('c')">🪦<b id="cGrave">0</b></button><div class="king" onclick="clickKing('c')">相手の王</div><span class="kingStat manaStat"><span class="manaOwner">相手</span><span class="manaGlyph" aria-hidden="true">💧</span><b id="cpuMana">2/2</b></span></div><div class="boardWrap"><div class="boardPlane"><div id="board" class="board" aria-label="5行5列の戦闘盤面"></div><svg class="boardGrid" viewBox="0 0 5 5" aria-hidden="true"><path data-grid-axis="column" d="M0 0V5"/><path data-grid-axis="column" d="M1 0V5"/><path data-grid-axis="column" d="M2 0V5"/><path data-grid-axis="column" d="M3 0V5"/><path data-grid-axis="column" d="M4 0V5"/><path data-grid-axis="column" d="M5 0V5"/><path data-grid-axis="row" d="M0 0H5"/><path data-grid-axis="row" d="M0 1H5"/><path data-grid-axis="row" d="M0 2H5"/><path data-grid-axis="row" d="M0 3H5"/><path data-grid-axis="row" d="M0 4H5"/><path data-grid-axis="row" d="M0 5H5"/></svg><span class="royalFoot enemy" aria-hidden="true"></span><span class="royalFoot player" aria-hidden="true"></span></div><div id="pieceOverlay" aria-hidden="true"></div><button id="enemyPedestal" class="royalPedestal enemy" type="button" onclick="clickKing('c')" aria-label="相手の王"><div class="crownModel" aria-hidden="true"><svg class="crownSvg" viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="goldA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a1805"/><stop offset=".13" stop-color="#9c681d"/><stop offset=".27" stop-color="#f2cc69"/><stop offset=".39" stop-color="#6c4310"/><stop offset=".53" stop-color="#d7a33b"/><stop offset=".69" stop-color="#fff0a3"/><stop offset=".78" stop-color="#8a5818"/><stop offset="1" stop-color="#251505"/></linearGradient><linearGradient id="goldB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8dc7a"/><stop offset=".22" stop-color="#a66b1c"/><stop offset=".48" stop-color="#e3b449"/><stop offset=".72" stop-color="#5a350d"/><stop offset="1" stop-color="#d8a13a"/></linearGradient><radialGradient id="gem" cx="35%" cy="25%"><stop offset="0" stop-color="#fff4aa"/><stop offset=".35" stop-color="#d7a42e"/><stop offset="1" stop-color="#5a3208"/></radialGradient><filter id="metal"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#000" flood-opacity=".8"/></filter></defs><g filter="url(#metal)" stroke="#211304" stroke-width="4" stroke-linejoin="round"><path fill="url(#goldA)" d="M25 143 C25 121 31 101 43 72 L69 109 L89 48 L118 103 L150 14 L182 103 L211 48 L231 109 L257 72 C269 101 275 121 275 143 Z"/><path fill="#160d04" opacity=".58" d="M41 133 C55 116 66 110 83 121 C101 132 114 119 126 105 C137 92 145 86 150 86 C156 86 165 94 175 106 C188 121 201 132 218 121 C236 109 248 117 260 133 L260 146 L41 146Z"/><path fill="none" stroke="url(#goldB)" stroke-width="8" d="M37 132 C61 107 77 108 96 126 C113 141 126 116 150 91 C174 116 187 141 204 126 C223 108 239 107 263 132"/><path fill="url(#goldB)" d="M22 137 Q150 151 278 137 L274 171 Q150 186 26 171Z"/><path fill="none" stroke="#f4d574" stroke-width="3" opacity=".7" d="M31 148 Q150 159 269 148"/><path fill="none" stroke="#51300c" stroke-width="5" d="M31 162 Q150 175 269 162"/></g><g fill="url(#gem)" stroke="#241504" stroke-width="3"><path d="M150 27 l11 17 -11 18 -11-18z"/><path d="M90 61 l9 14 -9 15 -9-15z"/><path d="M210 61 l9 14 -9 15 -9-15z"/><circle cx="48" cy="91" r="7"/><circle cx="252" cy="91" r="7"/><circle cx="150" cy="126" r="9"/></g><g fill="none" stroke="#d9a63d" stroke-width="5" stroke-linecap="round"><path d="M57 139 C57 117 79 115 84 133 C88 147 105 145 110 132 C116 115 135 113 142 132"/><path d="M243 139 C243 117 221 115 216 133 C212 147 195 145 190 132 C184 115 165 113 158 132"/></g><g fill="#1b1005" opacity=".95"><circle cx="62" cy="155" r="4"/><circle cx="88" cy="158" r="4"/><circle cx="116" cy="160" r="4"/><circle cx="150" cy="162" r="5"/><circle cx="184" cy="160" r="4"/><circle cx="212" cy="158" r="4"/><circle cx="238" cy="155" r="4"/></g><path d="M34 169 Q150 183 266 169" fill="none" stroke="#f4cf64" stroke-width="3" opacity=".6"/></svg></div><span class="kingLabel">相手の王</span></button><button id="playerPedestal" class="royalPedestal player" type="button" onclick="clickKing('p')" aria-label="あなたの王"><div class="crownModel" aria-hidden="true"><svg class="crownSvg" viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="goldA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a1805"/><stop offset=".13" stop-color="#9c681d"/><stop offset=".27" stop-color="#f2cc69"/><stop offset=".39" stop-color="#6c4310"/><stop offset=".53" stop-color="#d7a33b"/><stop offset=".69" stop-color="#fff0a3"/><stop offset=".78" stop-color="#8a5818"/><stop offset="1" stop-color="#251505"/></linearGradient><linearGradient id="goldB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8dc7a"/><stop offset=".22" stop-color="#a66b1c"/><stop offset=".48" stop-color="#e3b449"/><stop offset=".72" stop-color="#5a350d"/><stop offset="1" stop-color="#d8a13a"/></linearGradient><radialGradient id="gem" cx="35%" cy="25%"><stop offset="0" stop-color="#fff4aa"/><stop offset=".35" stop-color="#d7a42e"/><stop offset="1" stop-color="#5a3208"/></radialGradient><filter id="metal"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#000" flood-opacity=".8"/></filter></defs><g filter="url(#metal)" stroke="#211304" stroke-width="4" stroke-linejoin="round"><path fill="url(#goldA)" d="M25 143 C25 121 31 101 43 72 L69 109 L89 48 L118 103 L150 14 L182 103 L211 48 L231 109 L257 72 C269 101 275 121 275 143 Z"/><path fill="#160d04" opacity=".58" d="M41 133 C55 116 66 110 83 121 C101 132 114 119 126 105 C137 92 145 86 150 86 C156 86 165 94 175 106 C188 121 201 132 218 121 C236 109 248 117 260 133 L260 146 L41 146Z"/><path fill="none" stroke="url(#goldB)" stroke-width="8" d="M37 132 C61 107 77 108 96 126 C113 141 126 116 150 91 C174 116 187 141 204 126 C223 108 239 107 263 132"/><path fill="url(#goldB)" d="M22 137 Q150 151 278 137 L274 171 Q150 186 26 171Z"/><path fill="none" stroke="#f4d574" stroke-width="3" opacity=".7" d="M31 148 Q150 159 269 148"/><path fill="none" stroke="#51300c" stroke-width="5" d="M31 162 Q150 175 269 162"/></g><g fill="url(#gem)" stroke="#241504" stroke-width="3"><path d="M150 27 l11 17 -11 18 -11-18z"/><path d="M90 61 l9 14 -9 15 -9-15z"/><path d="M210 61 l9 14 -9 15 -9-15z"/><circle cx="48" cy="91" r="7"/><circle cx="252" cy="91" r="7"/><circle cx="150" cy="126" r="9"/></g><g fill="none" stroke="#d9a63d" stroke-width="5" stroke-linecap="round"><path d="M57 139 C57 117 79 115 84 133 C88 147 105 145 110 132 C116 115 135 113 142 132"/><path d="M243 139 C243 117 221 115 216 133 C212 147 195 145 190 132 C184 115 165 113 158 132"/></g><g fill="#1b1005" opacity=".95"><circle cx="62" cy="155" r="4"/><circle cx="88" cy="158" r="4"/><circle cx="116" cy="160" r="4"/><circle cx="150" cy="162" r="5"/><circle cx="184" cy="160" r="4"/><circle cx="212" cy="158" r="4"/><circle cx="238" cy="155" r="4"/></g><path d="M34 169 Q150 183 266 169" fill="none" stroke="#f4cf64" stroke-width="3" opacity=".6"/></svg></div><span class="kingLabel">あなたの王</span></button></div>
+  <p id="cpuDeckMatchNotice" role="status" hidden></p><div class="status"><span class="badge">ターン: <b id="turn">1</b></span><span class="badge">自分山札: <b id="deck">35</b></span><span class="badge">相手山札: <b id="cpuDeck">35</b></span><span class="badge">相手手札: <b id="cpuHand">5</b>枚</span><button class="badge statusButton" type="button" onclick="showGlobalEnchantments()">全体エンチャント🔮<b id="globalEnchantCount">0</b></button></div><div class="playArea"><div class="boardColumn"><div id="turnIndicator" class="turnIndicator" role="status" hidden></div><div class="kingZone enemy"><span class="kingStat">❤️HP<b id="cHp">20</b></span><button class="graveButton" type="button" onclick="showGraveyard('c')">🪦<b id="cGrave">0</b></button><div class="king" onclick="clickKing('c')">相手の王</div><span class="kingStat manaStat"><span class="manaOwner">相手</span><span class="manaGlyph" aria-hidden="true">💧</span><b id="cpuMana">2/2</b></span></div><div class="boardWrap"><div class="boardPlane"><div id="board" class="board" aria-label="5行5列の戦闘盤面"></div><svg class="boardGrid" viewBox="0 0 5 5" aria-hidden="true"><path data-grid-axis="column" d="M0 0V5"/><path data-grid-axis="column" d="M1 0V5"/><path data-grid-axis="column" d="M2 0V5"/><path data-grid-axis="column" d="M3 0V5"/><path data-grid-axis="column" d="M4 0V5"/><path data-grid-axis="column" d="M5 0V5"/><path data-grid-axis="row" d="M0 0H5"/><path data-grid-axis="row" d="M0 1H5"/><path data-grid-axis="row" d="M0 2H5"/><path data-grid-axis="row" d="M0 3H5"/><path data-grid-axis="row" d="M0 4H5"/><path data-grid-axis="row" d="M0 5H5"/></svg><span class="royalFoot enemy" aria-hidden="true"></span><span class="royalFoot player" aria-hidden="true"></span></div><div id="pieceOverlay" aria-hidden="true"></div><button id="enemyPedestal" class="royalPedestal enemy" type="button" onclick="clickKing('c')" aria-label="相手の王"><svg class="royalPlatform" aria-hidden="true"><polygon/></svg><div class="crownModel" aria-hidden="true"><svg class="crownSvg" viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="goldA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a1805"/><stop offset=".13" stop-color="#9c681d"/><stop offset=".27" stop-color="#f2cc69"/><stop offset=".39" stop-color="#6c4310"/><stop offset=".53" stop-color="#d7a33b"/><stop offset=".69" stop-color="#fff0a3"/><stop offset=".78" stop-color="#8a5818"/><stop offset="1" stop-color="#251505"/></linearGradient><linearGradient id="goldB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8dc7a"/><stop offset=".22" stop-color="#a66b1c"/><stop offset=".48" stop-color="#e3b449"/><stop offset=".72" stop-color="#5a350d"/><stop offset="1" stop-color="#d8a13a"/></linearGradient><radialGradient id="gem" cx="35%" cy="25%"><stop offset="0" stop-color="#fff4aa"/><stop offset=".35" stop-color="#d7a42e"/><stop offset="1" stop-color="#5a3208"/></radialGradient><filter id="metal"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#000" flood-opacity=".8"/></filter></defs><g filter="url(#metal)" stroke="#211304" stroke-width="4" stroke-linejoin="round"><path fill="url(#goldA)" d="M25 143 C25 121 31 101 43 72 L69 109 L89 48 L118 103 L150 14 L182 103 L211 48 L231 109 L257 72 C269 101 275 121 275 143 Z"/><path fill="#160d04" opacity=".58" d="M41 133 C55 116 66 110 83 121 C101 132 114 119 126 105 C137 92 145 86 150 86 C156 86 165 94 175 106 C188 121 201 132 218 121 C236 109 248 117 260 133 L260 146 L41 146Z"/><path fill="none" stroke="url(#goldB)" stroke-width="8" d="M37 132 C61 107 77 108 96 126 C113 141 126 116 150 91 C174 116 187 141 204 126 C223 108 239 107 263 132"/><path fill="url(#goldB)" d="M22 137 Q150 151 278 137 L274 171 Q150 186 26 171Z"/><path fill="none" stroke="#f4d574" stroke-width="3" opacity=".7" d="M31 148 Q150 159 269 148"/><path fill="none" stroke="#51300c" stroke-width="5" d="M31 162 Q150 175 269 162"/></g><g fill="url(#gem)" stroke="#241504" stroke-width="3"><path d="M150 27 l11 17 -11 18 -11-18z"/><path d="M90 61 l9 14 -9 15 -9-15z"/><path d="M210 61 l9 14 -9 15 -9-15z"/><circle cx="48" cy="91" r="7"/><circle cx="252" cy="91" r="7"/><circle cx="150" cy="126" r="9"/></g><g fill="none" stroke="#d9a63d" stroke-width="5" stroke-linecap="round"><path d="M57 139 C57 117 79 115 84 133 C88 147 105 145 110 132 C116 115 135 113 142 132"/><path d="M243 139 C243 117 221 115 216 133 C212 147 195 145 190 132 C184 115 165 113 158 132"/></g><g fill="#1b1005" opacity=".95"><circle cx="62" cy="155" r="4"/><circle cx="88" cy="158" r="4"/><circle cx="116" cy="160" r="4"/><circle cx="150" cy="162" r="5"/><circle cx="184" cy="160" r="4"/><circle cx="212" cy="158" r="4"/><circle cx="238" cy="155" r="4"/></g><path d="M34 169 Q150 183 266 169" fill="none" stroke="#f4cf64" stroke-width="3" opacity=".6"/></svg></div><span class="kingLabel">相手の王</span></button><button id="playerPedestal" class="royalPedestal player" type="button" onclick="clickKing('p')" aria-label="あなたの王"><svg class="royalPlatform" aria-hidden="true"><polygon/></svg><div class="crownModel" aria-hidden="true"><svg class="crownSvg" viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="goldA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a1805"/><stop offset=".13" stop-color="#9c681d"/><stop offset=".27" stop-color="#f2cc69"/><stop offset=".39" stop-color="#6c4310"/><stop offset=".53" stop-color="#d7a33b"/><stop offset=".69" stop-color="#fff0a3"/><stop offset=".78" stop-color="#8a5818"/><stop offset="1" stop-color="#251505"/></linearGradient><linearGradient id="goldB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f8dc7a"/><stop offset=".22" stop-color="#a66b1c"/><stop offset=".48" stop-color="#e3b449"/><stop offset=".72" stop-color="#5a350d"/><stop offset="1" stop-color="#d8a13a"/></linearGradient><radialGradient id="gem" cx="35%" cy="25%"><stop offset="0" stop-color="#fff4aa"/><stop offset=".35" stop-color="#d7a42e"/><stop offset="1" stop-color="#5a3208"/></radialGradient><filter id="metal"><feDropShadow dx="0" dy="2" stdDeviation="1.4" flood-color="#000" flood-opacity=".8"/></filter></defs><g filter="url(#metal)" stroke="#211304" stroke-width="4" stroke-linejoin="round"><path fill="url(#goldA)" d="M25 143 C25 121 31 101 43 72 L69 109 L89 48 L118 103 L150 14 L182 103 L211 48 L231 109 L257 72 C269 101 275 121 275 143 Z"/><path fill="#160d04" opacity=".58" d="M41 133 C55 116 66 110 83 121 C101 132 114 119 126 105 C137 92 145 86 150 86 C156 86 165 94 175 106 C188 121 201 132 218 121 C236 109 248 117 260 133 L260 146 L41 146Z"/><path fill="none" stroke="url(#goldB)" stroke-width="8" d="M37 132 C61 107 77 108 96 126 C113 141 126 116 150 91 C174 116 187 141 204 126 C223 108 239 107 263 132"/><path fill="url(#goldB)" d="M22 137 Q150 151 278 137 L274 171 Q150 186 26 171Z"/><path fill="none" stroke="#f4d574" stroke-width="3" opacity=".7" d="M31 148 Q150 159 269 148"/><path fill="none" stroke="#51300c" stroke-width="5" d="M31 162 Q150 175 269 162"/></g><g fill="url(#gem)" stroke="#241504" stroke-width="3"><path d="M150 27 l11 17 -11 18 -11-18z"/><path d="M90 61 l9 14 -9 15 -9-15z"/><path d="M210 61 l9 14 -9 15 -9-15z"/><circle cx="48" cy="91" r="7"/><circle cx="252" cy="91" r="7"/><circle cx="150" cy="126" r="9"/></g><g fill="none" stroke="#d9a63d" stroke-width="5" stroke-linecap="round"><path d="M57 139 C57 117 79 115 84 133 C88 147 105 145 110 132 C116 115 135 113 142 132"/><path d="M243 139 C243 117 221 115 216 133 C212 147 195 145 190 132 C184 115 165 113 158 132"/></g><g fill="#1b1005" opacity=".95"><circle cx="62" cy="155" r="4"/><circle cx="88" cy="158" r="4"/><circle cx="116" cy="160" r="4"/><circle cx="150" cy="162" r="5"/><circle cx="184" cy="160" r="4"/><circle cx="212" cy="158" r="4"/><circle cx="238" cy="155" r="4"/></g><path d="M34 169 Q150 183 266 169" fill="none" stroke="#f4cf64" stroke-width="3" opacity=".6"/></svg></div><span class="kingLabel">あなたの王</span></button></div>
 <div class="kingZone player"><span class="kingStat">❤️HP<b id="pHp">20</b></span><button class="graveButton" type="button" onclick="showGraveyard('p')">🪦<b id="pGrave">0</b></button><div class="king" onclick="clickKing('p')">あなたの王</div><span class="kingStat manaStat"><span class="manaOwner">自分</span><span class="manaGlyph" aria-hidden="true">💧</span><b id="mana">1/1</b></span></div></div><aside id="infoPanel" aria-live="polite"><div class="infoHeading">選択中の情報</div><div id="infoContent" class="infoContent"></div></aside></div><aside id="opponentCard" class="opponentCard" aria-label="相手が使用したカード" hidden></aside><div class="handTitle">手札（タップして使用）</div><div class="handScroller"><button type="button" class="layoutHandScroll" data-scroll-hand="-1" aria-label="手札を左へ">◀</button><div id="hand" class="hand"></div><button type="button" class="layoutHandScroll" data-scroll-hand="1" aria-label="手札を右へ">▶</button></div><div class="battleStrip" aria-label="手札と対戦操作"><div class="stripLeft"></div><div class="stripRight"><div class="stripButtons"></div><div class="stripEnd"></div></div></div><div class="controls"><span class="manaDock" aria-label="自分のマナ"></span><details class="layoutLog"><summary aria-label="戦闘ログ">戦闘ログ<span id="latestAction" class="latestAction" role="status" aria-label="最新の行動"><span id="latestActionText">直近の行動はありません</span></span></summary><div class="logPanel"><div id="log"></div></div></details><button id="endTurn">ターン終了</button><button id="undoOne" class="secondary" disabled>1手戻る</button></div></div>
 
 <div id="turnPopup" role="status" aria-live="polite" hidden></div><div id="settingsOverlay" aria-hidden="true"><div class="settingsPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle"><div class="settingsHead"><b id="settingsTitle">⚙️ 設定</b><button id="settingsClose" type="button">×</button></div><div class="settingsGroup"><div class="settingsLabel">視点比較（試作）</div><div class="settingsChoices" data-setting="view"><button type="button" data-value="current">A：現行方向</button><button type="button" data-value="left">B：左回転俯瞰</button></div><div class="settingsNote">横画面で比較します。端末だけの表示設定です。Bは正式採用前の試作です。</div></div><div class="settingsGroup"><div class="settingsLabel">ボード</div><div class="settingsChoices" data-setting="board"><button type="button" data-value="rich">リッチ</button><button type="button" data-value="simple">シンプル</button><button type="button" data-value="antique">アンティーク</button><button type="button" data-value="light">ライト</button></div></div><div class="settingsGroup"><div class="settingsLabel">王アイコン</div><div class="settingsChoices kingChoices" data-setting="king"><button type="button" data-value="simple1">デフォルト</button><button type="button" data-value="dark">ダーク</button><button type="button" data-value="default">ゴージャス</button><button type="button" data-value="simple2">シンプル</button><button type="button" data-value="oldking">老王1</button><button type="button" data-value="oldking2">老王2</button><button type="button" data-value="youngking">若王</button></div><div class="settingsNote">王冠画像アセットを切り替えます。ゲームルールには影響しません。</div></div><div class="settingsGroup"><div class="settingsLabel">BGM</div><div class="settingsChoices"><button type="button" data-bgm-enabled="true">ON</button><button type="button" data-bgm-enabled="false">OFF</button></div><div class="bgmVolumeRow"><label for="bgmVolume">音量</label><input id="bgmVolume" type="range" min="0" max="100" step="1" value="50" aria-describedby="bgmStatus"><output id="bgmVolumeValue" for="bgmVolume">50％</output></div><div id="bgmStatus" class="settingsNote">対戦中にループ再生します。音量0％は無音です。</div></div><div class="settingsGroup"><div class="settingsLabel">クリーチャー名称表示</div><div class="settingsChoices" id="creatureNameChoices"><button type="button" data-name-visible="true">ON</button><button type="button" data-name-visible="false">OFF</button></div><div class="settingsNote">盤上のクリーチャー名称のみ表示・非表示を切り替えます。</div></div><!-- CPU_SETTINGS_START --><div class="settingsGroup"><div class="settingsLabel">CPU演出</div><div id="cpuPresentationChoices" class="settingsChoices"><button type="button" data-cpu-speed="normal" aria-pressed="true">通常</button><button type="button" data-cpu-speed="fast" aria-pressed="false">高速</button><button type="button" data-cpu-speed="skip" aria-pressed="false">演出スキップ</button></div><div class="settingsNote">思考・ルール結果を変えず、CPUの演出待ちだけを変更します。</div></div><div class="settingsGroup"><div class="settingsLabel">CPUの強さ</div><div class="settingsChoices" data-setting="cpuDifficulty"><button type="button" data-value="weak">よわい</button><button type="button" data-value="strong">普通</button><button type="button" data-value="tactical">つよい</button><button type="button" data-value="gachi">ガチ</button></div><div class="settingsNote">「ガチ」は相手の応手と味方の反撃まで読み、駒の交換や配置を判断します。</div></div><div class="settingsGroup">
@@ -1222,7 +1248,6 @@ const landscapeQuery=matchMedia('(orientation: landscape) and (min-width: 640px)
 function fixedProject(x,y,size,yaw){const a=yaw*Math.PI/180,t=55*Math.PI/180,u=(x*Math.cos(a)-y*Math.sin(a))*size,v=(x*Math.sin(a)+y*Math.cos(a))*size,w=1-v*Math.sin(t)/1000;return {x:u/w,y:v*Math.cos(t)/w};}
 // Central-column ray meets the outer edge; the complete 64x36 royal target
 // stays outside its supporting half-plane. This is presentation geometry only.
-function hpOnLeft(name){return !landscapeQuery.matches&&presentationView==='left'?name==='player':name==='enemy';}
 function royalAnchor(name,size,yaw){
  const y=name==='enemy'?-.5:.5,edge=fixedProject(0,y,size,yaw),a=fixedProject(-.1,y,size,yaw),b=fixedProject(.1,y,size,yaw),outside=fixedProject(0,y*1.2,size,yaw);
  let nx=-(b.y-a.y),ny=b.x-a.x;const len=Math.hypot(nx,ny);nx/=len;ny/=len;
@@ -1895,7 +1920,7 @@ function positionOpponentCard(){
    const r=el.getBoundingClientRect();
    return detail.contains(el)?{left:r.left,right:r.right,top:Math.max(r.top,clip.top),bottom:Math.min(r.bottom,clip.bottom)}:r;
   }).filter(r=>r.right>r.left&&r.bottom>r.top);
- const obstacles=[...document.querySelectorAll('.royalPedestal,.royalHP,.crownModel,.graveButton,#turnIndicator,#hand,#endTurn')]
+ const obstacles=[...document.querySelectorAll('.royalPedestal,.royalDetails,.crownModel,.graveButton,#turnIndicator,#hand,#endTurn')]
   .map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height);
  // Keep the right edge. Move above controls that reach the anchor, or lift
  // a little to clear nearby king/status elements before shrinking to fit.
@@ -1934,7 +1959,7 @@ function fitLatestAction(latest,left,bottom){
  // Keep the two-line envelope in the gap beside the drawn board, even for a short headline.
  const top=bottom-36;
  let upper=max;
- for(const el of document.querySelectorAll('.royalPedestal,.royalHP,.royalGrave .graveButton')){
+ for(const el of document.querySelectorAll('.royalPedestal,.royalDetails,.royalGrave .graveButton')){
   const r=el.getBoundingClientRect();
   if(r.width&&r.left>left&&r.bottom>top&&r.top<bottom)upper=Math.min(upper,r.left-left-2);
  }
@@ -1999,7 +2024,7 @@ function positionTutorialLog(coach){
  const area=column.getBoundingClientRect(),anchor=entry.getBoundingClientRect(),vv=window.visualViewport,gap=8;
  const left=Math.max(area.left+6,vv?.offsetLeft||0),right=Math.min(area.right-6,(vv?.offsetLeft||0)+(vv?.width||innerWidth)),top=Math.max(area.top+4,vv?.offsetTop||0),bottom=Math.min(anchor.top-6,(vv?.offsetTop||0)+(vv?.height||innerHeight)-8);
  const rect=e=>e.getBoundingClientRect(),intersects=(a,b)=>a.left<b.right+gap&&a.right>b.left-gap&&a.top<b.bottom+gap&&a.bottom>b.top-gap;
- const obstacles=[coach,...document.querySelectorAll('#infoPanel,.royalPedestal,.royalHP,.royalGrave,.enemyInfoDock,.battleInfoDock')].filter(e=>e.getClientRects().length).map(rect),maxWidth=Math.min(360,right-left);
+ const obstacles=[coach,...document.querySelectorAll('#infoPanel,.royalPedestal,.royalDetails,.royalGrave,.enemyInfoDock,.battleInfoDock')].filter(e=>e.getClientRects().length).map(rect),maxWidth=Math.min(360,right-left);
  let best=null;
  for(const width of [...new Set([maxWidth,Math.min(300,maxWidth),Math.min(260,maxWidth),Math.min(220,maxWidth)])])for(const cap of [190,140,100,72]){
   tutorialLogWidthCap=width;tutorialLogHeightCap=cap;positionBattleLog();const height=panel.offsetHeight;
@@ -2047,30 +2072,91 @@ function pieceLabel(name){
  const restSize=Math.max(5,Math.min(12,Math.floor(38/Math.max(1,Array.from(rest).length))));
  return `<div class="pname"><span class="pnameLead">${escapeHTML(lead)}</span><span class="pnameRest" style="--rest-size:${restSize}px">${escapeHTML(rest)}</span></div>`;
 }
-function positionRoyalPedestals(){
- const wrap=$('board')?.closest('.boardWrap'), cells=$('board')?.querySelectorAll('.cell');
- if(!wrap||!cells||cells.length!==25||!wrap.clientWidth||!wrap.clientHeight)return;
- for(const [kind,id]of [['enemy','enemyPedestal'],['player','playerPedestal']]){let hud=wrap.querySelector('.royalHP.'+kind);if(!hud){hud=document.createElement('span');hud.className='royalHP '+kind;hud.setAttribute('aria-label',kind==='enemy'?'相手の王HP':'自分の王HP');wrap.append(hud);}const stat=document.querySelector('.kingZone.'+kind+' .kingStat:not(.manaStat)');if(stat){stat.firstChild.textContent='❤️';hud.append(stat);}}
- if(document.body.classList.contains('projected-board')){
-  for(const [id,kind]of [['enemyPedestal','enemy'],['playerPedestal','player']]){
-   const el=$(id),anchor=wrap.querySelector('.royalFoot.'+kind);if(!el||!anchor)continue;
-   const point=screenPoint(anchor,wrap),width=64;
-   el.style.left=point.x+'px';el.style.top=point.y+'px';el.style.width=width+'px';el.style.height='36px';el.style.zIndex=String(100+Math.round(point.y));
-  }positionRoyalHP(wrap);return;
- }
- const wr=wrap.getBoundingClientRect();
- // Portrait A keeps the existing CSS perspective. Use the real non-zero
- // central cell border boxes, not zero-area descendants inside preserve-3d.
- // In this direction the near/far edges are horizontal in screen space.
- for(const [id,index,dir] of [['enemyPedestal',2,-1],['playerPedestal',22,1]]){
-  const pedestal=$(id);if(!pedestal)continue;
-  const cell=cells[index].getBoundingClientRect();if(!cell.width||!cell.height)return;
-  const x=(cell.left+cell.right)/2-wr.left,edge=dir<0?cell.top:cell.bottom;
-  pedestal.style.left=x+'px';pedestal.style.top=(edge-wr.top+dir*28)+'px';
-  pedestal.style.width='64px';pedestal.style.height='36px';
- }positionRoyalHP(wrap);
+function royalPlatform(cells,kind,wrap){
+ const far=kind==='enemy',row=far?0:20,left=cells[row+1],right=cells[row+3];
+ const corner=(cell,position)=>screenPoint(cell.querySelector('[data-plane-point='+position+']'),wrap);
+ const a=corner(left,far?'nw':'sw'),b=corner(right,far?'ne':'se');
+ const inA=corner(left,far?'sw':'nw'),inB=corner(right,far?'se':'ne');
+ const center={x:(a.x+b.x)/2,y:(a.y+b.y)/2},length=Math.hypot(b.x-a.x,b.y-a.y);
+ if(!length)return null;
+ // The ends follow the two projected column boundaries as the band moves
+ // outward. This is a screen-space continuation of the rendered quadrilateral.
+ let nx=-(b.y-a.y)/length,ny=(b.x-a.x)/length;
+ if(nx*(a.x-inA.x)+ny*(a.y-inA.y)<0){nx=-nx;ny=-ny;}
+ const shift=(p,n)=>({x:p.x+nx*n,y:p.y+ny*n});
+ const outside=(p,q,depth)=>{
+  const scale=depth/((p.x-q.x)*nx+(p.y-q.y)*ny);
+  return {x:p.x+(p.x-q.x)*scale,y:p.y+(p.y-q.y)*scale};
+ };
+ const gap=3,depth=24;
+ const shape=[shift(a,gap),shift(b,gap),shift(outside(b,inB,depth),gap),shift(outside(a,inA,depth),gap)];
+ return {shape,center,nx,ny};
 }
-function positionRoyalHP(wrap){for(const [kind,id]of [['enemy','enemyPedestal'],['player','playerPedestal']]){const hud=wrap.querySelector('.royalHP.'+kind),b=$(id).getBoundingClientRect(),w=wrap.getBoundingClientRect();hud.style.left=(!landscapeQuery.matches?b.left-w.left+32:hpOnLeft(kind)?b.left-w.left-48:b.right-w.left+4)+'px';hud.style.top=(b.top-w.top+(!landscapeQuery.matches?4:(b.height-24)/2))+'px';const grave=wrap.querySelector('.royalGrave.'+kind);if(landscapeQuery.matches&&grave){grave.style.left=(kind==='enemy'?b.left-w.left-86:b.right-w.left+52)+'px';grave.style.top=(b.top-w.top+2)+'px';}}}
+function royalDetails(wrap,kind,pedestal){
+ let details=wrap.querySelector('.royalDetails.'+kind);
+ if(!details){
+  details=document.createElement('div');details.className='royalDetails '+kind;
+  const hp=document.createElement('span');hp.className='royalHP '+kind;
+  details.append(pedestal.querySelector('.kingLabel'),hp);wrap.append(details);
+ }
+ const stat=document.querySelector('.kingZone.'+kind+' .kingStat:not(.manaStat)');
+ if(stat){stat.firstChild.textContent='❤️';details.querySelector('.royalHP').append(stat);}
+ return details;
+}
+function positionRoyalPedestals(){
+ const board=$('board'),wrap=board?.closest('.boardWrap'),cells=board?.querySelectorAll('.cell');
+ if(!wrap||cells.length!==25||!wrap.clientWidth||!wrap.clientHeight)return;
+ const wr=wrap.getBoundingClientRect(),landscape=landscapeQuery.matches;
+ const royals=[['enemy','enemyPedestal'],['player','playerPedestal']].map(([kind,id])=>({
+  kind,pedestal:$(id),platform:royalPlatform(cells,kind,wrap)
+ }));
+ // Keep graveyards in the existing reservations unless a wider band reaches one.
+ if(landscape)for(const {kind,platform} of royals){
+  const grave=wrap.querySelector('.royalGrave.'+kind),point=screenPoint(wrap.querySelector('.royalFoot.'+kind),wrap);
+  let x=point.x+(kind==='enemy'?-118:84);const y=point.y-16;
+  if(platform&&intersectsRect(platform.shape,{x1:x-4,y1:y-4,x2:x+38,y2:y+36})){
+   const {x1,x2}=shapeBounds([platform.shape]);
+   const alternatives=kind==='enemy'?[x1-40,x2+6]:[x2+6,x1-40];
+   x=alternatives.find(x=>x>=0&&x+34<=wrap.clientWidth)??x;
+  }
+  grave.style.left=x+'px';grave.style.top=y+'px';
+ }
+ const obstacles=[...document.querySelectorAll('.graveButton,.manaStat,#turnIndicator,.statusButton,#hand,.layoutLog,#infoPanel,.battleStrip,.gameTopBar button,.appHeader button')]
+  .map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height);
+ for(const {kind,pedestal,platform} of royals){
+  if(!platform)continue;
+  const {shape,center,nx,ny}=platform,{x1,y1,x2,y2}=shapeBounds([shape]);
+  const width=x2-x1,height=y2-y1;
+  Object.assign(pedestal.style,{left:x1+'px',top:y1+'px',width:width+'px',height:height+'px'});
+  const svg=pedestal.querySelector('.royalPlatform');
+  svg.setAttribute('viewBox','0 0 '+width+' '+height);
+  svg.firstElementChild.setAttribute('points',shape.map(({x,y})=>(x-x1)+','+(y-y1)).join(' '));
+  const art=shape.reduce((p,q)=>({x:p.x+q.x/4,y:p.y+q.y/4}),{x:0,y:0});
+  pedestal.style.setProperty('--royal-art-x',art.x-x1+'px');pedestal.style.setProperty('--royal-art-y',art.y-y1+'px');
+
+  const details=royalDetails(wrap,kind,pedestal),w=details.offsetWidth,h=details.offsetHeight;
+  const normalExtent=Math.abs(nx)*w/2+Math.abs(ny)*h/2;
+  const clampX=x=>Math.min(innerWidth-wr.left-w/2-2,Math.max(w/2+2-wr.left,x));
+  const clampY=y=>Math.min(innerHeight-wr.top-h/2-2,Math.max(h/2+2-wr.top,y));
+  // Prefer the nearest readable position outside the board and away from the
+  // centered art. A short slide along the edge can clear an existing dock.
+  const positions=[];
+  for(const outward of [4,12,22,31])for(const along of [0,-.45,.45,-.8,.8,-1.2,1.2]){
+   const distance=normalExtent+outward;
+   positions.push({x:clampX(center.x+nx*distance-ny*w*along),y:clampY(center.y+ny*distance+nx*w*along)});
+  }
+  positions.sort((a,b)=>Math.hypot(a.x-art.x,a.y-art.y)-Math.hypot(b.x-art.x,b.y-art.y));
+  const readable=({x,y})=>(x-center.x)*nx+(y-center.y)*ny>=normalExtent+2&&
+   (Math.abs(x-art.x)>=w/2+20||Math.abs(y-art.y)>=h/2+14);
+  const clearDock=({x,y})=>{
+   const left=wr.left+x-w/2,right=left+w,top=wr.top+y-h/2,bottom=top+h;
+   return !obstacles.some(r=>r.left<right&&r.right>left&&r.top<bottom&&r.bottom>top);
+  };
+  // The latest action row already adjusts to the final HUD rectangles.
+  const position=positions.find(p=>readable(p)&&clearDock(p))||positions.find(readable)||positions[0];
+  details.style.left=position.x+'px';details.style.top=position.y+'px';
+ }
+}
 
 const CREATURE_ASSET_IDS={
  "歩兵":"infantry","銀級兵":"silver","金級兵":"gold","チャリオット":"chariot","アーチャー":"archer",
