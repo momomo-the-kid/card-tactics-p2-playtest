@@ -8,7 +8,7 @@
 // One fixed projection draws and clips the same 25 native cell elements.
 // Screen-space artwork follows their foot markers; there is no point-to-cell converter.
 let presentationView='current',layoutFrame=0;
-const royalGap=.14,royalDepth=.55;
+const royalGap=.14,royalDepth=1;
 const royalEdges=[
  {kind:'enemy',row:0,edgeY:0,outward:-1},
  {kind:'player',row:20,edgeY:5,outward:1}
@@ -137,7 +137,18 @@ function fitProjection(wrap,dock){
  // Portrait B retains v6's shared A/B scale and existing status clearance.
  if(!landscape){const envelope=size=>shapeBounds([0,-45].flatMap(a=>projectionShapes(size,a)));let lo=70,hi=800;for(let i=0;i<16;i++){const n=(lo+hi)/2,b=envelope(n);if(b.x2-b.x1<=w-8&&b.y2-b.y1<=h-8)lo=n;else hi=n;}const b=envelope(lo),active=shapeBounds(projectionShapes(lo,yaw));let y=(h-b.y1-b.y2)/2;const status=[...document.querySelectorAll('.kingZone.enemy .manaStat,.kingZone.enemy .graveButton')].map(e=>e.getBoundingClientRect()).filter(r=>r.width&&r.height),top=Math.max(0,...status.map(r=>r.bottom-wr.top+4));y+=Math.min(Math.max(0,top-y-active.y1),Math.max(0,h-4-y-active.y2));wrap.style.setProperty('--logical-board',lo+'px');wrap.style.setProperty('--plane-offset-x',(-(b.x1+b.x2)/2)+'px');wrap.style.setProperty('--plane-offset-y',(y-h/2)+'px');return;}
  let lo=30,hi=1000,best=place(lo);for(let i=0;i<17;i++){const n=(lo+hi)/2,p=place(n);if(p){lo=n;best=p;}else hi=n;}
- if(!best)return;wrap.style.setProperty('--logical-board',lo+'px');wrap.style.setProperty('--plane-offset-x',(best.x-w/2)+'px');wrap.style.setProperty('--plane-offset-y',(best.y-h/2)+'px');
+ if(!best)return;
+ // Give the deeper near platform clearance above the hand without rescaling
+ // the board. Keep the fit's horizontal position and reserve far-side space.
+ const outerEdge=.5+(royalGap+royalDepth)/5;
+ const edge=(side)=>[-.3,.3].map(x=>fixedProject(x,side*outerEdge,lo,yaw).y);
+ const near=Math.max(...edge(1)),far=Math.min(...edge(-1));
+ const hand=$('hand')?.getBoundingClientRect();
+ const handTop=hand?.height?hand.top-wr.top:h;
+ const lift=Math.min(Math.max(0,best.y+near-handTop+3),Math.max(0,best.y+far-4));
+ wrap.style.setProperty('--logical-board',lo+'px');
+ wrap.style.setProperty('--plane-offset-x',(best.x-w/2)+'px');
+ wrap.style.setProperty('--plane-offset-y',(best.y-lift-h/2)+'px');
 }
 function projectCells(cells,wrap){
  if(wrap.dataset.renderMode!=='projected')return;
@@ -902,6 +913,24 @@ function positionRoyalPedestals(){
   }
   grave.style.left=x+'px';grave.style.top=y+'px';
  }
+ const column=wrap.closest('.boardColumn');
+ column.style.removeProperty('--royal-mana-offset');
+ if(!landscape&&royals[1].platform){
+  const mana=column.querySelector('.kingZone.player .manaStat');
+  if(mana){
+   const {left,top,right,bottom}=mana.getBoundingClientRect();
+   const {shape}=royals[1].platform;
+   if(intersectsRect(shape,{x1:left-wr.left-2,y1:top-wr.top-2,x2:right-wr.left+2,y2:bottom-wr.top+2})){
+    const {y2}=shapeBounds([shape]);
+    column.style.setProperty('--royal-mana-offset',Math.ceil(wr.top+y2-top+3)+'px');
+   }
+  }
+ }
+ const span=({shape:[a,b,c,d]})=>(Math.hypot(b.x-a.x,b.y-a.y)+Math.hypot(c.x-d.x,c.y-d.y))/2;
+ const [enemy,player]=royals.map(royal=>royal.platform);
+ if(!enemy||!player)return;
+ // Dampen the apparent span ratio so the far king stays easy to identify.
+ const farScale=Math.max(.92,Math.min(.98,1-.4*(1-span(enemy)/span(player))));
  const obstacles=[...document.querySelectorAll('.graveButton,.manaStat,#turnIndicator,.statusButton,#hand,.layoutLog,#infoPanel,.battleStrip,.gameTopBar button,.appHeader button')]
   .map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height);
  for(const {kind,pedestal,platform} of royals){
@@ -912,8 +941,20 @@ function positionRoyalPedestals(){
   const svg=pedestal.querySelector('.royalPlatform');
   svg.setAttribute('viewBox','0 0 '+width+' '+height);
   svg.firstElementChild.setAttribute('points',shape.map(({x,y})=>(x-x1)+','+(y-y1)).join(' '));
-  const art=shape.reduce((p,q)=>({x:p.x+q.x/4,y:p.y+q.y/4}),{x:0,y:0});
-  pedestal.style.setProperty('--royal-art-x',art.x-x1+'px');pedestal.style.setProperty('--royal-art-y',art.y-y1+'px');
+  const far=kind==='enemy',diagonal=presentationView==='left';
+  const scale=far?farScale:1,artWidth=36*scale,artHeight=24*scale;
+  // Align the visible body of the PNG, whose alpha mass lies below its center.
+  // Keep the near icon closer to the inner half of the deeper platform.
+  const depth=far?.5:diagonal?.275:.4;
+  const [a,b,c,d]=shape;
+  const art={
+   x:((a.x+b.x)*(1-depth)+(c.x+d.x)*depth)/2+(!far&&diagonal?7:0),
+   y:((a.y+b.y)*(1-depth)+(c.y+d.y)*depth)/2-artHeight*.09-(far?(diagonal?7:3):diagonal?1:0)
+  };
+  pedestal.style.setProperty('--royal-art-x',art.x-x1+'px');
+  pedestal.style.setProperty('--royal-art-y',art.y-y1+'px');
+  pedestal.style.setProperty('--royal-art-width',artWidth+'px');
+  pedestal.style.setProperty('--royal-art-height',artHeight+'px');
 
   const details=royalDetails(wrap,kind,pedestal),w=details.offsetWidth,h=details.offsetHeight;
   const normalExtent=Math.abs(nx)*w/2+Math.abs(ny)*h/2;
@@ -922,9 +963,14 @@ function positionRoyalPedestals(){
   // Prefer the nearest readable position outside the board and away from the
   // centered art. A short slide along the edge can clear an existing dock.
   const positions=[];
-  for(const outward of [4,12,22,31])for(const along of [0,-.45,.45,-.8,.8,-1.2,1.2]){
+  for(const outward of [4,12,22,31,42,54,72,90]){
    const distance=normalExtent+outward;
-   positions.push({x:clampX(center.x+nx*distance-ny*w*along),y:clampY(center.y+ny*distance+nx*w*along)});
+   for(const along of [0,-.45,.45,-.8,.8,-1.2,1.2,-1.6,1.6]){
+    positions.push({x:clampX(center.x+nx*distance-ny*w*along),y:clampY(center.y+ny*distance+nx*w*along)});
+   }
+   for(const x of [x1-w/2-3,x2+w/2+3]){
+    positions.push({x:clampX(x),y:clampY(center.y+ny*distance)});
+   }
   }
   positions.sort((a,b)=>Math.hypot(a.x-art.x,a.y-art.y)-Math.hypot(b.x-art.x,b.y-art.y));
   const readable=({x,y})=>(x-center.x)*nx+(y-center.y)*ny>=normalExtent+2&&
@@ -934,7 +980,9 @@ function positionRoyalPedestals(){
    return !obstacles.some(r=>r.left<right&&r.right>left&&r.top<bottom&&r.bottom>top);
   };
   // The latest action row already adjusts to the final HUD rectangles.
-  const position=positions.find(p=>readable(p)&&clearDock(p))||positions.find(readable)||positions[0];
+  const clear=positions.filter(p=>readable(p)&&clearDock(p));
+  const position=clear.find(({x,y})=>!intersectsRect(shape,{x1:x-w/2-2,y1:y-h/2-2,x2:x+w/2+2,y2:y+h/2+2}))
+   ||clear[0]||positions.find(readable)||positions[0];
   details.style.left=position.x+'px';details.style.top=position.y+'px';
  }
 }
