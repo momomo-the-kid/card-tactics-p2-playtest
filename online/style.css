@@ -867,7 +867,10 @@ body.projected-board .overlayPiece{transform:translate(-50%,-76%)}
 body.projected-board .overlayNameLayer{top:0;height:auto;min-height:11px;background:#101318d9;border-radius:4px;color:#fff!important;-webkit-text-fill-color:#fff;-webkit-text-stroke:0!important;text-shadow:0 1px 2px #000!important;line-height:1.15;align-items:center;max-width:110%;width:max-content;padding:1px 2px}
 body.projected-board .overlayNameLead{font-size:11px;letter-spacing:0}body.projected-board .overlayNameRest{font-size:9px;letter-spacing:0;margin:0}
 body.projected-board .overlayStatsLayer{top:76%;font-size:10px;min-width:90%;max-width:none;padding:2px;line-height:1.1}
-body.projected-board .overlayCreatureAsset{top:47%;width:88%;height:68%}
+/* Projected creature artwork and the landscape royal artwork use these proportions. */
+.boardWrap{--projected-art-top:47%;--projected-art-width:88%;--projected-art-height:68%;--projected-art-scale:1}
+body.view-left .boardWrap{--projected-art-scale:1.5}
+body.projected-board .overlayCreatureAsset{top:var(--projected-art-top);width:var(--projected-art-width);height:var(--projected-art-height)}
 body.projected-board .overlayOrb{top:47%;width:55%}
 body.projected-board .overlayDot{top:21%;width:8px;height:8px}.projected-board .overlayDot.attack{right:12%}.projected-board .overlayDot.move{right:-2%}
 body.projected-board .royalPedestal{transform:translate(-50%,-50%)!important;border-radius:8px!important;min-height:32px;padding:0 3px;align-items:flex-end}
@@ -1018,6 +1021,7 @@ html body #app .royalPedestal .crownModel{
  width:var(--royal-art-width,36px)!important;height:var(--royal-art-height,24px)!important;transform:translate(-50%,-50%)!important;
  background-position:center!important;background-size:contain!important;pointer-events:none
 }
+html body.layout-landscape #app .royalPedestal .crownModel{background-position:center bottom!important}
 .royalDetails{
  position:absolute;z-index:702;transform:translate(-50%,-50%);display:flex;align-items:center;gap:4px;
  padding:2px 4px;border:1px solid #657080;border-radius:6px;background:#151b24ee;color:#fff;
@@ -1083,7 +1087,7 @@ body.creature-names-off .overlayPiece.combatHUD .overlayNameLayer{display:none}
 /* B only: enlarge artwork/fallback around their existing bottom edge.
    The piece, foot marker, name and combatStack are not transformed. */
 body.view-left .overlayPiece.combatHUD .overlayCreatureAsset,
-body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%) scale(1.5);transform-origin:50% 100%}
+body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%) scale(var(--projected-art-scale));transform-origin:50% 100%}
 
 .creatureStatus{position:absolute;right:calc(100% + 2px);top:50%;transform:translateY(-50%);width:17px;height:17px;line-height:17px;text-align:center;font-size:14px;pointer-events:none;animation:status-glow 3s ease-in-out var(--status-delay) infinite}
 .creatureStatus span{position:absolute;inset:0}

@@ -150,11 +150,14 @@ function fitProjection(wrap,dock){
  wrap.style.setProperty('--plane-offset-x',(best.x-w/2)+'px');
  wrap.style.setProperty('--plane-offset-y',(best.y-lift-h/2)+'px');
 }
-function projectCells(cells,wrap){
- if(wrap.dataset.renderMode!=='projected')return;
- const grid=wrap.querySelector('.boardGrid');
+function boardProjection(wrap){
  const size=parseFloat(wrap.style.getPropertyValue('--logical-board')),ox=wrap.clientWidth/2+parseFloat(wrap.style.getPropertyValue('--plane-offset-x')),oy=wrap.clientHeight/2+parseFloat(wrap.style.getPropertyValue('--plane-offset-y')),yaw=presentationView==='left'?-45:0;
  const at=(x,y)=>{const p=fixedProject(x-.5,y-.5,size,yaw);return {x:p.x+ox,y:p.y+oy};};
+ return {at,size,ox,oy,yaw};
+}
+function projectCells(cells,wrap){
+ if(wrap.dataset.renderMode!=='projected')return;
+ const grid=wrap.querySelector('.boardGrid'),{at,size,ox,oy,yaw}=boardProjection(wrap);
  const point=(c,name,p,x,y)=>{const e=mark(c,name,0,0);e.style.left=(p.x-x)+'px';e.style.top=(p.y-y)+'px';};
  cells.forEach((c,i)=>{
   const row=Math.floor(i/5),col=i%5,coords=[[col/5,row/5],[(col+1)/5,row/5],[(col+1)/5,(row+1)/5],[col/5,(row+1)/5]],q=coords.map(([x,y])=>at(x,y));
@@ -895,15 +898,31 @@ function royalDetails(wrap,kind,pedestal){
  if(stat){stat.firstChild.textContent='❤️';details.querySelector('.royalHP').append(stat);}
  return details;
 }
+function landscapeRoyalArt(wrap){
+ const {at}=boardProjection(wrap),style=getComputedStyle(wrap);
+ const fraction=name=>parseFloat(style.getPropertyValue('--projected-art-'+name))/100;
+ const width=fraction('width'),height=fraction('height'),top=fraction('top');
+ const scale=Number(style.getPropertyValue('--projected-art-scale'));
+ return ({edgeY,outward})=>{
+  const y=(edgeY+outward*(royalGap+royalDepth/2))/5,foot=at(.5,y);
+  const pitch=projectedPieceWidth(at(.4,y),at(.6,y));
+  const artWidth=pitch*width*scale,artHeight=pitch*height*scale;
+  const bottom=foot.y+pitch*(top+height/2-.5);
+  // The existing king PNGs have a small transparent margin below the base.
+  // Align the visible base to the projected creature artwork's bottom.
+  const margin=.03*Math.min(artHeight,artWidth*341/512);
+  return {x:foot.x,y:bottom-artHeight/2+margin,width:artWidth,height:artHeight};
+ };
+}
 function positionRoyalPedestals(){
  const board=$('board'),wrap=board?.closest('.boardWrap'),cells=board?.querySelectorAll('.cell');
  if(!wrap||cells.length!==25||!wrap.clientWidth||!wrap.clientHeight)return;
  const wr=wrap.getBoundingClientRect(),landscape=landscapeQuery.matches;
  const royals=royalEdges.map(edge=>({
-  kind:edge.kind,pedestal:$(edge.kind+'Pedestal'),platform:royalPlatform(cells,edge,wrap)
+  edge,pedestal:$(edge.kind+'Pedestal'),platform:royalPlatform(cells,edge,wrap)
  }));
  // Keep graveyards in the existing reservations unless a wider band reaches one.
- if(landscape)for(const {kind,platform} of royals){
+ if(landscape)for(const {edge:{kind},platform} of royals){
   const grave=wrap.querySelector('.royalGrave.'+kind),point=screenPoint(wrap.querySelector('.royalFoot.'+kind),wrap);
   let x=point.x+(kind==='enemy'?-118:84);const y=point.y-16;
   if(platform&&intersectsRect(platform.shape,{x1:x-4,y1:y-4,x2:x+38,y2:y+36})){
@@ -933,7 +952,9 @@ function positionRoyalPedestals(){
  const farScale=Math.max(.92,Math.min(.98,1-.4*(1-span(enemy)/span(player))));
  const obstacles=[...document.querySelectorAll('.graveButton,.manaStat,#turnIndicator,.statusButton,#hand,.layoutLog,#infoPanel,.battleStrip,.gameTopBar button,.appHeader button')]
   .map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height);
- for(const {kind,pedestal,platform} of royals){
+ const projectedArt=landscape?landscapeRoyalArt(wrap):null;
+ for(const {edge,pedestal,platform} of royals){
+  const {kind}=edge;
   if(!platform)continue;
   const {shape,center,nx,ny}=platform,{x1,y1,x2,y2}=shapeBounds([shape]);
   const width=x2-x1,height=y2-y1;
@@ -947,14 +968,17 @@ function positionRoyalPedestals(){
   // Keep the near icon closer to the inner half of the deeper platform.
   const depth=far?.5:diagonal?.275:.4;
   const [a,b,c,d]=shape;
-  const art={
+  // Retain the old anchor when ranking name/HP positions.
+  const labelAnchor={
    x:((a.x+b.x)*(1-depth)+(c.x+d.x)*depth)/2+(!far&&diagonal?7:0),
-   y:((a.y+b.y)*(1-depth)+(c.y+d.y)*depth)/2-artHeight*.09-(far?(diagonal?7:3):diagonal?1:0)
+   y:((a.y+b.y)*(1-depth)+(c.y+d.y)*depth)/2-artHeight*.09-(far?(diagonal?7:3):diagonal?1:0),
+   width:artWidth,height:artHeight
   };
+  const art=projectedArt?projectedArt(edge):labelAnchor;
   pedestal.style.setProperty('--royal-art-x',art.x-x1+'px');
   pedestal.style.setProperty('--royal-art-y',art.y-y1+'px');
-  pedestal.style.setProperty('--royal-art-width',artWidth+'px');
-  pedestal.style.setProperty('--royal-art-height',artHeight+'px');
+  pedestal.style.setProperty('--royal-art-width',art.width+'px');
+  pedestal.style.setProperty('--royal-art-height',art.height+'px');
 
   const details=royalDetails(wrap,kind,pedestal),w=details.offsetWidth,h=details.offsetHeight;
   const normalExtent=Math.abs(nx)*w/2+Math.abs(ny)*h/2;
@@ -972,17 +996,19 @@ function positionRoyalPedestals(){
     positions.push({x:clampX(x),y:clampY(center.y+ny*distance)});
    }
   }
-  positions.sort((a,b)=>Math.hypot(a.x-art.x,a.y-art.y)-Math.hypot(b.x-art.x,b.y-art.y));
+  positions.sort((a,b)=>Math.hypot(a.x-labelAnchor.x,a.y-labelAnchor.y)-Math.hypot(b.x-labelAnchor.x,b.y-labelAnchor.y));
   const readable=({x,y})=>(x-center.x)*nx+(y-center.y)*ny>=normalExtent+2&&
-   (Math.abs(x-art.x)>=w/2+20||Math.abs(y-art.y)>=h/2+14);
+   (Math.abs(x-labelAnchor.x)>=w/2+20||Math.abs(y-labelAnchor.y)>=h/2+14);
   const clearDock=({x,y})=>{
    const left=wr.left+x-w/2,right=left+w,top=wr.top+y-h/2,bottom=top+h;
    return !obstacles.some(r=>r.left<right&&r.right>left&&r.top<bottom&&r.bottom>top);
   };
   // The latest action row already adjusts to the final HUD rectangles.
   const clear=positions.filter(p=>readable(p)&&clearDock(p));
-  const position=clear.find(({x,y})=>!intersectsRect(shape,{x1:x-w/2-2,y1:y-h/2-2,x2:x+w/2+2,y2:y+h/2+2}))
-   ||clear[0]||positions.find(readable)||positions[0];
+  const offPlatform=({x,y})=>!intersectsRect(shape,{x1:x-w/2-2,y1:y-h/2-2,x2:x+w/2+2,y2:y+h/2+2});
+  const offArt=({x,y})=>Math.abs(x-art.x)>=(w+art.width)/2+2||Math.abs(y-art.y)>=(h+art.height)/2+2;
+  let position=clear.find(offPlatform)||clear[0]||positions.find(readable)||positions[0];
+  if(landscape&&!offArt(position))position=clear.find(p=>offPlatform(p)&&offArt(p))||clear.find(offArt)||position;
   details.style.left=position.x+'px';details.style.top=position.y+'px';
  }
 }

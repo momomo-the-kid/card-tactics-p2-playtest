@@ -912,7 +912,10 @@ body.projected-board .overlayPiece{transform:translate(-50%,-76%)}
 body.projected-board .overlayNameLayer{top:0;height:auto;min-height:11px;background:#101318d9;border-radius:4px;color:#fff!important;-webkit-text-fill-color:#fff;-webkit-text-stroke:0!important;text-shadow:0 1px 2px #000!important;line-height:1.15;align-items:center;max-width:110%;width:max-content;padding:1px 2px}
 body.projected-board .overlayNameLead{font-size:11px;letter-spacing:0}body.projected-board .overlayNameRest{font-size:9px;letter-spacing:0;margin:0}
 body.projected-board .overlayStatsLayer{top:76%;font-size:10px;min-width:90%;max-width:none;padding:2px;line-height:1.1}
-body.projected-board .overlayCreatureAsset{top:47%;width:88%;height:68%}
+/* Projected creature artwork and the landscape royal artwork use these proportions. */
+.boardWrap{--projected-art-top:47%;--projected-art-width:88%;--projected-art-height:68%;--projected-art-scale:1}
+body.view-left .boardWrap{--projected-art-scale:1.5}
+body.projected-board .overlayCreatureAsset{top:var(--projected-art-top);width:var(--projected-art-width);height:var(--projected-art-height)}
 body.projected-board .overlayOrb{top:47%;width:55%}
 body.projected-board .overlayDot{top:21%;width:8px;height:8px}.projected-board .overlayDot.attack{right:12%}.projected-board .overlayDot.move{right:-2%}
 body.projected-board .royalPedestal{transform:translate(-50%,-50%)!important;border-radius:8px!important;min-height:32px;padding:0 3px;align-items:flex-end}
@@ -1063,6 +1066,7 @@ html body #app .royalPedestal .crownModel{
  width:var(--royal-art-width,36px)!important;height:var(--royal-art-height,24px)!important;transform:translate(-50%,-50%)!important;
  background-position:center!important;background-size:contain!important;pointer-events:none
 }
+html body.layout-landscape #app .royalPedestal .crownModel{background-position:center bottom!important}
 .royalDetails{
  position:absolute;z-index:702;transform:translate(-50%,-50%);display:flex;align-items:center;gap:4px;
  padding:2px 4px;border:1px solid #657080;border-radius:6px;background:#151b24ee;color:#fff;
@@ -1128,7 +1132,7 @@ body.creature-names-off .overlayPiece.combatHUD .overlayNameLayer{display:none}
 /* B only: enlarge artwork/fallback around their existing bottom edge.
    The piece, foot marker, name and combatStack are not transformed. */
 body.view-left .overlayPiece.combatHUD .overlayCreatureAsset,
-body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%) scale(1.5);transform-origin:50% 100%}
+body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%) scale(var(--projected-art-scale));transform-origin:50% 100%}
 
 .creatureStatus{position:absolute;right:calc(100% + 2px);top:50%;transform:translateY(-50%);width:17px;height:17px;line-height:17px;text-align:center;font-size:14px;pointer-events:none;animation:status-glow 3s ease-in-out var(--status-delay) infinite}
 .creatureStatus span{position:absolute;inset:0}
@@ -1148,7 +1152,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-royal-depth-v63">ver p3-royal-depth-v63</div>
+  <div class="titleVersion" data-build="p3-royal-piece-scale-v64">ver p3-royal-piece-scale-v64</div>
   <p id="benchmarkTrialLabel">クリーチャー基準・試験版</p><div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -1397,11 +1401,14 @@ function fitProjection(wrap,dock){
  wrap.style.setProperty('--plane-offset-x',(best.x-w/2)+'px');
  wrap.style.setProperty('--plane-offset-y',(best.y-lift-h/2)+'px');
 }
-function projectCells(cells,wrap){
- if(wrap.dataset.renderMode!=='projected')return;
- const grid=wrap.querySelector('.boardGrid');
+function boardProjection(wrap){
  const size=parseFloat(wrap.style.getPropertyValue('--logical-board')),ox=wrap.clientWidth/2+parseFloat(wrap.style.getPropertyValue('--plane-offset-x')),oy=wrap.clientHeight/2+parseFloat(wrap.style.getPropertyValue('--plane-offset-y')),yaw=presentationView==='left'?-45:0;
  const at=(x,y)=>{const p=fixedProject(x-.5,y-.5,size,yaw);return {x:p.x+ox,y:p.y+oy};};
+ return {at,size,ox,oy,yaw};
+}
+function projectCells(cells,wrap){
+ if(wrap.dataset.renderMode!=='projected')return;
+ const grid=wrap.querySelector('.boardGrid'),{at,size,ox,oy,yaw}=boardProjection(wrap);
  const point=(c,name,p,x,y)=>{const e=mark(c,name,0,0);e.style.left=(p.x-x)+'px';e.style.top=(p.y-y)+'px';};
  cells.forEach((c,i)=>{
   const row=Math.floor(i/5),col=i%5,coords=[[col/5,row/5],[(col+1)/5,row/5],[(col+1)/5,(row+1)/5],[col/5,(row+1)/5]],q=coords.map(([x,y])=>at(x,y));
@@ -2142,15 +2149,31 @@ function royalDetails(wrap,kind,pedestal){
  if(stat){stat.firstChild.textContent='❤️';details.querySelector('.royalHP').append(stat);}
  return details;
 }
+function landscapeRoyalArt(wrap){
+ const {at}=boardProjection(wrap),style=getComputedStyle(wrap);
+ const fraction=name=>parseFloat(style.getPropertyValue('--projected-art-'+name))/100;
+ const width=fraction('width'),height=fraction('height'),top=fraction('top');
+ const scale=Number(style.getPropertyValue('--projected-art-scale'));
+ return ({edgeY,outward})=>{
+  const y=(edgeY+outward*(royalGap+royalDepth/2))/5,foot=at(.5,y);
+  const pitch=projectedPieceWidth(at(.4,y),at(.6,y));
+  const artWidth=pitch*width*scale,artHeight=pitch*height*scale;
+  const bottom=foot.y+pitch*(top+height/2-.5);
+  // The existing king PNGs have a small transparent margin below the base.
+  // Align the visible base to the projected creature artwork's bottom.
+  const margin=.03*Math.min(artHeight,artWidth*341/512);
+  return {x:foot.x,y:bottom-artHeight/2+margin,width:artWidth,height:artHeight};
+ };
+}
 function positionRoyalPedestals(){
  const board=$('board'),wrap=board?.closest('.boardWrap'),cells=board?.querySelectorAll('.cell');
  if(!wrap||cells.length!==25||!wrap.clientWidth||!wrap.clientHeight)return;
  const wr=wrap.getBoundingClientRect(),landscape=landscapeQuery.matches;
  const royals=royalEdges.map(edge=>({
-  kind:edge.kind,pedestal:$(edge.kind+'Pedestal'),platform:royalPlatform(cells,edge,wrap)
+  edge,pedestal:$(edge.kind+'Pedestal'),platform:royalPlatform(cells,edge,wrap)
  }));
  // Keep graveyards in the existing reservations unless a wider band reaches one.
- if(landscape)for(const {kind,platform} of royals){
+ if(landscape)for(const {edge:{kind},platform} of royals){
   const grave=wrap.querySelector('.royalGrave.'+kind),point=screenPoint(wrap.querySelector('.royalFoot.'+kind),wrap);
   let x=point.x+(kind==='enemy'?-118:84);const y=point.y-16;
   if(platform&&intersectsRect(platform.shape,{x1:x-4,y1:y-4,x2:x+38,y2:y+36})){
@@ -2180,7 +2203,9 @@ function positionRoyalPedestals(){
  const farScale=Math.max(.92,Math.min(.98,1-.4*(1-span(enemy)/span(player))));
  const obstacles=[...document.querySelectorAll('.graveButton,.manaStat,#turnIndicator,.statusButton,#hand,.layoutLog,#infoPanel,.battleStrip,.gameTopBar button,.appHeader button')]
   .map(el=>el.getBoundingClientRect()).filter(r=>r.width&&r.height);
- for(const {kind,pedestal,platform} of royals){
+ const projectedArt=landscape?landscapeRoyalArt(wrap):null;
+ for(const {edge,pedestal,platform} of royals){
+  const {kind}=edge;
   if(!platform)continue;
   const {shape,center,nx,ny}=platform,{x1,y1,x2,y2}=shapeBounds([shape]);
   const width=x2-x1,height=y2-y1;
@@ -2194,14 +2219,17 @@ function positionRoyalPedestals(){
   // Keep the near icon closer to the inner half of the deeper platform.
   const depth=far?.5:diagonal?.275:.4;
   const [a,b,c,d]=shape;
-  const art={
+  // Retain the old anchor when ranking name/HP positions.
+  const labelAnchor={
    x:((a.x+b.x)*(1-depth)+(c.x+d.x)*depth)/2+(!far&&diagonal?7:0),
-   y:((a.y+b.y)*(1-depth)+(c.y+d.y)*depth)/2-artHeight*.09-(far?(diagonal?7:3):diagonal?1:0)
+   y:((a.y+b.y)*(1-depth)+(c.y+d.y)*depth)/2-artHeight*.09-(far?(diagonal?7:3):diagonal?1:0),
+   width:artWidth,height:artHeight
   };
+  const art=projectedArt?projectedArt(edge):labelAnchor;
   pedestal.style.setProperty('--royal-art-x',art.x-x1+'px');
   pedestal.style.setProperty('--royal-art-y',art.y-y1+'px');
-  pedestal.style.setProperty('--royal-art-width',artWidth+'px');
-  pedestal.style.setProperty('--royal-art-height',artHeight+'px');
+  pedestal.style.setProperty('--royal-art-width',art.width+'px');
+  pedestal.style.setProperty('--royal-art-height',art.height+'px');
 
   const details=royalDetails(wrap,kind,pedestal),w=details.offsetWidth,h=details.offsetHeight;
   const normalExtent=Math.abs(nx)*w/2+Math.abs(ny)*h/2;
@@ -2219,17 +2247,19 @@ function positionRoyalPedestals(){
     positions.push({x:clampX(x),y:clampY(center.y+ny*distance)});
    }
   }
-  positions.sort((a,b)=>Math.hypot(a.x-art.x,a.y-art.y)-Math.hypot(b.x-art.x,b.y-art.y));
+  positions.sort((a,b)=>Math.hypot(a.x-labelAnchor.x,a.y-labelAnchor.y)-Math.hypot(b.x-labelAnchor.x,b.y-labelAnchor.y));
   const readable=({x,y})=>(x-center.x)*nx+(y-center.y)*ny>=normalExtent+2&&
-   (Math.abs(x-art.x)>=w/2+20||Math.abs(y-art.y)>=h/2+14);
+   (Math.abs(x-labelAnchor.x)>=w/2+20||Math.abs(y-labelAnchor.y)>=h/2+14);
   const clearDock=({x,y})=>{
    const left=wr.left+x-w/2,right=left+w,top=wr.top+y-h/2,bottom=top+h;
    return !obstacles.some(r=>r.left<right&&r.right>left&&r.top<bottom&&r.bottom>top);
   };
   // The latest action row already adjusts to the final HUD rectangles.
   const clear=positions.filter(p=>readable(p)&&clearDock(p));
-  const position=clear.find(({x,y})=>!intersectsRect(shape,{x1:x-w/2-2,y1:y-h/2-2,x2:x+w/2+2,y2:y+h/2+2}))
-   ||clear[0]||positions.find(readable)||positions[0];
+  const offPlatform=({x,y})=>!intersectsRect(shape,{x1:x-w/2-2,y1:y-h/2-2,x2:x+w/2+2,y2:y+h/2+2});
+  const offArt=({x,y})=>Math.abs(x-art.x)>=(w+art.width)/2+2||Math.abs(y-art.y)>=(h+art.height)/2+2;
+  let position=clear.find(offPlatform)||clear[0]||positions.find(readable)||positions[0];
+  if(landscape&&!offArt(position))position=clear.find(p=>offPlatform(p)&&offArt(p))||clear.find(offArt)||position;
   details.style.left=position.x+'px';details.style.top=position.y+'px';
  }
 }
