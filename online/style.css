@@ -759,9 +759,32 @@ body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
 #turnPopup{position:fixed;inset:0;margin:auto;width:max-content;height:max-content;max-width:calc(100% - 24px);max-height:calc(100% - 24px);box-sizing:border-box;padding:12px 20px;border:2px solid #b99f65;border-radius:12px;background:#211c16;color:#fff7e1;box-shadow:0 6px 22px #0009;z-index:905;text-align:center;font-size:clamp(17px,4vmin,23px);font-weight:800;pointer-events:none}
 #turnPopup[data-stage=turn]{border-color:var(--turn-bright)}
 #turnPopup[hidden]{display:none}
-.turnDicePair{display:flex;justify-content:center;gap:24px;margin-top:8px;font-size:15px}
-.turnDie{display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:3px;width:49px;height:49px;box-sizing:border-box;padding:7px;margin:12px auto 0;border-radius:9px;background:#f8eacf;box-shadow:inset 0 -3px #0003;color:#6d3029}
-.turnDicePair>div:first-child .turnDie{color:#1a4873}
+#turnPopup:is([data-stage=dice],[data-stage=order]){
+ width:auto;height:auto;max-width:none;max-height:none;margin:0;padding:0;
+ border:0;background:none;box-shadow:none
+}
+.openingPresentation{
+ position:absolute;visibility:hidden;--opening-order-height:calc(1.15em + 14px);
+ /* Reserve a gap to the result on shallow projections, before dice start. */
+ --opening-die-size:max(12px,min(49px,var(--opening-die-limit),
+  calc(var(--opening-board-height) * .64 - var(--opening-order-height) - 4px)))
+}
+.turnDicePair{position:absolute;inset:0}
+.turnDieAnchor,.openingOrder{position:absolute;left:50%;transform:translate(-50%,-50%)}
+.turnDieAnchor{width:var(--opening-die-size);height:var(--opening-die-size)}
+.turnDieAnchor[data-die=enemy]{top:18%;--die-color:#a32e3c}
+.turnDieAnchor[data-die=own]{top:82%;--die-color:#205d9e}
+.turnDie{
+ display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:7%;width:100%;height:100%;
+ box-sizing:border-box;padding:14%;border:1px solid #fff9;border-radius:19%;background:var(--die-color);
+ box-shadow:inset 0 -3px #0003,0 3px 7px #000a;color:#fff
+}
+.openingOrder{
+ top:50%;height:var(--opening-order-height);display:grid;place-items:center;
+ padding:0 13px;border:2px solid #b99f65;border-radius:12px;background:#211c16;
+ box-shadow:0 6px 22px #0009;white-space:nowrap
+}
+.openingOrder[hidden]{display:none}
 .turnDie i{width:100%;aspect-ratio:1;border-radius:50%;background:currentColor}
 .turnPip1{grid-area:1/1}.turnPip3{grid-area:1/3}.turnPip4{grid-area:2/1}.turnPip5{grid-area:2/2}.turnPip6{grid-area:2/3}.turnPip7{grid-area:3/1}.turnPip9{grid-area:3/3}
 

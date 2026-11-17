@@ -471,7 +471,7 @@ function presentBattleAction(events,context){
 }
 
 // The fixed layer owns presentation time only. Neither Core nor online receipt waits on it.
-const turnPresentationMs=Object.freeze({dice:3000,diceHold:700,order:2000,turn:1050});
+const turnPresentationMs=Object.freeze({dice:3300,diceHold:1000,order:2000,turn:1050});
 let turnSequence=null;
 const turnPresentationBusy=()=>turnSequence!==null;
 
@@ -489,23 +489,24 @@ function diceForMatch(seed,first){
  }
 }
 const dicePips=[[],[5],[1,9],[1,5,9],[1,3,7,9],[1,3,5,7,9],[1,3,4,6,7,9]];
-function setDieFace(cube,value){
+function setDieFace({cube,own},value){
  cube.dataset.roll=value;
- cube.setAttribute('aria-label',value+'の目');
+ cube.setAttribute('aria-label',(own?'あなた':'相手')+' '+value+'の目');
  const pips=dicePips[value].map(index=>{
   const pip=document.createElement('i');pip.className='turnPip'+index;return pip;
  });
  cube.replaceChildren(...pips);
 }
-function die(label){
- const item=document.createElement('div'),cube=document.createElement('span');
- item.textContent=label;cube.className='turnDie';cube.setAttribute('role','img');
- item.append(cube);return {item,cube};
+function die(side,viewer,value){
+ const anchor=document.createElement('div'),cube=document.createElement('span'),own=side===viewer;
+ anchor.className='turnDieAnchor';anchor.dataset.die=own?'own':'enemy';
+ cube.className='turnDie';cube.setAttribute('role','img');
+ anchor.append(cube);return {anchor,cube,side,own,value};
 }
-function rollDice(title,pair,dice){
+function rollDice(pair,dice){
  const settle=()=>{
-  for(const {cube,value} of dice)setDieFace(cube,value);
-  title.textContent='大きい目が先攻';pair.removeAttribute('aria-hidden');
+  for(const die of dice)setDieFace(die,die.value);
+  pair.removeAttribute('aria-hidden');
  };
  if(matchMedia('(prefers-reduced-motion: reduce)').matches){settle();return;}
  const duration=turnPresentationMs.dice-turnPresentationMs.diceHold;
@@ -514,7 +515,7 @@ function rollDice(title,pair,dice){
   [{transform:'rotate(0deg)'},{transform:side==='p'?'rotate(720deg)':'rotate(-720deg)'}],
   {duration,easing:'cubic-bezier(.2,.55,.4,1)'}
  ));
- title.textContent='ダイスを振っています';pair.setAttribute('aria-hidden','true');
+ pair.setAttribute('aria-hidden','true');
  let frame,previous=-1;
  function stop(){
   cancelAnimationFrame(frame);for(const animation of animations)animation.cancel();
@@ -526,13 +527,32 @@ function rollDice(title,pair,dice){
   // These faces are visual only and never consume the match RNG.
   const step=Math.floor((1-(1-progress)**2)*16);
   if(step!==previous){
-   for(const {cube,value,side} of dice)setDieFace(cube,(value+step*(side==='p'?1:5))%6+1);
+   for(const die of dice)setDieFace(die,(die.value+step*(die.side==='p'?1:5))%6+1);
    previous=step;
   }
   frame=requestAnimationFrame(tick);
  }
  tick(start);
  return stop;
+}
+// Use the rendered cells in screen space, including the projected board.
+function positionOpeningPresentation(rects){
+ const panel=$('turnPopup'),group=panel?.querySelector('.openingPresentation');
+ if(!group)return;
+ rects??=Array.from($('board').querySelectorAll('.cell'),cell=>cell.getBoundingClientRect());
+ if(!rects.length)return;
+ const viewport=window.visualViewport,origin=panel.getBoundingClientRect();
+ const x=viewport?.offsetLeft??0,y=viewport?.offsetTop??0;
+ const left=Math.max(x,Math.min(...rects.map(r=>r.left)));
+ const top=Math.max(y,Math.min(...rects.map(r=>r.top)));
+ const right=Math.min(x+(viewport?.width??innerWidth),Math.max(...rects.map(r=>r.right)));
+ const bottom=Math.min(y+(viewport?.height??innerHeight),Math.max(...rects.map(r=>r.bottom)));
+ const width=right-left,height=bottom-top;
+ group.style.visibility=width>0&&height>0?'visible':'hidden';
+ if(width<=0||height<=0)return;
+ Object.assign(group.style,{left:(left-origin.left)+'px',top:(top-origin.top)+'px',width:width+'px',height:height+'px'});
+ group.style.setProperty('--opening-board-height',height+'px');
+ group.style.setProperty('--opening-die-limit',Math.min(height,width)*.28+'px');
 }
 function cancelTurnPresentation(){
  if(!turnSequence)return;
@@ -558,7 +578,8 @@ function showTurnSequence(stages,done){
   sequence.stopStage?.();
   panel.dataset.stage=stage.kind;
   panel.classList.toggle('ownTurn',stage.own===true);panel.classList.toggle('enemyTurn',stage.own===false);
-  panel.replaceChildren(stage.content);panel.hidden=false;
+  if(panel.firstChild!==stage.content)panel.replaceChildren(stage.content);
+  panel.hidden=false;
   sequence.timer=setTimeout(next,turnPresentationMs[stage.kind]);
   sequence.stopStage=stage.start?.();
  }
@@ -570,12 +591,23 @@ function turnStage(activeSide,viewer){
 }
 function showOpening({seed,first,viewer,activeSide},done){
  const rolls=diceForMatch(seed,first),group=document.createElement('div');
- const title=document.createElement('span'),pair=document.createElement('div');
- const dice=[viewer,viewer==='p'?'c':'p'].map(side=>({...die(side===viewer?'あなた':'相手'),side,value:rolls[side]}));
- pair.className='turnDicePair';pair.append(...dice.map(({item})=>item));
- group.append(title,pair);
- showTurnSequence([{kind:'dice',content:group,start:()=>rollDice(title,pair,dice)},
-  {kind:'order',content:viewer===first?'あなたは先攻です':'あなたは後攻です'},turnStage(activeSide,viewer)],done);
+ const pair=document.createElement('div'),result=document.createElement('span');
+ // Keep the same nodes and their board-relative positions through both stages.
+ const dice=[viewer,viewer==='p'?'c':'p'].map(side=>die(side,viewer,rolls[side]));
+ group.className='openingPresentation';pair.className='turnDicePair';
+ pair.append(...dice.map(({anchor})=>anchor));
+ result.className='openingOrder';result.hidden=true;
+ group.append(pair,result);
+ showTurnSequence([
+  {kind:'dice',content:group,start(){
+   positionOpeningPresentation();
+   return rollDice(pair,dice);
+  }},
+  {kind:'order',content:group,start(){
+   result.textContent=viewer===first?'あなたは先攻です':'あなたは後攻です';result.hidden=false;
+  }},
+  turnStage(activeSide,viewer)
+ ],done);
 }
 function showTurn(activeSide,viewer,done){
  const stage=turnStage(activeSide,viewer);
@@ -669,7 +701,7 @@ function positionOpponentCard(){
  panel.style.top=(bottom-height)+'px';
  panel.style.transform=scale<1?'scale('+Math.max(0,scale)+')':'';
 }
-function positionBattleOverlays(){positionBattleLog();positionOpponentCard();}
+function positionBattleOverlays(){positionBattleLog();positionOpponentCard();positionOpeningPresentation();}
 window.addEventListener('resize',positionBattleOverlays);
 window.visualViewport?.addEventListener('resize',positionBattleOverlays);
 window.visualViewport?.addEventListener('scroll',positionBattleOverlays);
@@ -925,6 +957,7 @@ function renderPieces(model){
  const wrapRect=overlay.getBoundingClientRect();
  const cells=board.querySelectorAll(".cell");
  const cellRects=[...cells].map(c=>c.getBoundingClientRect());
+ positionOpeningPresentation(cellRects);
  const pitch=Math.min(Math.max(...cellRects.map(r=>r.right))-Math.min(...cellRects.map(r=>r.left)),Math.max(...cellRects.map(r=>r.bottom))-Math.min(...cellRects.map(r=>r.top)))/5;
  const now=performance.now(),seenStatuses=new Set();
  const compactHUD=pitch<64;overlay.dataset.hudSize=compactHUD?'compact':'regular';
