@@ -1032,6 +1032,22 @@ html body.layout-landscape #app .royalPedestal .crownModel{background-position:c
 }
 .royalDetails .kingLabel{position:static;white-space:nowrap}
 
+/* Attack numbers survive piece redraw and remain visible at the final hit. */
+#attackDamageLayer{position:fixed;inset:0;z-index:20010;pointer-events:none}
+.attackDamageNumber{
+ position:absolute;white-space:nowrap;color:#fff;font:900 clamp(22px,4vmin,30px)/1 system-ui,sans-serif;
+ -webkit-text-stroke:3px #111;paint-order:stroke fill;
+ text-shadow:0 1px 2px #000;transform:translate(-50%,-50%);
+ animation:attackDamageNumber var(--damage-duration) ease-out both
+}
+@keyframes attackDamageNumber{
+ 0%{opacity:1;transform:translate(-50%,-50%) scale(.82)}
+ 14%{transform:translate(-50%,-50%) scale(1.18)}
+ 28%,60%{opacity:1;transform:translate(-50%,-50%)}
+ 100%{opacity:0;transform:translate(-50%,-65%)}
+}
+@media(prefers-reduced-motion:reduce){.attackDamageNumber{animation:none}}
+
 /* Screen-facing public combat information; no hit targets or board geometry. */
 .overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-name:-52px;--hud-foot:0px;transform:translate(-50%,-50%);pointer-events:none}
 /* Match the overlay centre to its foot marker; do not inherit the older -76% projected shift. */

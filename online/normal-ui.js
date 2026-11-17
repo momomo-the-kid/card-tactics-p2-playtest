@@ -249,7 +249,7 @@ function bindPresentation(){
 function startPlayPresentation(){
  detailContext=null;detailNotice=null;
  const log=document.querySelector('.layoutLog');if(log)log.open=false;
- setLatestAction();clearOpponentCards();
+ setLatestAction();clearOpponentCards();clearAttackDamage();
  previousLogExplanation=false;tutorialExplanation=null;
 }
 // The projected stream also includes the legacy identity of a face-down Mine.
@@ -489,6 +489,69 @@ function battleLogNotice(text){
  const row=document.createElement('div');
  row.textContent=text;appendBattleLog(row);
 }
+const damageDuration=800;
+const damageNumbers=new Map();
+const damageOffsets=[0,-18,18,-33,33];
+function clearAttackDamage(){
+ for(const [element,{timer}] of damageNumbers){clearTimeout(timer);element.remove();}
+ damageNumbers.clear();
+}
+function positionAttackDamage(){
+ for(const [element,{target,offset}] of damageNumbers){
+  let x,y;
+  if(typeof target==='number'){
+   const foot=$('board').querySelector(`[data-cell="${target}"] [data-plane-point="foot"]`);
+   if(!foot)continue;
+   const r=foot.getBoundingClientRect();
+   x=r.left;y=r.top-12;
+  }else{
+   const r=$(target+'Pedestal').querySelector('.crownModel').getBoundingClientRect();
+   x=r.left+r.width/2;y=r.top+r.height/2-8;
+  }
+  element.style.left=Math.min(innerWidth-18,Math.max(18,x+offset))+'px';
+  element.style.top=Math.min(innerHeight-18,Math.max(18,y-Math.abs(offset)*.3))+'px';
+ }
+}
+function showDamageNumber(target,amount){
+ if(!Number.isSafeInteger(amount)||amount<0)return;
+ let layer=$('attackDamageLayer');
+ if(!layer){
+  layer=document.createElement('div');layer.id='attackDamageLayer';
+  layer.setAttribute('aria-hidden','true');document.body.append(layer);
+ }
+ const used=new Set([...damageNumbers.values()].filter(entry=>entry.target===target).map(entry=>entry.offset));
+ const offset=damageOffsets.find(value=>!used.has(value))??0;
+ const element=document.createElement('span');
+ element.className='attackDamageNumber';
+ element.dataset.damageTarget=String(target);
+ element.textContent=String(amount);
+ element.style.setProperty('--damage-duration',damageDuration+'ms');
+ damageNumbers.set(element,{target,offset,timer:setTimeout(()=>{
+  element.remove();damageNumbers.delete(element);
+ },damageDuration)});
+ positionAttackDamage();
+ layer.append(element);
+}
+function presentAttackDamage(events,viewer){
+ if(document.visibilityState!=='visible')return;
+ for(const [i,attack] of events.entries()){
+  if(attack.type!=='creature:attacked')continue;
+  const next=events[i+1];
+  if(attack.targetKind==='king'||attack.to===null){
+   if(next?.type==='king:damaged'&&['p','c'].includes(next.side))
+    showDamageNumber(next.side===viewer?'player':'enemy',next.amount);
+   continue;
+  }
+  if(!Number.isInteger(attack.to)||attack.to<0||attack.to>=25)continue;
+  const guard=next?.type==='damage:guarded'&&next.cell===attack.to?next:null;
+  const target=guard?guard.guardian:attack.to,hit=guard?events[i+2]:next;
+  if(hit?.type==='creature:damaged'&&hit.cell===target)showDamageNumber(target,hit.amount);
+  // Core emits no creature damage event when reduction cancels the whole hit.
+  else if(!guard&&hit?.type==='creature:attack-resolved'&&hit.from===attack.from&&hit.to===attack.to)
+   showDamageNumber(target,0);
+ }
+}
+
 function presentBattleAction(events,context){
  const action=describeBattleAction(events,context);
  if(!action)return;
@@ -741,14 +804,14 @@ function positionOpponentCard(){
  panel.style.top=(bottom-height)+'px';
  panel.style.transform=scale<1?'scale('+Math.max(0,scale)+')':'';
 }
-function positionBattleOverlays(){positionBattleLog();positionOpponentCard();positionBoardAnnouncement();}
+function positionBattleOverlays(){positionBattleLog();positionOpponentCard();positionBoardAnnouncement();positionAttackDamage();}
 window.addEventListener('resize',positionBattleOverlays);
 window.visualViewport?.addEventListener('resize',positionBattleOverlays);
 window.visualViewport?.addEventListener('scroll',positionBattleOverlays);
 window.addEventListener('scroll',positionBattleOverlays,{passive:true});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible'){clearOpponentCards();finishTurnPresentation();}});
-window.addEventListener('pagehide',event=>{clearOpponentCards();if(event.persisted)finishTurnPresentation();else cancelTurnPresentation();});
-document.addEventListener('p2b1:exit',clearOpponentCards);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible'){clearAttackDamage();clearOpponentCards();finishTurnPresentation();}});
+window.addEventListener('pagehide',event=>{clearAttackDamage();clearOpponentCards();if(event.persisted)finishTurnPresentation();else cancelTurnPresentation();});
+document.addEventListener('p2b1:exit',()=>{clearAttackDamage();clearOpponentCards();});
 function fitLatestAction(latest,left,bottom){
  latest.style.removeProperty('max-width');
  const wrap=$('board')?.closest('.boardWrap'),max=latest.offsetWidth;
@@ -1110,7 +1173,7 @@ function renderPieces(model){
  overlay.innerHTML="";
  prepareCells(cells);
  projectCells(cells,board.closest(".boardWrap"));
- positionRoyalPedestals();updateRoyalHealth();
+ positionRoyalPedestals();updateRoyalHealth();positionAttackDamage();
  const wrapRect=overlay.getBoundingClientRect();
  const cellRects=[...cells].map(c=>c.getBoundingClientRect());
  positionBoardAnnouncement(cellRects);
@@ -1285,5 +1348,5 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearOpponentCards();cancelTurnPresentation();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst,showOpening,showTurn,turnPresentationBusy,cancelTurnPresentation,clearOpponentCards});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,presentAttackDamage,clearAttackDamage,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearAttackDamage();clearOpponentCards();cancelTurnPresentation();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst,showOpening,showTurn,turnPresentationBusy,cancelTurnPresentation,clearOpponentCards});
 })();

@@ -145,6 +145,7 @@
    if(v.revision===0)N.presentBattleAction([{type:'turn:started',side:v.activeSide}],
     {viewer:v.viewer,activeSide:v.activeSide,turn:v.turn,definitions:D,revision:0,animate:false});
   }
+  if(current.status!=='connected')N.clearAttackDamage();
   if(priorState?.status!=='connected'||current.status!=='connected')presentedRevision=Math.max(presentedRevision,v.revision);
   if(v.revision!==lastRevision||current.status!==lastStatus||current.inFlight)clear();lastRevision=v.revision;lastStatus=current.status;
   const enemy=opposite(v.viewer),own=v.players[v.viewer],other=v.players[enemy],enabled=usable();
@@ -175,6 +176,7 @@
   presentedRevision=revision;
   const before=presentationBefore;
   if(!awaitingGuardian(v)){
+   N.presentAttackDamage(events,v.viewer);
    N.presentBattleAction(events,{viewer:v.viewer,activeSide:v.activeSide,before,after:v,definitions:D,revision,animate:!v.gameOver&&!state.aborted});
   }
   for(const e of events){
