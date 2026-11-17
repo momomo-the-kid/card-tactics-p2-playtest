@@ -471,7 +471,7 @@ function presentBattleAction(events,context){
 }
 
 // The fixed layer owns presentation time only. Neither Core nor online receipt waits on it.
-const turnPresentationMs=Object.freeze({dice:3300,diceHold:1000,order:2000,turn:1050});
+const turnPresentationMs=Object.freeze({dice:2310,diceHold:700,order:2000,turn:1050});
 let turnSequence=null;
 const turnPresentationBusy=()=>turnSequence!==null;
 
@@ -536,8 +536,8 @@ function rollDice(pair,dice){
  return stop;
 }
 // Use the rendered cells in screen space, including the projected board.
-function positionOpeningPresentation(rects){
- const panel=$('turnPopup'),group=panel?.querySelector('.openingPresentation');
+function positionBoardAnnouncement(rects){
+ const panel=$('turnPopup'),group=panel?.firstElementChild;
  if(!group)return;
  rects??=Array.from($('board').querySelectorAll('.cell'),cell=>cell.getBoundingClientRect());
  if(!rects.length)return;
@@ -551,8 +551,10 @@ function positionOpeningPresentation(rects){
  group.style.visibility=width>0&&height>0?'visible':'hidden';
  if(width<=0||height<=0)return;
  Object.assign(group.style,{left:(left-origin.left)+'px',top:(top-origin.top)+'px',width:width+'px',height:height+'px'});
- group.style.setProperty('--opening-board-height',height+'px');
- group.style.setProperty('--opening-die-limit',Math.min(height,width)*.28+'px');
+ if(group.classList.contains('openingPresentation')){
+  group.style.setProperty('--opening-board-height',height+'px');
+  group.style.setProperty('--opening-die-limit',Math.min(height,width)*.28+'px');
+ }
 }
 function cancelTurnPresentation(){
  if(!turnSequence)return;
@@ -580,29 +582,30 @@ function showTurnSequence(stages,done){
   panel.classList.toggle('ownTurn',stage.own===true);panel.classList.toggle('enemyTurn',stage.own===false);
   if(panel.firstChild!==stage.content)panel.replaceChildren(stage.content);
   panel.hidden=false;
+  positionBoardAnnouncement();
   sequence.timer=setTimeout(next,turnPresentationMs[stage.kind]);
   sequence.stopStage=stage.start?.();
  }
  next();
 }
 function turnStage(activeSide,viewer){
- const own=activeSide===viewer;
- return {kind:'turn',own,content:own?'あなたのターン':'相手のターン'};
+ const own=activeSide===viewer,content=document.createElement('div'),notice=document.createElement('span');
+ content.className='boardAnnouncement';notice.className='turnNotification';
+ notice.textContent=own?'あなたのターン':'相手のターン';
+ content.append(notice);
+ return {kind:'turn',own,content};
 }
 function showOpening({seed,first,viewer,activeSide},done){
  const rolls=diceForMatch(seed,first),group=document.createElement('div');
  const pair=document.createElement('div'),result=document.createElement('span');
  // Keep the same nodes and their board-relative positions through both stages.
  const dice=[viewer,viewer==='p'?'c':'p'].map(side=>die(side,viewer,rolls[side]));
- group.className='openingPresentation';pair.className='turnDicePair';
+ group.className='boardAnnouncement openingPresentation';pair.className='turnDicePair';
  pair.append(...dice.map(({anchor})=>anchor));
  result.className='openingOrder';result.hidden=true;
  group.append(pair,result);
  showTurnSequence([
-  {kind:'dice',content:group,start(){
-   positionOpeningPresentation();
-   return rollDice(pair,dice);
-  }},
+  {kind:'dice',content:group,start:()=>rollDice(pair,dice)},
   {kind:'order',content:group,start(){
    result.textContent=viewer===first?'あなたは先攻です':'あなたは後攻です';result.hidden=false;
   }},
@@ -701,7 +704,7 @@ function positionOpponentCard(){
  panel.style.top=(bottom-height)+'px';
  panel.style.transform=scale<1?'scale('+Math.max(0,scale)+')':'';
 }
-function positionBattleOverlays(){positionBattleLog();positionOpponentCard();positionOpeningPresentation();}
+function positionBattleOverlays(){positionBattleLog();positionOpponentCard();positionBoardAnnouncement();}
 window.addEventListener('resize',positionBattleOverlays);
 window.visualViewport?.addEventListener('resize',positionBattleOverlays);
 window.visualViewport?.addEventListener('scroll',positionBattleOverlays);
@@ -957,7 +960,7 @@ function renderPieces(model){
  const wrapRect=overlay.getBoundingClientRect();
  const cells=board.querySelectorAll(".cell");
  const cellRects=[...cells].map(c=>c.getBoundingClientRect());
- positionOpeningPresentation(cellRects);
+ positionBoardAnnouncement(cellRects);
  const pitch=Math.min(Math.max(...cellRects.map(r=>r.right))-Math.min(...cellRects.map(r=>r.left)),Math.max(...cellRects.map(r=>r.bottom))-Math.min(...cellRects.map(r=>r.top)))/5;
  const now=performance.now(),seenStatuses=new Set();
  const compactHUD=pitch<64;overlay.dataset.hudSize=compactHUD?'compact':'regular';
