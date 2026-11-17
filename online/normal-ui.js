@@ -1104,12 +1104,14 @@ function renderPieces(model){
  current=model;syncLayout();
  const overlay=$("pieceOverlay"), board=$("board");
  if(!overlay||!board||!board.getClientRects().length||!board.clientWidth||!board.clientHeight)return;
+ const cells=board.querySelectorAll(".cell");
+ // The screen can be made visible before the caller has built its cells.
+ if(cells.length!==25)return;
  overlay.innerHTML="";
- prepareCells(board.querySelectorAll(".cell"));
- projectCells(board.querySelectorAll(".cell"),board.closest(".boardWrap"));
+ prepareCells(cells);
+ projectCells(cells,board.closest(".boardWrap"));
  positionRoyalPedestals();updateRoyalHealth();
  const wrapRect=overlay.getBoundingClientRect();
- const cells=board.querySelectorAll(".cell");
  const cellRects=[...cells].map(c=>c.getBoundingClientRect());
  positionBoardAnnouncement(cellRects);
  const pitch=Math.min(Math.max(...cellRects.map(r=>r.right))-Math.min(...cellRects.map(r=>r.left)),Math.max(...cellRects.map(r=>r.bottom))-Math.min(...cellRects.map(r=>r.top)))/5;

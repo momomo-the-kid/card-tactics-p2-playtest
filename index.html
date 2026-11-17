@@ -1152,7 +1152,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-royal-piece-scale-v64">ver p3-royal-piece-scale-v64</div>
+  <div class="titleVersion" data-build="p3-tutorial-projected-start-v65">ver p3-tutorial-projected-start-v65</div>
   <p id="benchmarkTrialLabel">クリーチャー基準・試験版</p><div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -2355,12 +2355,14 @@ function renderPieces(model){
  current=model;syncLayout();
  const overlay=$("pieceOverlay"), board=$("board");
  if(!overlay||!board||!board.getClientRects().length||!board.clientWidth||!board.clientHeight)return;
+ const cells=board.querySelectorAll(".cell");
+ // The screen can be made visible before the caller has built its cells.
+ if(cells.length!==25)return;
  overlay.innerHTML="";
- prepareCells(board.querySelectorAll(".cell"));
- projectCells(board.querySelectorAll(".cell"),board.closest(".boardWrap"));
+ prepareCells(cells);
+ projectCells(cells,board.closest(".boardWrap"));
  positionRoyalPedestals();updateRoyalHealth();
  const wrapRect=overlay.getBoundingClientRect();
- const cells=board.querySelectorAll(".cell");
  const cellRects=[...cells].map(c=>c.getBoundingClientRect());
  positionBoardAnnouncement(cellRects);
  const pitch=Math.min(Math.max(...cellRects.map(r=>r.right))-Math.min(...cellRects.map(r=>r.left)),Math.max(...cellRects.map(r=>r.bottom))-Math.min(...cellRects.map(r=>r.top)))/5;
@@ -4961,7 +4963,7 @@ const TutorialController={
    msg('説明を読んで「次へ」を押して下さい。','routine');
   delete S.cardIdentities;delete S.coreBridge;delete S.pendingCardTransfers;delete S.pendingSummon;delete S.pendingEntry;delete S.pendingChoice;delete S.pendingEntryHtml;Object.assign(S,{turn:1,side:'p',manaBySide:{p:1,c:1},maxManaBySide:{p:1,c:1},manaBonus:{p:0,c:0},pHp:20,cHp:20,board:Array(25).fill(null),hand:['歩兵','歩兵','戦列兵','戦列兵','バーサーク'],deck:[...Array(31).fill('歩兵'),'踊り子','チャリオット','ファイヤーボルト','マナ'],cHand:['歩兵','ヒーラー','金級兵','チャリオット','銀級兵'],cDeck:Array(35).fill('歩兵'),card:null,piece:null,inspect:null,gameOver:false,mines:Array(25).fill(null),enchantments:[],battles:[],graveyards:{p:[],c:[]},nextCardInstanceId:1,kingAction:{p:{},c:{}},kingAttackMode:false,sorcererMode:false,tokenPlacement:null,teleportSource:null,dispelTarget:null,cpuPreview:null});
   S.rules=R12Core.normalizeRules();
-  $('log').innerHTML='';clearOneStepUndo();document.body.classList.add('tutorial-mode');startGameScreen();render();
+  $('log').innerHTML='';clearOneStepUndo();document.body.classList.add('tutorial-mode');startGameScreen();
   const epoch=this.epoch;
   NormalGameUI.showOpening(cpuOpening('p'),()=>{if(this.active&&this.epoch===epoch)this.show();});
  },
@@ -5101,7 +5103,7 @@ let cpuDeckMatchStarted=false;function startGameScreen(){NormalGameUI.startPlayP
   sessionStorage.removeItem("cardTacticsStartInGame");
   document.getElementById("titleScreen").style.display="none";
   document.getElementById("app").classList.remove("gameScreenHidden");
-  renderPieceOverlay();
+  if(TutorialController.active)render();else renderPieceOverlay();
   syncInfoPanelHeight();
   NormalGameUI.bindHandScroll()();
   if(startsCpuMatch)presentCpuOpening();
