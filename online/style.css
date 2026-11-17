@@ -793,7 +793,7 @@ body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
 .turnPip1{grid-area:1/1}.turnPip3{grid-area:1/3}.turnPip4{grid-area:2/1}.turnPip5{grid-area:2/2}.turnPip6{grid-area:2/3}.turnPip7{grid-area:3/1}.turnPip9{grid-area:3/3}
 
 /* P3 comparison presentation: editable templates own structure; CSS owns viewport layout. */
-.boardPlane{display:block;position:absolute;inset:0;transform-style:flat}.boardGrid,.royalFoot{display:none}
+.boardPlane{display:block;position:absolute;inset:0;perspective:none;transform-style:flat}.boardGrid,.royalFoot{display:none}
 .planePoint{position:absolute;width:0;height:0;pointer-events:none}
 .manaDock:empty,.enemyManaDock:empty{display:none}
 .layoutHandScroll{display:none}
@@ -902,11 +902,17 @@ body:not(.layout-landscape) .royalHP .kingStat{font-size:10px!important}
 /* Absolute arrows reserve their existing gutters even when unavailable. */
 .handScroller button[hidden],.scrollHint.hand[hidden]{display:none!important}
 
-/* Stable native 3D plane: do not switch display:contents/containing blocks. */
+/* The camera and tilt share the board's bottom-center origin. Composing them
+   on the board avoids switching the parent's perspective/3D context on rotation. */
 body:not(.projected-board) .boardWrap{perspective:none}
-body:not(.projected-board) .boardPlane{display:block;position:absolute;inset:0;transform:none;transform-style:flat;perspective:700px;perspective-origin:50% 100%}
-body:not(.projected-board) .boardPlane>.board{display:grid!important;position:relative;transform:rotateX(42deg)!important;transform-origin:50% 100%;transform-style:preserve-3d!important}
-@media(max-width:600px){body:not(.projected-board) .boardPlane{perspective:560px}body:not(.projected-board) .boardPlane>.board{transform:rotateX(40deg)!important}}
+.boardPlane>.board{will-change:auto}
+body:not(.projected-board) .boardPlane>.board{
+ --board-perspective:700px;--board-tilt:42deg;
+ display:grid!important;position:relative;
+ transform:perspective(var(--board-perspective)) rotateX(var(--board-tilt))!important;
+ transform-origin:50% 100%;transform-style:flat!important
+}
+@media(max-width:600px){body:not(.projected-board) .boardPlane>.board{--board-perspective:560px;--board-tilt:40deg}}
 .battleInfoDock{display:none}.royalGrave:empty{display:none}
 body.layout-landscape .battleInfoDock{display:grid;position:absolute;right:0;top:0;grid-template-columns:auto auto;gap:4px;z-index:900;align-items:start;justify-items:end}
 body.layout-landscape .battleInfoDock .turnIndicator{grid-column:2;grid-row:1;position:relative;left:auto;top:auto;transform:none;margin:0;min-height:32px;box-sizing:border-box}
@@ -994,10 +1000,14 @@ html body #app .royalPedestal{
  animation:none!important
 }
 .royalPlatform{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-.royalPlatform polygon{pointer-events:visiblePainted;fill:#5d4832;stroke:#d1a45d;stroke-width:2;stroke-linejoin:round;cursor:pointer}
-.royalPedestal.player .royalPlatform polygon{fill:#33485d;stroke:#8db2da}
-.board-light .royalPlatform polygon{fill:#e2c991;stroke:#8c6835}
-.board-simple .royalPlatform polygon{fill:#6a7075;stroke:#d4d8dc}
+/* Use an existing surface tone from each board and share its frame color.
+   Rich uses the dark marble squares as the common surface. */
+.boardWrap{--board-surface:#6a5547;--board-frame:#3a2b22}
+.board-light .boardWrap{--board-surface:#e6c78f;--board-frame:#a67b42}
+.board-rich .boardWrap{--board-surface:#4b5056;--board-frame:#d4a52e}
+.board-simple .boardWrap{--board-surface:#dfe1e1;--board-frame:#c9c9c5}
+html body .boardWrap .boardPlane>.board{border-color:var(--board-frame)!important}
+.royalPlatform polygon{pointer-events:visiblePainted;fill:var(--board-surface);stroke:var(--board-frame);stroke-width:2;stroke-linejoin:round;cursor:pointer}
 .royalPedestal:is(.attackable,.spellTarget,:focus-visible,.tutorialGlow) .royalPlatform polygon{stroke-width:3}
 .royalPedestal.attackable .royalPlatform polygon{stroke:#f08080}
 .royalPedestal.spellTarget .royalPlatform polygon{stroke:#ffad4e}

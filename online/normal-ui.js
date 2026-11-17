@@ -8,6 +8,11 @@
 // One fixed projection draws and clips the same 25 native cell elements.
 // Screen-space artwork follows their foot markers; there is no point-to-cell converter.
 let presentationView='current',layoutFrame=0;
+const royalGap=.14,royalDepth=.55;
+const royalEdges=[
+ {kind:'enemy',row:0,edgeY:0,outward:-1},
+ {kind:'player',row:20,edgeY:5,outward:1}
+];
 const landscapeQuery=matchMedia('(orientation: landscape) and (min-width: 640px)');
 function fixedProject(x,y,size,yaw){const a=yaw*Math.PI/180,t=55*Math.PI/180,u=(x*Math.cos(a)-y*Math.sin(a))*size,v=(x*Math.sin(a)+y*Math.cos(a))*size,w=1-v*Math.sin(t)/1000;return {x:u/w,y:v*Math.cos(t)/w};}
 // Central-column ray meets the outer edge; the complete 64x36 royal target
@@ -135,8 +140,8 @@ function fitProjection(wrap,dock){
  if(!best)return;wrap.style.setProperty('--logical-board',lo+'px');wrap.style.setProperty('--plane-offset-x',(best.x-w/2)+'px');wrap.style.setProperty('--plane-offset-y',(best.y-h/2)+'px');
 }
 function projectCells(cells,wrap){
- const active=document.body.classList.contains('projected-board'),grid=wrap.querySelector('.boardGrid');
- if(!active){for(const c of cells){for(const key of ['position','left','top','width','height','clip-path'])c.style.removeProperty(key);delete c.dataset.logicalSize;}return;}
+ if(wrap.dataset.renderMode!=='projected')return;
+ const grid=wrap.querySelector('.boardGrid');
  const size=parseFloat(wrap.style.getPropertyValue('--logical-board')),ox=wrap.clientWidth/2+parseFloat(wrap.style.getPropertyValue('--plane-offset-x')),oy=wrap.clientHeight/2+parseFloat(wrap.style.getPropertyValue('--plane-offset-y')),yaw=presentationView==='left'?-45:0;
  const at=(x,y)=>{const p=fixedProject(x-.5,y-.5,size,yaw);return {x:p.x+ox,y:p.y+oy};};
  const point=(c,name,p,x,y)=>{const e=mark(c,name,0,0);e.style.left=(p.x-x)+'px';e.style.top=(p.y-y)+'px';};
@@ -147,6 +152,13 @@ function projectCells(cells,wrap){
   for(const [j,name]of ['nw','ne','se','sw'].entries())point(c,name,q[j],x,y);
   point(c,'foot',at((col+.5)/5,(row+.5)/5),x,y);point(c,'left',at(col/5,(row+.5)/5),x,y);point(c,'right',at((col+1)/5,(row+.5)/5),x,y);
  });
+ for(const {row,edgeY,outward} of royalEdges){
+  for(const [col,x,side] of [[1,1,'left'],[3,4,'right']]){
+   const cell=cells[row+col],box=cell.style;
+   for(const [name,depth] of [['inner',royalGap],['outer',royalGap+royalDepth]])
+    point(cell,'royal-'+side+'-'+name,at(x/5,(edgeY+outward*depth)/5),parseFloat(box.left),parseFloat(box.top));
+  }
+ }
  for(const name of ['enemy','player']){const e=wrap.querySelector('.royalFoot.'+name),q=royalAnchor(name,size,yaw);e.style.left=(q.x+ox)+'px';e.style.top=(q.y+oy)+'px';}
  grid.setAttribute('viewBox','0 0 '+wrap.clientWidth+' '+wrap.clientHeight);grid.replaceChildren();
  const line=(axis,a,b)=>{const e=document.createElementNS('http://www.w3.org/2000/svg','path');e.dataset.gridAxis=axis;e.setAttribute('d','M'+a.x+' '+a.y+'L'+b.x+' '+b.y);grid.append(e);};
@@ -168,7 +180,7 @@ function syncLayout(){
  document.body.classList.toggle('projected-board',projected);
  const app=$('app'),column=document.querySelector('.boardColumn'),wrap=$('board')?.closest('.boardWrap');
  if(!app||!wrap)return;
- const board=$('board');if(!projected)restoreNativePlane(board,wrap);
+ if(!projected&&wrap.dataset.renderMode==='projected')restoreNativePlane($('board'),wrap);
  wrap.dataset.renderMode=projected?'projected':'native';
  const infoDock=arrangeLandscapeInfo(landscape,app,column,wrap);
  arrangeBattleStrip(landscape,app);
@@ -186,8 +198,20 @@ function prepareCells(cells){cells.forEach((cell,i)=>{
  if(!cell.hasAttribute('data-cell'))cell.dataset.cell=String(i);
  mark(cell,'foot',50,50);mark(cell,'left',0,50);mark(cell,'right',100,50);
  for(const [name,x,y]of [['nw',0,0],['ne',100,0],['se',100,100],['sw',0,100]])mark(cell,name,x,y);
-});}
-function queuePresentation(){if(layoutFrame)return;layoutFrame=requestAnimationFrame(()=>{layoutFrame=0;syncLayout();if(current)renderPieces(current);});}
+});
+ // Native grid markers use the same cell fractions before the CSS transform.
+ for(const {row,edgeY,outward} of royalEdges){
+  const y=edgeY?100:0;
+  for(const [col,x,side] of [[1,0,'left'],[3,100,'right']]){
+   const cell=cells[row+col];
+   if(!cell)continue;
+   for(const [name,depth] of [['inner',royalGap],['outer',royalGap+royalDepth]])
+    mark(cell,'royal-'+side+'-'+name,x,y+100*outward*depth);
+  }
+ }
+}
+function refreshPresentation(){if(current)renderPieces(current);else syncLayout();}
+function queuePresentation(){if(layoutFrame)return;layoutFrame=requestAnimationFrame(()=>{layoutFrame=0;refreshPresentation();});}
 window.addEventListener('resize',queuePresentation);
 window.addEventListener('orientationchange',queuePresentation);
 landscapeQuery.addEventListener('change',queuePresentation);
@@ -836,25 +860,18 @@ function pieceLabel(name){
  const restSize=Math.max(5,Math.min(12,Math.floor(38/Math.max(1,Array.from(rest).length))));
  return `<div class="pname"><span class="pnameLead">${escapeHTML(lead)}</span><span class="pnameRest" style="--rest-size:${restSize}px">${escapeHTML(rest)}</span></div>`;
 }
-function royalPlatform(cells,kind,wrap){
- const far=kind==='enemy',row=far?0:20,left=cells[row+1],right=cells[row+3];
+function royalPlatform(cells,{row,outward},wrap){
+ const left=cells[row+1],right=cells[row+3],far=outward<0;
  const corner=(cell,position)=>screenPoint(cell.querySelector('[data-plane-point='+position+']'),wrap);
  const a=corner(left,far?'nw':'sw'),b=corner(right,far?'ne':'se');
- const inA=corner(left,far?'sw':'nw'),inB=corner(right,far?'se':'ne');
- const center={x:(a.x+b.x)/2,y:(a.y+b.y)/2},length=Math.hypot(b.x-a.x,b.y-a.y);
+ const length=Math.hypot(b.x-a.x,b.y-a.y);
  if(!length)return null;
- // The ends follow the two projected column boundaries as the band moves
- // outward. This is a screen-space continuation of the rendered quadrilateral.
- let nx=-(b.y-a.y)/length,ny=(b.x-a.x)/length;
- if(nx*(a.x-inA.x)+ny*(a.y-inA.y)<0){nx=-nx;ny=-ny;}
- const shift=(p,n)=>({x:p.x+nx*n,y:p.y+ny*n});
- const outside=(p,q,depth)=>{
-  const scale=depth/((p.x-q.x)*nx+(p.y-q.y)*ny);
-  return {x:p.x+(p.x-q.x)*scale,y:p.y+(p.y-q.y)*scale};
- };
- const gap=3,depth=24;
- const shape=[shift(a,gap),shift(b,gap),shift(outside(b,inB,depth),gap),shift(outside(a,inA,depth),gap)];
- return {shape,center,nx,ny};
+ const shape=[
+  corner(left,'royal-left-inner'),corner(right,'royal-right-inner'),
+  corner(right,'royal-right-outer'),corner(left,'royal-left-outer')
+ ];
+ const nx=outward*(a.y-b.y)/length,ny=outward*(b.x-a.x)/length;
+ return {shape,center:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},nx,ny};
 }
 function royalDetails(wrap,kind,pedestal){
  let details=wrap.querySelector('.royalDetails.'+kind);
@@ -871,8 +888,8 @@ function positionRoyalPedestals(){
  const board=$('board'),wrap=board?.closest('.boardWrap'),cells=board?.querySelectorAll('.cell');
  if(!wrap||cells.length!==25||!wrap.clientWidth||!wrap.clientHeight)return;
  const wr=wrap.getBoundingClientRect(),landscape=landscapeQuery.matches;
- const royals=[['enemy','enemyPedestal'],['player','playerPedestal']].map(([kind,id])=>({
-  kind,pedestal:$(id),platform:royalPlatform(cells,kind,wrap)
+ const royals=royalEdges.map(edge=>({
+  kind:edge.kind,pedestal:$(edge.kind+'Pedestal'),platform:royalPlatform(cells,edge,wrap)
  }));
  // Keep graveyards in the existing reservations unless a wider band reaches one.
  if(landscape)for(const {kind,platform} of royals){
@@ -1127,7 +1144,7 @@ function readStoredVisualSettings(){try{const v=JSON.parse(localStorage.getItem(
 const VisualSettings={
  state:{view:'current',board:'rich',king:'default',creatureNames:true,...(includeCPU?{cpuDifficulty:'weak'}:{})},
  load(){try{const v=readStoredVisualSettings();if(['current','left'].includes(v.view))this.state.view=v.view;if(['light','antique','rich','simple'].includes(v.board))this.state.board=v.board;if(v.king==='pop')v.king='default';if(v.king==='simple')v.king='simple1';if(['default','dark','simple1','simple2','oldking','oldking2','youngking'].includes(v.king))this.state.king=v.king;if(typeof v.creatureNames==='boolean')this.state.creatureNames=v.creatureNames;if(includeCPU&&['weak','strong','tactical','gachi'].includes(v.cpuDifficulty))this.state.cpuDifficulty=v.cpuDifficulty}catch(e){}this.apply()},
- apply(){presentationView=this.state.view;document.body.classList.remove('board-light','board-antique','board-rich','board-simple','king-default','king-dark','king-simple1','king-simple2','king-oldking','king-oldking2','king-youngking','creature-names-off');document.body.classList.add('board-'+this.state.board,'king-'+this.state.king);if(!this.state.creatureNames)document.body.classList.add('creature-names-off');applyKingAsset(this.state.king);document.querySelectorAll('.settingsChoices[data-setting]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.value===this.state[g.dataset.setting])));document.querySelectorAll('#creatureNameChoices button').forEach(b=>b.classList.toggle('active',(b.dataset.nameVisible==='true')===this.state.creatureNames));try{localStorage.setItem('phase2VisualSettings',JSON.stringify({...readStoredVisualSettings(),...this.state}))}catch(e){}syncLayout();if(current)renderPieces(current);},
+ apply(){presentationView=this.state.view;document.body.classList.remove('board-light','board-antique','board-rich','board-simple','king-default','king-dark','king-simple1','king-simple2','king-oldking','king-oldking2','king-youngking','creature-names-off');document.body.classList.add('board-'+this.state.board,'king-'+this.state.king);if(!this.state.creatureNames)document.body.classList.add('creature-names-off');applyKingAsset(this.state.king);document.querySelectorAll('.settingsChoices[data-setting]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.value===this.state[g.dataset.setting])));document.querySelectorAll('#creatureNameChoices button').forEach(b=>b.classList.toggle('active',(b.dataset.nameVisible==='true')===this.state.creatureNames));try{localStorage.setItem('phase2VisualSettings',JSON.stringify({...readStoredVisualSettings(),...this.state}))}catch(e){}refreshPresentation();},
  set(key,value){if(!Object.hasOwn(this.state,key))return;if(key==='cpuDifficulty'&&!['weak','strong','tactical','gachi'].includes(value))return;if(key==='view'&&!['current','left'].includes(value))return;if(key==='king'&&!Object.hasOwn(KING_ASSET_PATHS,value))return;if(key==='board'&&!['light','antique','rich','simple'].includes(value))return;this.state[key]=value;this.apply()}
 };
 function openSettings(){document.getElementById('settingsOverlay').classList.add('show');document.getElementById('settingsOverlay').setAttribute('aria-hidden','false')}
