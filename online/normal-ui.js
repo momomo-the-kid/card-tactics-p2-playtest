@@ -471,7 +471,7 @@ function presentBattleAction(events,context){
 }
 
 // The fixed layer owns presentation time only. Neither Core nor online receipt waits on it.
-const turnPresentationMs=Object.freeze({dice:1000,order:1000,turn:700});
+const turnPresentationMs=Object.freeze({dice:3000,diceHold:700,order:2000,turn:1050});
 let turnSequence=null;
 const turnPresentationBusy=()=>turnSequence!==null;
 
@@ -489,20 +489,56 @@ function diceForMatch(seed,first){
  }
 }
 const dicePips=[[],[5],[1,9],[1,5,9],[1,3,7,9],[1,3,5,7,9],[1,3,4,6,7,9]];
-function die(label,value){
+function setDieFace(cube,value){
+ cube.dataset.roll=value;
+ cube.setAttribute('aria-label',value+'の目');
+ const pips=dicePips[value].map(index=>{
+  const pip=document.createElement('i');pip.className='turnPip'+index;return pip;
+ });
+ cube.replaceChildren(...pips);
+}
+function die(label){
  const item=document.createElement('div'),cube=document.createElement('span');
- item.textContent=label;
- cube.className='turnDie';cube.dataset.roll=value;
- cube.setAttribute('role','img');cube.setAttribute('aria-label',value+'の目');
- for(const index of dicePips[value]){
-  const pip=document.createElement('i');pip.className='turnPip'+index;cube.append(pip);
+ item.textContent=label;cube.className='turnDie';cube.setAttribute('role','img');
+ item.append(cube);return {item,cube};
+}
+function rollDice(title,pair,dice){
+ const settle=()=>{
+  for(const {cube,value} of dice)setDieFace(cube,value);
+  title.textContent='大きい目が先攻';pair.removeAttribute('aria-hidden');
+ };
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches){settle();return;}
+ const duration=turnPresentationMs.dice-turnPresentationMs.diceHold;
+ const start=performance.now();
+ const animations=dice.map(({cube,side})=>cube.animate(
+  [{transform:'rotate(0deg)'},{transform:side==='p'?'rotate(720deg)':'rotate(-720deg)'}],
+  {duration,easing:'cubic-bezier(.2,.55,.4,1)'}
+ ));
+ title.textContent='ダイスを振っています';pair.setAttribute('aria-hidden','true');
+ let frame,previous=-1;
+ function stop(){
+  cancelAnimationFrame(frame);for(const animation of animations)animation.cancel();
  }
- item.append(cube);return item;
+ function tick(now){
+  const progress=Math.max(0,(now-start)/duration);
+  if(progress>=1){stop();settle();return;}
+  // Space the changes progressively farther apart as the dice slow down.
+  // These faces are visual only and never consume the match RNG.
+  const step=Math.floor((1-(1-progress)**2)*16);
+  if(step!==previous){
+   for(const {cube,value,side} of dice)setDieFace(cube,(value+step*(side==='p'?1:5))%6+1);
+   previous=step;
+  }
+  frame=requestAnimationFrame(tick);
+ }
+ tick(start);
+ return stop;
 }
 function cancelTurnPresentation(){
  if(!turnSequence)return;
- clearTimeout(turnSequence.timer);turnSequence=null;
+ clearTimeout(turnSequence.timer);turnSequence.stopStage?.();turnSequence=null;
  const panel=$('turnPopup');panel.hidden=true;panel.replaceChildren();delete panel.dataset.stage;
+ panel.classList.remove('ownTurn','enemyTurn');
 }
 function finishTurnPresentation(){
  if(!turnSequence)return;
@@ -519,27 +555,32 @@ function showTurnSequence(stages,done){
   if(turnSequence!==sequence)return;
   const stage=stages.shift();
   if(!stage){finishTurnPresentation();return;}
-  panel.dataset.stage=stage.kind;panel.replaceChildren(stage.content);panel.hidden=false;
+  sequence.stopStage?.();
+  panel.dataset.stage=stage.kind;
+  panel.classList.toggle('ownTurn',stage.own===true);panel.classList.toggle('enemyTurn',stage.own===false);
+  panel.replaceChildren(stage.content);panel.hidden=false;
   sequence.timer=setTimeout(next,turnPresentationMs[stage.kind]);
+  sequence.stopStage=stage.start?.();
  }
  next();
 }
 function turnStage(activeSide,viewer){
- return {kind:'turn',content:activeSide===viewer?'あなたのターン':'相手のターン'};
+ const own=activeSide===viewer;
+ return {kind:'turn',own,content:own?'あなたのターン':'相手のターン'};
 }
 function showOpening({seed,first,viewer,activeSide},done){
  const rolls=diceForMatch(seed,first),group=document.createElement('div');
  const title=document.createElement('span'),pair=document.createElement('div');
- title.textContent='大きい目が先攻';pair.className='turnDicePair';
- pair.append(die('あなた',rolls[viewer]),die('相手',rolls[viewer==='p'?'c':'p']));
+ const dice=[viewer,viewer==='p'?'c':'p'].map(side=>({...die(side===viewer?'あなた':'相手'),side,value:rolls[side]}));
+ pair.className='turnDicePair';pair.append(...dice.map(({item})=>item));
  group.append(title,pair);
- showTurnSequence([{kind:'dice',content:group},{kind:'order',content:viewer===first?'あなたは先攻です':'あなたは後攻です'},
-  turnStage(activeSide,viewer)],done);
+ showTurnSequence([{kind:'dice',content:group,start:()=>rollDice(title,pair,dice)},
+  {kind:'order',content:viewer===first?'あなたは先攻です':'あなたは後攻です'},turnStage(activeSide,viewer)],done);
 }
 function showTurn(activeSide,viewer,done){
  const stage=turnStage(activeSide,viewer);
  const openingTurn=turnSequence?.stages.find(stage=>stage.kind==='turn');
- if(openingTurn){openingTurn.content=stage.content;return;}
+ if(openingTurn){Object.assign(openingTurn,stage);return;}
  showTurnSequence([stage],done);
 }
 // Eat a click that started while the popup was visible, even when its pointer

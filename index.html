@@ -773,8 +773,10 @@ body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
 
 /* Shared CPU / online card geometry: content wraps inside a stable card. */
 .hand .card{box-sizing:border-box;flex:0 0 100px;width:100px;min-width:0;max-width:100px;font-family:inherit;font-size:16px;white-space:normal;overflow-wrap:anywhere}
-.turnIndicator{display:inline-block;align-self:flex-start;position:relative;z-index:15;border-radius:10px;padding:8px 12px;margin:0 0 9px;color:#fff;font-weight:800;font-size:13px;line-height:1.3;animation:turnPulse 3s ease-in-out infinite;pointer-events:none}
-.turnIndicator.ownTurn{background:#205d9e;--turn-bright:#2d78bd;--turn-dark:#10304f}.turnIndicator.enemyTurn{background:#a32e3c;--turn-bright:#c63f50;--turn-dark:#511720}
+.turnIndicator{display:inline-block;align-self:flex-start;position:relative;z-index:15;padding:8px 12px;margin:0 0 9px;font-weight:800;font-size:13px;line-height:1.3;animation:turnPulse 3s ease-in-out infinite;pointer-events:none}
+.turnIndicator,#turnPopup[data-stage=turn]{border-radius:10px;color:#fff}
+.turnIndicator.ownTurn,#turnPopup.ownTurn{background:#205d9e;--turn-bright:#2d78bd;--turn-dark:#10304f}
+.turnIndicator.enemyTurn,#turnPopup.enemyTurn{background:#a32e3c;--turn-bright:#c63f50;--turn-dark:#511720}
 .turnIndicator[hidden]{display:none!important}
 @keyframes turnPulse{0%,100%{background-color:var(--turn-bright)}50%{background-color:var(--turn-dark)}}
 @media(prefers-reduced-motion:reduce){.turnIndicator{animation:none}}
@@ -800,16 +802,13 @@ body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
 
 /* Match-opening and turn messages sit above play without affecting its geometry. */
 #turnPopup{position:fixed;inset:0;margin:auto;width:max-content;height:max-content;max-width:calc(100% - 24px);max-height:calc(100% - 24px);box-sizing:border-box;padding:12px 20px;border:2px solid #b99f65;border-radius:12px;background:#211c16;color:#fff7e1;box-shadow:0 6px 22px #0009;z-index:905;text-align:center;font-size:clamp(17px,4vmin,23px);font-weight:800;pointer-events:none}
+#turnPopup[data-stage=turn]{border-color:var(--turn-bright)}
 #turnPopup[hidden]{display:none}
 .turnDicePair{display:flex;justify-content:center;gap:24px;margin-top:8px;font-size:15px}
-.turnDie{display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:3px;width:49px;height:49px;box-sizing:border-box;padding:7px;margin:5px auto 0;border-radius:9px;background:#f8eacf;box-shadow:inset 0 -3px #0003;color:#6d3029}
+.turnDie{display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:3px;width:49px;height:49px;box-sizing:border-box;padding:7px;margin:12px auto 0;border-radius:9px;background:#f8eacf;box-shadow:inset 0 -3px #0003;color:#6d3029}
 .turnDicePair>div:first-child .turnDie{color:#1a4873}
 .turnDie i{width:100%;aspect-ratio:1;border-radius:50%;background:currentColor}
 .turnPip1{grid-area:1/1}.turnPip3{grid-area:1/3}.turnPip4{grid-area:2/1}.turnPip5{grid-area:2/2}.turnPip6{grid-area:2/3}.turnPip7{grid-area:3/1}.turnPip9{grid-area:3/3}
-@media (prefers-reduced-motion:no-preference){
- #turnPopup[data-stage=dice] .turnDie{animation:turnDiceRoll .55s ease-out both}
- @keyframes turnDiceRoll{0%,42%{transform:translateY(-7px) rotate(-19deg)}22%,62%{transform:translateY(2px) rotate(15deg)}80%{transform:rotate(-6deg)}100%{transform:none}}
-}
 
 /* P3 comparison presentation: editable templates own structure; CSS owns viewport layout. */
 .boardPlane{display:block;position:absolute;inset:0;transform-style:flat}.boardGrid,.royalFoot{display:none}
@@ -1085,7 +1084,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-turn-presentation-v57">ver p3-turn-presentation-v57</div>
+  <div class="titleVersion" data-build="p3-dice-timing-v58">ver p3-dice-timing-v58</div>
   <p id="benchmarkTrialLabel">クリーチャー基準・試験版</p><div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -1655,7 +1654,7 @@ function presentBattleAction(events,context){
 }
 
 // The fixed layer owns presentation time only. Neither Core nor online receipt waits on it.
-const turnPresentationMs=Object.freeze({dice:1000,order:1000,turn:700});
+const turnPresentationMs=Object.freeze({dice:3000,diceHold:700,order:2000,turn:1050});
 let turnSequence=null;
 const turnPresentationBusy=()=>turnSequence!==null;
 
@@ -1673,20 +1672,56 @@ function diceForMatch(seed,first){
  }
 }
 const dicePips=[[],[5],[1,9],[1,5,9],[1,3,7,9],[1,3,5,7,9],[1,3,4,6,7,9]];
-function die(label,value){
+function setDieFace(cube,value){
+ cube.dataset.roll=value;
+ cube.setAttribute('aria-label',value+'の目');
+ const pips=dicePips[value].map(index=>{
+  const pip=document.createElement('i');pip.className='turnPip'+index;return pip;
+ });
+ cube.replaceChildren(...pips);
+}
+function die(label){
  const item=document.createElement('div'),cube=document.createElement('span');
- item.textContent=label;
- cube.className='turnDie';cube.dataset.roll=value;
- cube.setAttribute('role','img');cube.setAttribute('aria-label',value+'の目');
- for(const index of dicePips[value]){
-  const pip=document.createElement('i');pip.className='turnPip'+index;cube.append(pip);
+ item.textContent=label;cube.className='turnDie';cube.setAttribute('role','img');
+ item.append(cube);return {item,cube};
+}
+function rollDice(title,pair,dice){
+ const settle=()=>{
+  for(const {cube,value} of dice)setDieFace(cube,value);
+  title.textContent='大きい目が先攻';pair.removeAttribute('aria-hidden');
+ };
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches){settle();return;}
+ const duration=turnPresentationMs.dice-turnPresentationMs.diceHold;
+ const start=performance.now();
+ const animations=dice.map(({cube,side})=>cube.animate(
+  [{transform:'rotate(0deg)'},{transform:side==='p'?'rotate(720deg)':'rotate(-720deg)'}],
+  {duration,easing:'cubic-bezier(.2,.55,.4,1)'}
+ ));
+ title.textContent='ダイスを振っています';pair.setAttribute('aria-hidden','true');
+ let frame,previous=-1;
+ function stop(){
+  cancelAnimationFrame(frame);for(const animation of animations)animation.cancel();
  }
- item.append(cube);return item;
+ function tick(now){
+  const progress=Math.max(0,(now-start)/duration);
+  if(progress>=1){stop();settle();return;}
+  // Space the changes progressively farther apart as the dice slow down.
+  // These faces are visual only and never consume the match RNG.
+  const step=Math.floor((1-(1-progress)**2)*16);
+  if(step!==previous){
+   for(const {cube,value,side} of dice)setDieFace(cube,(value+step*(side==='p'?1:5))%6+1);
+   previous=step;
+  }
+  frame=requestAnimationFrame(tick);
+ }
+ tick(start);
+ return stop;
 }
 function cancelTurnPresentation(){
  if(!turnSequence)return;
- clearTimeout(turnSequence.timer);turnSequence=null;
+ clearTimeout(turnSequence.timer);turnSequence.stopStage?.();turnSequence=null;
  const panel=$('turnPopup');panel.hidden=true;panel.replaceChildren();delete panel.dataset.stage;
+ panel.classList.remove('ownTurn','enemyTurn');
 }
 function finishTurnPresentation(){
  if(!turnSequence)return;
@@ -1703,27 +1738,32 @@ function showTurnSequence(stages,done){
   if(turnSequence!==sequence)return;
   const stage=stages.shift();
   if(!stage){finishTurnPresentation();return;}
-  panel.dataset.stage=stage.kind;panel.replaceChildren(stage.content);panel.hidden=false;
+  sequence.stopStage?.();
+  panel.dataset.stage=stage.kind;
+  panel.classList.toggle('ownTurn',stage.own===true);panel.classList.toggle('enemyTurn',stage.own===false);
+  panel.replaceChildren(stage.content);panel.hidden=false;
   sequence.timer=setTimeout(next,turnPresentationMs[stage.kind]);
+  sequence.stopStage=stage.start?.();
  }
  next();
 }
 function turnStage(activeSide,viewer){
- return {kind:'turn',content:activeSide===viewer?'あなたのターン':'相手のターン'};
+ const own=activeSide===viewer;
+ return {kind:'turn',own,content:own?'あなたのターン':'相手のターン'};
 }
 function showOpening({seed,first,viewer,activeSide},done){
  const rolls=diceForMatch(seed,first),group=document.createElement('div');
  const title=document.createElement('span'),pair=document.createElement('div');
- title.textContent='大きい目が先攻';pair.className='turnDicePair';
- pair.append(die('あなた',rolls[viewer]),die('相手',rolls[viewer==='p'?'c':'p']));
+ const dice=[viewer,viewer==='p'?'c':'p'].map(side=>({...die(side===viewer?'あなた':'相手'),side,value:rolls[side]}));
+ pair.className='turnDicePair';pair.append(...dice.map(({item})=>item));
  group.append(title,pair);
- showTurnSequence([{kind:'dice',content:group},{kind:'order',content:viewer===first?'あなたは先攻です':'あなたは後攻です'},
-  turnStage(activeSide,viewer)],done);
+ showTurnSequence([{kind:'dice',content:group,start:()=>rollDice(title,pair,dice)},
+  {kind:'order',content:viewer===first?'あなたは先攻です':'あなたは後攻です'},turnStage(activeSide,viewer)],done);
 }
 function showTurn(activeSide,viewer,done){
  const stage=turnStage(activeSide,viewer);
  const openingTurn=turnSequence?.stages.find(stage=>stage.kind==='turn');
- if(openingTurn){openingTurn.content=stage.content;return;}
+ if(openingTurn){Object.assign(openingTurn,stage);return;}
  showTurnSequence([stage],done);
 }
 // Eat a click that started while the popup was visible, even when its pointer
