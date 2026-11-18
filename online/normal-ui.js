@@ -343,6 +343,12 @@ function describeBattleAction(events,{viewer,activeSide,before,after,turn,defini
    }
    case 'damage:guarded':
     add(unit(board[e.guardian])+'が'+unit(board[e.cell])+'への'+e.amount+'ダメージを肩代わり');break;
+   case 'advance:offered':
+    if(!events.some(result=>result.type==='advance:chosen'&&result.instanceId===e.instanceId))
+     add(label(e.side)+'の敵陣突破：ドロー選択待ち');
+    break;
+   case 'advance:chosen':
+    add(label(e.side)+(e.accept?'は敵陣突破のドローを選択':'は敵陣突破のドローを辞退'));break;
    case 'advance:rewarded':
     add((e.side===viewer?'あなた':'相手')+'の'+(e.kind==='draw'?'敵陣突破！ 1枚ドロー':e.capped?'士気高揚！ 最大マナ上限':'士気高揚！ 最大マナ＋1'));break;
    case 'creature:damaged': {
@@ -584,6 +590,7 @@ function presentBattleAction(events,context){
 const turnPresentationMs=Object.freeze({dice:2310,diceHold:700,order:2000,turn:1050});
 let turnSequence=null;
 const turnQueue=[];
+let advanceChoice=null,advanceChoiceContext=null;
 const turnPresentationBusy=()=>turnSequence!==null;
 
 function diceForMatch(seed,first){
@@ -667,7 +674,8 @@ function positionBoardAnnouncement(rects){
   group.style.setProperty('--opening-die-limit',Math.min(height,width)*.28+'px');
  }
 }
-function cancelTurnPresentation(){
+function cancelTurnPresentation(preserveChoice=false){
+ if(!preserveChoice)advanceChoice=null;
  turnQueue.length=0;
  if(!turnSequence)return;
  clearTimeout(turnSequence.timer);turnSequence.stopStage?.();turnSequence=null;
@@ -677,7 +685,7 @@ function cancelTurnPresentation(){
 function finishTurnPresentation(){
  if(!turnSequence)return;
  const done=turnSequence.done,queued=turnQueue.splice(0);
- cancelTurnPresentation();
+ cancelTurnPresentation(true);
  if(document.visibilityState!=='visible'){done?.();for(const item of queued)item.done?.();return;}
  turnQueue.push(...queued);done?.();
  if(!turnPresentationBusy()&&turnQueue.length){
@@ -695,15 +703,16 @@ function showTurnSequence(stages,done,append=false){
   const stage=stages.shift();
   if(!stage){finishTurnPresentation();return;}
   sequence.stopStage?.();
+  sequence.current=stage;
   panel.dataset.stage=stage.kind;
   panel.classList.toggle('ownTurn',stage.own===true);panel.classList.toggle('enemyTurn',stage.own===false);
   if(panel.firstChild!==stage.content)panel.replaceChildren(stage.content);
   panel.hidden=false;
   positionBoardAnnouncement();
-  sequence.timer=setTimeout(next,stage.duration??turnPresentationMs[stage.kind]);
+  sequence.timer=stage.hold?null:setTimeout(next,stage.duration??turnPresentationMs[stage.kind]);
   sequence.stopStage=stage.start?.();
  }
- next();
+ sequence.next=next;next();
 }
 function turnStage(activeSide,viewer){
  const own=activeSide===viewer,content=document.createElement('div'),notice=document.createElement('span');
@@ -734,6 +743,41 @@ function showTurn(activeSide,viewer,done){
  const openingTurn=turnSequence?.stages.find(stage=>stage.kind==='turn');
  if(openingTurn){Object.assign(openingTurn,stage);return;}
  showTurnSequence([stage],done,true);
+}
+function syncAdvanceDrawChoice(choice,viewer,submit,enabled=true){
+ advanceChoiceContext={choice,viewer,submit,enabled};
+ const pending=choice&&(choice.type==='advanceDraw'||['advanceDraw','advanceDrawWait'].includes(choice.kind));
+ const key=pending?[choice.side,choice.instanceId,choice.cell].join(':'):null;
+ if(advanceChoice?.key===key){
+  for(const button of advanceChoice.buttons)button.disabled=!enabled;
+  return;
+ }
+ if(advanceChoice){
+  const remove=stages=>{for(let i=stages.length-1;i>=0;i--)if(stages[i].kind==='advanceChoice')stages.splice(i,1);};
+  if(turnSequence)remove(turnSequence.stages);
+  for(const item of turnQueue)remove(item.stages);
+  advanceChoice=null;
+  if(turnSequence?.current?.kind==='advanceChoice')turnSequence.next();
+ }
+ if(!key||document.visibilityState!=='visible')return;
+ const own=choice.side===viewer,content=document.createElement('div'),notice=document.createElement('div');
+ const title=document.createElement('strong'),question=document.createElement('small'),buttons=[];
+ content.className='boardAnnouncement';notice.className='turnNotification advanceRewardNotification advanceDrawChoice';
+ notice.dataset.side=choice.side;notice.setAttribute('role','group');notice.setAttribute('aria-label','敵陣突破のドロー選択');
+ title.textContent='敵陣突破！';
+ question.textContent=own?'カードを1枚引きますか？':'相手がドローを選択中…';
+ notice.append(title,question);
+ if(own){
+  const actions=document.createElement('div');actions.className='advanceDrawButtons';
+  for(const [accept,text]of [[true,'1枚引く'],[false,'引かない']]){
+   const button=document.createElement('button');button.type='button';button.textContent=text;button.disabled=!enabled;
+   button.onclick=()=>{for(const b of buttons)b.disabled=true;submit(accept);};
+   buttons.push(button);actions.append(button);
+  }
+  notice.append(actions);
+ }
+ content.append(notice);advanceChoice={key,buttons};
+ showTurnSequence([{kind:'advanceChoice',own,content,hold:true}],undefined,true);
 }
 function presentAdvanceRewards(events,viewer,ended=false,done){
  if(ended||document.visibilityState!=='visible')return;
@@ -835,12 +879,15 @@ function positionOpponentCard(){
  panel.style.top=(bottom-height)+'px';
  panel.style.transform=scale<1?'scale('+Math.max(0,scale)+')':'';
 }
-function positionBattleOverlays(){positionBattleLog();positionOpponentCard();positionBoardAnnouncement();positionAttackDamage();}
+function positionBattleOverlays(){positionBattleLog();positionOpponentCard();positionBoardAnnouncement();positionAttackDamage();globalThis.CardResourceUI?.position();}
 window.addEventListener('resize',positionBattleOverlays);
 window.visualViewport?.addEventListener('resize',positionBattleOverlays);
 window.visualViewport?.addEventListener('scroll',positionBattleOverlays);
 window.addEventListener('scroll',positionBattleOverlays,{passive:true});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible'){clearAttackDamage();clearOpponentCards();finishTurnPresentation();}});
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState!=='visible'){clearAttackDamage();clearOpponentCards();finishTurnPresentation();advanceChoice=null;}
+ else if(advanceChoiceContext){const {choice,viewer,submit,enabled}=advanceChoiceContext;syncAdvanceDrawChoice(choice,viewer,submit,enabled);}
+});
 window.addEventListener('pagehide',event=>{clearAttackDamage();clearOpponentCards();if(event.persisted)finishTurnPresentation();else cancelTurnPresentation();});
 document.addEventListener('p2b1:exit',()=>{clearAttackDamage();clearOpponentCards();});
 function fitLatestAction(latest,left,bottom){
@@ -1207,7 +1254,7 @@ function renderPieces(model){
  positionRoyalPedestals();updateRoyalHealth();positionAttackDamage();
  const wrapRect=overlay.getBoundingClientRect();
  const cellRects=[...cells].map(c=>c.getBoundingClientRect());
- positionBoardAnnouncement(cellRects);
+ positionBoardAnnouncement(cellRects);globalThis.CardResourceUI?.position();
  const pitch=Math.min(Math.max(...cellRects.map(r=>r.right))-Math.min(...cellRects.map(r=>r.left)),Math.max(...cellRects.map(r=>r.bottom))-Math.min(...cellRects.map(r=>r.top)))/5;
  const now=performance.now(),seenStatuses=new Set();
  const compactHUD=pitch<64;overlay.dataset.hudSize=compactHUD?'compact':'regular';
@@ -1379,5 +1426,5 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,presentAdvanceRewards,presentDamageNumbers,clearAttackDamage,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearAttackDamage();clearOpponentCards();cancelTurnPresentation();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst,showOpening,showTurn,turnPresentationBusy,cancelTurnPresentation,clearOpponentCards});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,syncAdvanceDrawChoice,presentAdvanceRewards,presentDamageNumbers,clearAttackDamage,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){advanceChoiceContext=null;globalThis.CardResourceUI?.clear();current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearAttackDamage();clearOpponentCards();cancelTurnPresentation();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst,showOpening,showTurn,turnPresentationBusy,cancelTurnPresentation,clearOpponentCards});
 })();

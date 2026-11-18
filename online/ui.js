@@ -145,11 +145,18 @@
    if(v.revision===0)N.presentBattleAction([{type:'turn:started',side:v.activeSide}],
     {viewer:v.viewer,activeSide:v.activeSide,turn:v.turn,definitions:D,revision:0,animate:false});
   }
-  if(current.status!=='connected')N.clearAttackDamage();
+  if(current.status!=='connected'){N.clearAttackDamage();CardResourceUI.clearAnimations();}
+  const rewardChoice=['advanceDraw','advanceDrawWait'].includes(v.choice?.kind)?v.choice:null;
+  N.syncAdvanceDrawChoice(current.status==='connected'&&!v.gameOver&&!current.aborted?rewardChoice:null,v.viewer,accept=>{
+   const option=state?.view?.options.find(o=>o.action.type==='chooseAdvanceDraw'&&o.action.accept===accept);
+   if(option&&state.status==='connected'&&!state.inFlight&&!state.view.gameOver){
+    const result=B3Poc.choose(option.choiceId);if(result&&!result.ok)render(state);
+   }
+  },!current.inFlight);
   if(priorState?.status!=='connected'||current.status!=='connected')presentedRevision=Math.max(presentedRevision,v.revision);
   if(v.revision!==lastRevision||current.status!==lastStatus||current.inFlight)clear();lastRevision=v.revision;lastStatus=current.status;
   const enemy=opposite(v.viewer),own=v.players[v.viewer],other=v.players[enemy],enabled=usable();
-  $('assignment').textContent=(current.role==='host'?'ホスト':'ゲスト')+' / '+(v.viewer==='p'?'先攻（p）':'後攻（c）');$('turn').textContent='ターン '+v.turn+' / '+(v.activeSide===v.viewer?'あなたの手番':'相手の手番');$('ownDeck').textContent='自分山札 '+own.deckCount;$('enemyDeck').textContent='相手山札 '+other.deckCount;$('enemyHand').textContent='相手手札 '+(v.hands[enemy]?.length??0)+'枚';$('globalEnchantCount').textContent=v.enchantments.filter(e=>e.target?.kind==='global').length;
+  $('assignment').textContent=(current.role==='host'?'ホスト':'ゲスト')+' / '+(v.viewer==='p'?'先攻（p）':'後攻（c）');$('turn').textContent='ターン '+v.turn+' / '+(v.activeSide===v.viewer?'あなたの手番':'相手の手番');$('ownDeck').textContent='自分山札 '+own.deckCount;$('enemyDeck').textContent='相手山札 '+other.deckCount;$('enemyHand').textContent='相手手札 '+(v.hands[enemy]?.length??0)+'枚';CardResourceUI.render({enemyHand:v.players[enemy].handCount,ownDeck:own.deckCount,enemyDeck:other.deckCount});$('globalEnchantCount').textContent=v.enchantments.filter(e=>e.target?.kind==='global').length;
   for(const [id,value]of Object.entries({ownHp:own.kingHp,enemyHp:other.kingHp,ownMana:own.mana+'/'+own.maxMana,enemyMana:other.mana+'/'+other.maxMana,ownGrave:own.graveyard.length,enemyGrave:other.graveyard.length}))$(id).textContent=value;
   $('ownKing').textContent='あなたの王 HP '+own.kingHp;$('enemyKing').textContent='相手の王 HP '+other.kingHp;
   for(const e of document.querySelectorAll('[data-king]')){const side=e.dataset.king==='own'?v.viewer:enemy;if(e.tagName==='BUTTON')e.disabled=!enabled;e.onclick=()=>king(side);e.classList.toggle('spellTarget',enabled&&options().some(o=>atKing(o.action,side)));e.classList.toggle('attackable',enabled&&options().some(o=>o.action.type==='attack_king'&&side===enemy));}
@@ -177,6 +184,7 @@
   const before=presentationBefore;
   if(!awaitingGuardian(v)){
    N.presentDamageNumbers(events,v.viewer);
+   CardResourceUI.presentDraws(events,v.viewer);
    N.presentAdvanceRewards(events,v.viewer,v.gameOver,()=>render(state));
    N.presentBattleAction(events,{viewer:v.viewer,activeSide:v.activeSide,before,after:v,definitions:D,revision,animate:!v.gameOver&&!state.aborted});
   }
