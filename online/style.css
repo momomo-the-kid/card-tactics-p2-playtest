@@ -1125,13 +1125,14 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 
 #cardResourceLayer{position:fixed;inset:0;z-index:880;pointer-events:none}
 #cardResourceLayer[hidden]{display:none}
+.resourceDeck[hidden]{display:none}
 .resourceHand,.resourceDeck{position:absolute;box-sizing:border-box;pointer-events:none}
 .cardBack{display:block;box-sizing:border-box;border:1px solid #d2b875;border-radius:3px;background-color:var(--back-color,#244c75);background-image:var(--card-back-image,repeating-linear-gradient(45deg,#fff2 0 1px,transparent 1px 5px));box-shadow:inset 0 0 0 2px #151c28,inset 0 0 0 3px #d2b87588}
 .cardBack.own,.resourceDeck.own{--back-color:#244c75}
 .cardBack.enemy,.resourceDeck.enemy,.resourceHand.enemy{--back-color:#763640}
 .resourceHand .cardBack{position:absolute;left:calc(var(--index)*var(--back-spread));top:0;width:var(--back-width);height:100%}
 .resourceHand.empty{border:1px dashed #8a6c72;border-radius:3px;opacity:.6}
-.resourceHand.empty::after{content:"手札 0";font:10px/22px system-ui;color:#c8b7b9}
+.resourceHandLabel{position:absolute;bottom:0;left:50%;transform:translateX(-50%);max-width:100%;white-space:nowrap;color:#fff;font:700 10px/12px system-ui;text-shadow:0 1px 2px #000;background:#201723dd;border-radius:2px;padding:0 2px;box-sizing:border-box}
 .resourceDeck{display:flex;align-items:center;gap:5px;white-space:normal}
 .resourcePile{position:relative;display:block;flex:0 0 18px;height:20px}
 .resourcePile .cardBack{position:absolute;width:15px;height:20px;left:calc(var(--stack)*1px);top:calc(var(--stack)*-1px)}

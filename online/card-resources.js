@@ -31,12 +31,36 @@ globalThis.CardResourceUI=(()=>{
   Object.assign(element.style,{left:x+'px',top:y+'px',width:width+'px',height:height+'px'});
  }
  function rect(element){return element?.getBoundingClientRect();}
+ // Stay beside the existing own graveyard; never reserve layout space.
+ function positionOwnDeck(){
+  const grave=rect(document.querySelector('.royalGrave.player .graveButton'));
+  const column=rect(document.querySelector('.boardColumn'));
+  if(!grave?.width||!column?.width)return;
+  const width=65,height=24,gap=6;
+  const obstacles=[...document.querySelectorAll('#board .cell,.royalPlatform,.crownModel,.royalDetails,.graveButton,#hand,#infoPanel,.manaStat,#turnIndicator,.layoutLog,.battleStrip,.gameTopBar button,.appHeader button,#endTurn,#undoOne,#onlineUndo,#onlineSurrender,.layoutHandScroll,#latestAction')]
+   .filter(e=>e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden').map(rect).filter(r=>r.width&&r.height);
+  const candidates=[];
+  const add=(x,y)=>{
+   if(x<Math.max(2,column.left)||x+width>Math.min(innerWidth-2,column.right)||y<column.top||y+height>Math.min(innerHeight-2,column.bottom))return;
+   if(obstacles.some(r=>x<r.right+2&&x+width>r.left-2&&y<r.bottom+2&&y+height>r.top-2))return;
+   candidates.push({x,y,distance:Math.hypot(x+width/2-grave.left-grave.width/2,y+height/2-grave.top-grave.height/2)});
+  };
+  for(const x of [grave.right+gap,grave.left,grave.right-width,grave.left-width-gap,grave.left+(grave.width-width)/2])
+   for(const y of [grave.top+(grave.height-height)/2,grave.top-height-gap,grave.bottom+gap])add(x,y);
+  if(!candidates.length)for(let y=column.top;y+height<=column.bottom;y+=6)
+   for(let x=column.left;x+width<=column.right;x+=6)add(x,y);
+  candidates.sort((a,b)=>a.distance-b.distance);
+  const chosen=candidates[0];
+  // An impossibly small viewport must not cover a game control.
+  own.hidden=!chosen;if(chosen)place(own,chosen.x,chosen.y,width,height);
+ }
  function position(){
   if(!layer)return;
   const app=$('app'),appRect=rect(app),match=$('match');
   const hidden=!counts||!appRect?.width||app.classList.contains('gameScreenHidden')||match?.hidden;
   layer.hidden=hidden;if(hidden)return;
   const landscape=document.body.classList.contains('layout-landscape');
+  own.hidden=false;
   if(landscape){
    const bar=document.querySelector('.gameTopBar,.appHeader'),r=rect(bar);
    if(!r)return;
@@ -55,14 +79,13 @@ globalThis.CardResourceUI=(()=>{
    if(width<136&&segments[1]?.[1]-segments[1]?.[0]>=53){
     const spare=segments[1];
     place(enemy,spare[0],top,53,height);
-    place(fan,main[0],top,Math.max(18,width-59),height);
-    place(own,main[1]-53,top,53,height);
+    place(fan,main[0],top,width,height);
    }else{
     const deckWidth=width<220?53:65;
     place(enemy,main[0],top,deckWidth,height);
-    place(fan,main[0]+deckWidth+6,top,Math.max(18,width-deckWidth*2-12),height);
-    place(own,main[1]-deckWidth,top,deckWidth,height);
+    place(fan,main[0]+deckWidth+6,top,Math.max(18,width-deckWidth-6),height);
    }
+   positionOwnDeck();
   }else{
    const turn=rect($('turnIndicator')),info=rect($('infoPanel')),column=rect(document.querySelector('.boardColumn'));
    const title=rect(document.querySelector('.handTitle'));
@@ -76,7 +99,7 @@ globalThis.CardResourceUI=(()=>{
    place(own,appRect.right-77,title.top-1,72,Math.min(24,Math.max(18,rect($('hand')).top-title.top-2)));
   }
   const fanRect=fan.getBoundingClientRect();
-  const width=Math.min(fanRect.width,counts.enemyHand===0?40:18+Math.max(0,counts.enemyHand-1)*12);
+  const width=Math.min(fanRect.width,Math.max(56,18+Math.max(0,counts.enemyHand-1)*12));
   place(fan,fanRect.left+(fanRect.width-width)/2,fanRect.top,width,fanRect.height);
   const cardWidth=Math.min(18,width);
   fan.style.setProperty('--back-width',cardWidth+'px');
@@ -86,7 +109,8 @@ globalThis.CardResourceUI=(()=>{
   ensure();
   const safe={enemyHand:count(next.enemyHand),ownDeck:count(next.ownDeck),enemyDeck:count(next.enemyDeck)};
   if(!counts||safe.enemyHand!==counts.enemyHand){
-   fan.replaceChildren(...Array.from({length:safe.enemyHand},(_,i)=>{const card=back();card.style.setProperty('--index',i);return card;}));
+   const label=document.createElement('span');label.className='resourceHandLabel';label.textContent='手札 '+safe.enemyHand+'枚';
+   fan.replaceChildren(...Array.from({length:safe.enemyHand},(_,i)=>{const card=back();card.style.setProperty('--index',i);return card;}),label);
    fan.classList.toggle('empty',safe.enemyHand===0);fan.dataset.count=safe.enemyHand;
    fan.setAttribute('aria-label','相手の手札 '+safe.enemyHand+'枚');
   }
