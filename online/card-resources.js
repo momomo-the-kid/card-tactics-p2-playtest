@@ -32,22 +32,27 @@ globalThis.CardResourceUI=(()=>{
  }
  function rect(element){return element?.getBoundingClientRect();}
  // Stay beside the existing own graveyard; never reserve layout space.
+ function royalRect(element){
+  const r=rect(element),width=Number(element.dataset.layoutWidth)||r.width;
+  return {left:r.left+(r.width-width)/2,right:r.right+(width-r.width)/2,top:r.top,bottom:r.bottom,width,height:r.height};
+ }
  function positionOwnDeck(){
   const grave=rect(document.querySelector('.royalGrave.player .graveButton'));
   const column=rect(document.querySelector('.boardColumn'));
   if(!grave?.width||!column?.width)return;
-  const width=65,height=24,gap=6;
+  const width=65,height=24,gap=6,preferred=globalThis.NormalGameUI?.landscapeOwnDeckRegion();
   const obstacles=[...document.querySelectorAll('#board .cell,.royalPlatform,.crownModel,.royalDetails,.graveButton,#hand,#infoPanel,.manaStat,#turnIndicator,.layoutLog,.battleStrip,.gameTopBar button,.appHeader button,#endTurn,#undoOne,#onlineUndo,#onlineSurrender,.layoutHandScroll,#latestAction')]
-   .filter(e=>e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden').map(rect).filter(r=>r.width&&r.height);
+   .filter(e=>e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden').map(e=>!preferred&&e.classList.contains('royalDetails')?royalRect(e):rect(e)).filter(r=>r.width&&r.height);
   const candidates=[];
   const add=(x,y)=>{
    if(x<Math.max(2,column.left)||x+width>Math.min(innerWidth-2,column.right)||y<column.top||y+height>Math.min(innerHeight-2,column.bottom))return;
    if(obstacles.some(r=>x<r.right+2&&x+width>r.left-2&&y<r.bottom+2&&y+height>r.top-2))return;
    candidates.push({x,y,distance:Math.hypot(x+width/2-grave.left-grave.width/2,y+height/2-grave.top-grave.height/2)});
   };
-  for(const x of [grave.right+gap,grave.left,grave.right-width,grave.left-width-gap,grave.left+(grave.width-width)/2])
-   for(const y of [grave.top+(grave.height-height)/2,grave.top-height-gap,grave.bottom+gap])add(x,y);
-  if(!candidates.length)for(let y=column.top;y+height<=column.bottom;y+=6)
+  if(preferred)add(preferred.left,preferred.top);
+  if(!candidates.length)for(const x of [grave.right+gap,grave.left,grave.right-width,grave.left-width-gap,grave.left+(grave.width-width)/2])
+   for(const y of preferred?[grave.bottom+gap]:[grave.top+(grave.height-height)/2,grave.top-height-gap,grave.bottom+gap])add(x,y);
+  if(!candidates.length)for(let y=preferred?grave.bottom+gap:column.top;y+height<=column.bottom;y+=6)
    for(let x=column.left;x+width<=column.right;x+=6)add(x,y);
   candidates.sort((a,b)=>a.distance-b.distance);
   const chosen=candidates[0];
@@ -70,7 +75,7 @@ globalThis.CardResourceUI=(()=>{
    const height=Math.min(28,r.height-4),top=r.top+2;
    let segments=[[left,right]];
    for(const hud of document.querySelectorAll('.royalDetails')){
-    const h=rect(hud);if(h.top>top+height+6||h.bottom<top-6)continue;
+    const h=royalRect(hud);if(h.top>top+height+6||h.bottom<top-6)continue;
     segments=segments.flatMap(([a,b])=>h.right+6<=a||h.left-6>=b?[[a,b]]:
      [[a,Math.max(a,h.left-6)],[Math.min(b,h.right+6),b]].filter(([a,b])=>b-a>=18));
    }
