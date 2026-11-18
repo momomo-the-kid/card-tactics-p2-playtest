@@ -177,6 +177,7 @@
   const before=presentationBefore;
   if(!awaitingGuardian(v)){
    N.presentDamageNumbers(events,v.viewer);
+   N.presentAdvanceRewards(events,v.viewer,v.gameOver,()=>render(state));
    N.presentBattleAction(events,{viewer:v.viewer,activeSide:v.activeSide,before,after:v,definitions:D,revision,animate:!v.gameOver&&!state.aborted});
   }
   for(const e of events){

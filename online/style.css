@@ -783,6 +783,9 @@ body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
  width:max-content;max-width:calc(100vw - 24px);padding:12px 20px;
  border:2px solid var(--turn-bright);box-shadow:0 6px 22px #0009
 }
+.advanceRewardNotification{display:flex;flex-direction:column;align-items:center;gap:5px;white-space:nowrap}
+.advanceRewardNotification strong{font:inherit;font-weight:800}
+.advanceRewardNotification small{font-size:.6em;font-weight:600}
 .openingOrder{
  height:var(--opening-order-height);display:grid;place-items:center;
  padding:0 13px;border:2px solid #b99f65;border-radius:12px;background:#211c16;
