@@ -384,14 +384,264 @@ window.SummonSounds = (() => {
 })();
 
 'use strict';
-// Only confirmed summons arrive here. The CPU and online adapters own revision checks.
+
+window.AttackEffects = (() => {
+  function slash(scene, angle, width, color, delay = 0) {
+    scene.shape('attackSlash', [
+      { opacity: 0, transform: `rotate(${angle}deg) scaleX(.22)` },
+      { opacity: .95, transform: `rotate(${angle}deg) scaleX(1)`, offset: .27 },
+      { opacity: 0, transform: `rotate(${angle}deg) scaleX(1.12)` }
+    ], { style: { width: width + 'px', color }, delay });
+  }
+
+  function ring(scene, color, width = 60) {
+    scene.shape('attackRing', [
+      { opacity: .1, transform: 'scale(.37)' },
+      { opacity: .87, transform: 'scale(.65)', offset: .19 },
+      { opacity: 0, transform: 'scale(1.14)' }
+    ], { style: { width: width + 'px', color } });
+  }
+
+  function sparks(scene, color, spread) {
+    for (const [index, angle] of [-152, -120, -74, -30, 22, 144].entries()) {
+      const rad = angle * Math.PI / 180;
+      const travel = `translate(${Math.cos(rad) * spread}px,${Math.sin(rad) * spread}px) rotate(${angle}deg)`;
+      scene.shape('attackSpark', [
+        { opacity: 0, transform: `rotate(${angle}deg) scale(.6)` },
+        { opacity: 1, offset: .18 },
+        { opacity: 0, transform: travel + ' scale(.3)' }
+      ], { style: { color }, delay: index % 3 * 16 });
+    }
+  }
+
+  const choices = [
+    ['現行の命中表示', '現行の✴️が一度拡大して薄れる。比較基準。', 710, scene => {
+      scene.shape('attackBaseline', [
+        { opacity: 0, transform: 'scale(.5)' }, { opacity: 1, transform: 'scale(1.25)', offset: .25 },
+        { opacity: 0, transform: 'scale(1.5)' }
+      ], { text: '✴️' });
+    }],
+    ['短い斬撃線', '細い線が斜めに一度走る。', 270, scene => slash(scene, -33, 68, '#e5f6ff')],
+    ['交差する斬撃', '短い間隔で二本の線が対象を横切る。', 365, scene => {
+      slash(scene, -38, 64, '#ecf5ff');
+      slash(scene, 38, 59, '#b9defe', 52);
+    }],
+    ['弧を描く斬撃', '細い弧が手前から対象をすくうように走る。', 365, scene => {
+      scene.shape('attackArc', [
+        { opacity: 0, transform: 'rotate(-87deg) scale(.63)' },
+        { opacity: .96, transform: 'rotate(-34deg)', offset: .31 },
+        { opacity: 0, transform: 'rotate(8deg) scale(1.07)' }
+      ]);
+    }],
+    ['鋭い命中光', '対象の中央だけに小さな四差光が一瞬出る。', 260, scene => {
+      scene.shape('attackFlash', [
+        { opacity: 0, transform: 'scale(.34)' },
+        { opacity: .92, transform: 'scale(.95)', offset: .19 },
+        { opacity: 0, transform: 'scale(.78)' }
+      ]);
+    }],
+    ['打撃の衝撃波', '打点を中心に足元へ低い輪が広がる。', 390, scene => ring(scene, '#f5d396')],
+    ['散る火花', '打点から斜めに小さな火花が飛ぶ。', 365, scene => sparks(scene, '#ffbf69', 38)],
+    ['風圧', '対象の手前から奥へ半透明の風が抜ける。', 365, scene => {
+      scene.shape('attackGust', [
+        { opacity: 0, transform: 'translate(-19px,13px) rotate(-24deg) scale(.6)' },
+        { opacity: .82, transform: 'rotate(-24deg)', offset: .38 },
+        { opacity: 0, transform: 'translate(18px,-12px) rotate(-24deg) scale(1.2)' }
+      ]);
+    }],
+    ['輪郭の発光', '対象の画像の輪郭に短い光が走る。', 390, scene => {
+      scene.animate(scene.target, [
+        { filter: 'drop-shadow(0 4px 3px #000b)' },
+        { filter: 'drop-shadow(0 0 6px #ffdea0) drop-shadow(0 0 4px #fff2bb)', offset: .26 },
+        { filter: 'drop-shadow(0 4px 3px #000b)' }
+      ]);
+    }],
+    ['局所の揺れと衝撃', '命中した駒だけが数px揺れ、足元の輪が消える。', 380, scene => {
+      scene.animate(scene.target, [
+        { transform: 'none' }, { transform: 'translateX(4px)', offset: .16 },
+        { transform: 'translateX(-3px)', offset: .36 }, { transform: 'translateX(1px)', offset: .57 },
+        { transform: 'none' }
+      ]);
+      ring(scene, '#ffe0a1', 48);
+    }],
+    ['斬撃と火花', '薄い短線に小さな火花を重ねる。', 350, scene => {
+      slash(scene, -24, 51, '#fff0b8');
+      sparks(scene, '#ffd589', 27);
+    }]
+  ].map(([name, summary, duration, draw], index) => ({
+    id: 'A' + String(index).padStart(2, '0'), name, summary, duration, draw
+  }));
+
+  function play(choice, target, layer, reducedMotion, damage) {
+    const animations = [];
+    const duration = reducedMotion ? 200 : choice.duration;
+    const animate = (element, frames, timing = {}) => animations.push(element.animate(frames, {
+      duration, easing: 'ease-out', fill: 'both', ...timing
+    }));
+    const shape = (className, frames, options = {}) => {
+      const { style = {}, delay = 0, text = '' } = options;
+      const shape = document.createElement('span');
+      shape.className = 'attackShape ' + className;
+      shape.textContent = text;
+      Object.assign(shape.style, style);
+      layer.append(shape);
+      animate(shape, frames, { delay, duration: duration - delay });
+    };
+    if (reducedMotion) shape('attackRing', [{ opacity: .8 }, { opacity: .8 }], { style: { color: '#f2d097' } });
+    else choice.draw({ target, animate, shape });
+
+    if (damage) {
+      const number = document.createElement('span');
+      number.className = 'sampleDamage';
+      number.textContent = '4';
+      layer.append(number);
+      const frames = reducedMotion ? [{ opacity: 1 }, { opacity: 1 }] : [
+        { opacity: 1, transform: 'scale(.82)' },
+        { opacity: 1, transform: 'scale(1.18)', offset: .14 },
+        { opacity: 1, transform: 'scale(1)', offset: .28 },
+        { opacity: 1, transform: 'scale(1)', offset: .6 },
+        { opacity: 0, transform: 'translateY(-15%)' }
+      ];
+      animate(number, frames, { duration: 800 });
+    }
+    return {
+      duration: damage ? 800 : duration,
+      stop() { for (const animation of animations) animation.cancel(); layer.replaceChildren(); }
+    };
+  }
+  return { choices, play };
+})();
+
+'use strict';
+
+window.ActionSounds = (() => {
+  // Entries use the existing monophonic synthesizer and its peak and tail handling.
+  const tone = (frequency, endFrequency, duration, gain, options = {}) => ({
+    kind: 'tone', frequency, endFrequency, duration, gain, start: 0, attack: .008,
+    decay: 3.4, partials: [[1, 1]], ...options
+  });
+  const noise = (low, high, duration, gain, options = {}) => ({
+    kind: 'noise', low, high, duration, gain, start: 0, attack: .008, decay: 3.6, ...options
+  });
+  const catalog = (prefix, entries) => entries.map(([name, summary, voices], i) => ({
+    id: prefix + String(i + 1).padStart(2, '0'), name, summary, voices,
+    duration: Math.round(1000 * Math.max(...voices.map(v => v.start + v.duration)))
+  }));
+
+  const attack = catalog('H', [
+    ['薄い斬撃', '細い風切りに短い刃音が重なる。', [
+      noise(680, 4650, .18, .7, { attack: .047, sweep: -1 }),
+      tone(950, 485, .115, .2, { start: .034, partials: [[1, 1], [1.56, .15]] })
+    ]],
+    ['軽い打撃', '小さく乾いた打点がすぐ収まる。', [
+      tone(230, 108, .13, .43, { decay: 4.1, partials: [[1, 1], [2, .2]] }),
+      noise(410, 2320, .12, .59, { decay: 3.1 })
+    ]],
+    ['重い打撃', '低い響きが短く沈み、打点がはっきりする。', [
+      tone(149, 61, .26, .54, { attack: .013, partials: [[1, 1], [2, .31], [3, .12]] }),
+      noise(85, 910, .21, .54, { start: .013, decay: 2.5 }),
+      noise(840, 3200, .085, .2)
+    ]],
+    ['金属への命中', '短い金属音と控えめな余韻。', [
+      tone(581, 554, .26, .28, { partials: [[1, 1], [2.71, .45], [3.64, .2]] }),
+      tone(934, 885, .17, .12, { start: .011 }),
+      noise(840, 4900, .1, .39)
+    ]],
+    ['短い風切り', '丸い風音が上がってから素早く引く。', [
+      noise(310, 2900, .235, .74, { attack: .09, decay: 1.9, sweep: .78 }),
+      tone(391, 268, .16, .12, { start: .05, attack: .047 })
+    ]],
+    ['木盾の打点', '木を叩くような中低音に小さな擦れ。', [
+      tone(368, 301, .146, .39, { partials: [[1, 1], [1.92, .34], [2.9, .15]] }),
+      tone(139, 95, .19, .22, { start: .009 }),
+      noise(200, 1780, .138, .36)
+    ]],
+    ['二段の斬り込み', 'ひと息の間に短い切れ味が二段続く。', [
+      noise(720, 4370, .12, .53, { attack: .035, sweep: -.59 }),
+      noise(540, 3700, .139, .57, { start: .065, attack: .025, sweep: -.81 }),
+      tone(580, 211, .12, .24, { start: .086 })
+    ]],
+    ['砂をはじく打撃', '中低音の打点に小さな粒の音が散る。', [
+      tone(205, 103, .172, .48, { decay: 3.1 }),
+      noise(480, 3780, .155, .48, { attack: .015, sweep: -.52 }),
+      noise(1220, 4120, .12, .27, { start: .071, attack: .013 })
+    ]],
+    ['軽い残響の刃', '鈍い刃音に短い中音の響きが残る。', [
+      noise(580, 3900, .142, .48, { attack: .032 }),
+      tone(462, 293, .22, .28, { start: .016, partials: [[1, 1], [2.44, .22]] }),
+      tone(371, 337, .16, .085, { start: .094 })
+    ]],
+    ['抑えた斬撃と打点', '細い空気音の直後に丸い打点。', [
+      noise(460, 2910, .145, .55, { attack: .059, sweep: -.8 }),
+      tone(238, 98, .167, .43, { start: .046, partials: [[1, 1], [2, .18]] }),
+      noise(230, 1120, .102, .2, { start: .053 })
+    ]]
+  ]);
+
+  const card = catalog('C', [
+    ['カードを置く', '短い紙の擦れと、机に置くような打点。', [
+      noise(680, 3400, .15, .58, { attack: .032, sweep: -.61 }),
+      tone(280, 174, .1, .26, { start: .055 })
+    ]],
+    ['カードを払う', '乾いた擦れが手前から奥へ抜ける。', [
+      noise(480, 2370, .211, .68, { attack: .072, decay: 2.2, sweep: .7 }),
+      noise(950, 3750, .106, .26, { start: .08, attack: .026 })
+    ]],
+    ['柔らかい確定', '小さな二音で落ち着いて決まる。', [
+      tone(370, 370, .174, .39, { attack: .017, decay: 4.1, partials: [[1, 1], [2, .13]] }),
+      tone(494, 489, .193, .29, { start: .039, attack: .024, decay: 4.3 })
+    ]],
+    ['軽い発動', '中音からやや高い音へ短く開く。', [
+      tone(470, 640, .205, .37, { attack: .032, decay: 4, partials: [[1, 1], [2, .15]] }),
+      tone(742, 740, .224, .18, { start: .064, attack: .031, decay: 4.5 }),
+      noise(520, 1570, .14, .17, { attack: .046 })
+    ]],
+    ['魔法の刻印', 'かすかな粒音が、小さく澄む一音にまとまる。', [
+      noise(460, 1960, .16, .45, { attack: .072, sweep: .4 }),
+      tone(552, 587, .23, .36, { start: .055, partials: [[1, 1], [2.82, .15]] }),
+      tone(880, 876, .172, .14, { start: .116, attack: .019 })
+    ]],
+    ['暖かな発動', '明るい二音が柔らかく重なる。', [
+      tone(330, 332, .294, .35, { attack: .053, decay: 2.6 }),
+      tone(415, 415, .258, .25, { start: .051, attack: .035 }),
+      tone(554, 554, .205, .16, { start: .086, attack: .043 })
+    ]],
+    ['印を押す', '抑えたクリックのあと、小さな丸い響き。', [
+      noise(560, 2420, .111, .49, { decay: 3.3 }),
+      tone(402, 309, .181, .35, { start: .011, attack: .019, partials: [[1, 1], [1.98, .13]] })
+    ]],
+    ['奥に沈む魔法', '低めの二音が静かに沈み、音の粒が少し残る。', [
+      tone(281, 163, .332, .39, { attack: .055, decay: 2.4, partials: [[1, 1], [1.5, .24]] }),
+      tone(347, 248, .256, .22, { start: .043, attack: .039 }),
+      noise(260, 1230, .206, .18, { start: .089, attack: .059 })
+    ]],
+    ['小さな結晶', '遠すぎない中高音が短くきらめく。', [
+      tone(746, 735, .211, .32, { attack: .018, partials: [[1, 1], [2.46, .28]] }),
+      tone(993, 993, .137, .19, { start: .056, attack: .018 }),
+      noise(630, 2190, .106, .18, { start: .021, attack: .024 })
+    ]],
+    ['紙音と確定', '軽いカード音に丸い確定音が続く。', [
+      noise(580, 2910, .164, .51, { attack: .044, sweep: -.56 }),
+      tone(437, 405, .21, .34, { start: .052, attack: .024, partials: [[1, 1], [2, .14]] }),
+      tone(566, 548, .13, .11, { start: .097, attack: .039 })
+    ]]
+  ]);
+
+  return { attack, card };
+})();
+
+'use strict';
+// Confirmed action effects. The CPU and online adapters own revision checks.
 globalThis.SummonPresentation=(()=>{
  const effects=globalThis.SummonEffects,sounds=globalThis.SummonSounds;
  const effect=effects.choices.find(e=>e.id==='E11'),sound=sounds.choices.find(s=>s.id==='S04');
+ const attackEffect=AttackEffects.choices.find(e=>e.id==='A09');
+ const attackSound=ActionSounds.attack.find(s=>s.id==='H03'),cardSound=ActionSounds.card.find(s=>s.id==='C06');
+ const buffers=new Map();
  const storageKey='cardTacticsSummonSE';
  const voices=new Set(),effectsOnBoard=new Set(),listeners=new Set();
  const reduce=matchMedia('(prefers-reduced-motion: reduce)');
- let enabled=true,volume=25,context,gain,buffer,layer;
+ let enabled=true,volume=25,context,gain,layer;
 
  try{
   const saved=JSON.parse(localStorage.getItem(storageKey)||'{}');
@@ -424,15 +674,16 @@ globalThis.SummonPresentation=(()=>{
    if(context&&context.state!=='running')context.resume().catch(()=>{});
   }catch{}
  }
- function impactSound(impactAt){
+ function playSound(choice,impactAt=performance.now()){
   if(!enabled||!volume||context?.state!=='running')return;
   let voice;
   try{
    if(!gain){gain=context.createGain();gain.connect(context.destination);}
+   let buffer=buffers.get(choice);
    if(!buffer){
-    const samples=sounds.mix(sound,context.sampleRate);
+    const samples=sounds.mix(choice,context.sampleRate);
     buffer=context.createBuffer(1,samples.length,context.sampleRate);
-    buffer.getChannelData(0).set(samples);
+    buffer.getChannelData(0).set(samples);buffers.set(choice,buffer);
    }
    voice=context.createBufferSource();voice.buffer=buffer;voice.connect(gain);
    voice.onended=()=>disconnect(voice);
@@ -445,14 +696,19 @@ globalThis.SummonPresentation=(()=>{
   const board=document.getElementById('board'),pieceOverlay=document.getElementById('pieceOverlay');
   for(const entry of effectsOnBoard){
    const selector=`[data-cell="${entry.cell}"]`;
-   const foot=board.querySelector(selector+' [data-plane-point="foot"]');
-   if(!foot?.getClientRects().length)continue;
-   const rect=foot.getBoundingClientRect();
-   entry.node.style.left=rect.left+'px';
-   entry.node.style.top=rect.top+'px';
-   if(!entry.reveal)continue;
    const piece=pieceOverlay.querySelector(selector);
-   const target=piece?.dataset.summonIdentity===entry.identity?piece:null;
+   let target=piece?.dataset.summonIdentity===entry.identity?piece:null;
+   const crown=entry.king&&document.getElementById(entry.king+'Pedestal').querySelector('.crownModel');
+   const anchor=crown||board.querySelector(selector+' [data-plane-point="foot"]');
+   if(!anchor?.getClientRects().length)continue;
+   const rect=anchor.getBoundingClientRect();
+   entry.node.style.left=(crown?rect.left+rect.width/2:rect.left)+'px';
+   entry.node.style.top=(crown?rect.bottom-15:rect.top)+'px';
+   if(!entry.reveal)continue;
+   if(entry.attack&&!crown){
+    const art=target?.querySelector('.overlayCreatureAsset');
+    target=art?.getClientRects().length?art:target?.querySelector('.overlayOrb')||null;
+   }else if(crown)target=crown;
    if(entry.reveal.effect.target!==target)entry.reveal.effect.target=target;
   }
  }
@@ -463,9 +719,43 @@ globalThis.SummonPresentation=(()=>{
   for(const entry of effectsOnBoard)remove(entry);
   stopSound();
  }
- function present(events,board){
+ function mount(entry,start){
+  try{
+   if(!layer){layer=document.createElement('div');layer.id='summonLayer';layer.setAttribute('aria-hidden','true');document.body.append(layer);}
+   layer.append(entry.node);
+   entry.animation=start();
+   entry.timer=setTimeout(()=>remove(entry),entry.animation.duration);
+   effectsOnBoard.add(entry);
+  }catch{remove(entry);}
+ }
+ function present(events,board,viewer,definitions,impacts){
   if(document.visibilityState!=='visible')return;
-  for(const {type,token,side,cell,cardId} of events){
+  const byEvent=new Map(impacts.map(impact=>[impact.event,impact]));
+  for(const event of events){
+   const {type,token,side,cell,cardId}=event;
+   const impact=byEvent.get(event);
+   if(impact){
+    const king=typeof impact.target==='string'?impact.target:null;
+    const hitCell=king?null:impact.target,hitPiece=board[hitCell];
+    const node=document.createElement('div');
+    node.className='attackImpactOnBoard';node.dataset.attackTarget=String(impact.target);
+    const entry={node,cell:hitCell,king,attack:true,identity:hitPiece?String(hitPiece.sourceInstanceId):null};
+    // Use the sample's exact shake offsets without replacing the art's positioning transform.
+    const unit={animate(frames,timing){
+     const offsets=frames.map(({transform,...frame})=>({...frame,translate:transform==='none'?'0px':transform.slice(11,-1)}));
+     const shake=new Animation(new KeyframeEffect(null,offsets,timing),document.timeline);
+     entry.reveal=shake;shake.play();return shake;
+    }};
+    mount(entry,()=>AttackEffects.play(attackEffect,unit,node,reduce.matches,false));
+    playSound(attackSound);
+    continue;
+   }
+   if(type==='card:played'){
+    const cardType=definitions[cardId]?.type;
+    // An opponent's face-down mine stays private; the generic cue must not reveal it.
+    if((cardType==='spell'||cardType==='enchant')&&(cardId!=='マイン'||side===viewer))playSound(cardSound);
+    continue;
+   }
    if(type!=='creature:summoned'||token||!Number.isInteger(cell)||cell<0||cell>=25)continue;
    const piece=board[cell];
    const node=document.createElement('div');
@@ -476,15 +766,9 @@ globalThis.SummonPresentation=(()=>{
     const reveal=new Animation(new KeyframeEffect(null,frames,timing),document.timeline);
     entry.reveal=reveal;reveal.play();return reveal;
    }};
-   try{
-    if(!layer){layer=document.createElement('div');layer.id='summonLayer';layer.setAttribute('aria-hidden','true');document.body.append(layer);}
-    layer.append(node);
-    const started=performance.now(),reduced=reduce.matches;
-    entry.animation=effects.play(effect,unit,node,reduced);
-    entry.timer=setTimeout(()=>remove(entry),entry.animation.duration);
-    effectsOnBoard.add(entry);
-    impactSound(started+(reduced?0:effects.e11Impact));
-   }catch{remove(entry);}
+   const started=performance.now(),reduced=reduce.matches;
+   mount(entry,()=>effects.play(effect,unit,node,reduced));
+   playSound(sound,started+(reduced?0:effects.e11Impact));
   }
   position();
  }

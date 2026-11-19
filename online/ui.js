@@ -182,17 +182,29 @@
   const v=state?.view;
   if(!v||state.status!=='connected'||revision!==v.revision||revision<=presentedRevision)return;
   presentedRevision=revision;
-  const before=presentationBefore;
+  const before=presentationBefore,impacts=[...N.attackImpacts(events,v.viewer)];
   if(!awaitingGuardian(v)){
-   SummonPresentation.present(events,v.board);
-   N.presentDamageNumbers(events,v.viewer);
+   SummonPresentation.present(events,v.board,v.viewer,D,impacts);
+   N.presentDamageNumbers(events,v.viewer,impacts);
    CardResourceUI.presentDraws(events,v.viewer);
    N.presentAdvanceRewards(events,v.viewer,v.gameOver,()=>render(state));
    N.presentBattleAction(events,{viewer:v.viewer,activeSide:v.activeSide,before,after:v,definitions:D,revision,animate:!v.gameOver&&!state.aborted});
   }
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const direct=new Set(impacts.map(hit=>hit.event)),directCells=new Set(impacts.map(hit=>hit.target));
   for(const e of events){
-  if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&(e.type==='creature:attack-resolved'&&e.to!==null&&e.to!==undefined&&e.amount>0||e.type==='king:damaged'&&e.amount>0)){const key=e.type==='king:damaged'?'king-'+e.side:'cell-'+e.to;hitEffects.set(key,{id:'online-'+(++hitSequence),until:performance.now()+710,...(e.type==='king:damaged'?{side:e.side}:{cell:e.to})});}
- }if(before){for(const [from,p]of before.board.entries()){if(!p)continue;const to=v.board.findIndex(q=>q?.sourceInstanceId===p.sourceInstanceId),next=to>=0?v.board[to]:null;if(next&&next.hp>=p.hp)continue;const cell=to>=0?to:from;if(!matchMedia('(prefers-reduced-motion: reduce)').matches)hitEffects.set('cell-'+cell,{id:'online-'+(++hitSequence),until:performance.now()+710,cell});}}restoreHits();clearTimeout(hitCleanup);hitCleanup=setTimeout(()=>{hitCleanup=null;restoreHits();},730);}
+   if(e.type==='king:damaged'&&e.amount>0&&!direct.has(e))
+    hitEffects.set('king-'+e.side,{id:'online-'+(++hitSequence),until:performance.now()+710,side:e.side});
+  }
+  if(before)for(const [from,p]of before.board.entries()){
+   if(!p)continue;
+   const to=v.board.findIndex(q=>q?.sourceInstanceId===p.sourceInstanceId),next=to>=0?v.board[to]:null;
+   if(next&&next.hp>=p.hp||directCells.has(from))continue;
+   const cell=to>=0?to:from;
+   hitEffects.set('cell-'+cell,{id:'online-'+(++hitSequence),until:performance.now()+710,cell});
+  }
+  restoreHits();clearTimeout(hitCleanup);hitCleanup=setTimeout(()=>{hitCleanup=null;restoreHits();},730);
+ }
  $('stopRecovery').onclick=()=>{if(!state?.waitingRecovery)return;$('recoveryExitDialog').showModal();$('continueRecovery').focus();};
  $('continueRecovery').onclick=()=>$('recoveryExitDialog').close();
  $('confirmRecoveryExit').onclick=()=>{if(!B3Poc.inspect().matchRecovering||B3Poc.inspect().view?.gameOver){$('recoveryExitDialog').close();return;}globalThis.CardTacticsBGM?.setActive(false);B3Poc.leave();sessionStorage.removeItem('cardTacticsStartInGame');location.href='../';};

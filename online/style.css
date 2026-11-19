@@ -1060,6 +1060,12 @@ html body.layout-landscape #app .royalPedestal .crownModel{background-position:c
 .summonStrike{position:absolute;pointer-events:none}
 .summonStrike>.fx{position:absolute;left:0;top:0;translate:-50% -50%;opacity:0;pointer-events:none}
 
+.attackImpactOnBoard{position:absolute;pointer-events:none}
+.attackImpactOnBoard>.attackRing{
+ position:absolute;left:0;top:15px;translate:-50% -50%;width:52px;height:24px;
+ border:2px solid currentColor;border-radius:50%;opacity:0;pointer-events:none
+}
+
 /* Screen-facing public combat information; no hit targets or board geometry. */
 .overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-name:-52px;--hud-foot:0px;transform:translate(-50%,-50%);pointer-events:none}
 /* Match the overlay centre to its foot marker; do not inherit the older -76% projected shift. */

@@ -38,10 +38,13 @@
   if(!wanted()){stop(!enabled||!active);notify();return;}
   if(unavailable||blocked||pending)return;
   try{
-   prepare();if(!audio.paused){status='playing';notify();return;}
-   // Invoke resume/play in the user event stack when available; contain both rejections.
-   const resumed=context&&context.state!=='running'?context.resume():Promise.resolve();
-   const played=audio.play();
+   prepare();
+   // A media element can remain playing while its Web Audio output is interrupted.
+   // Resume that graph on the next gesture/foreground reconciliation without seeking.
+   const resumeGraph=gain&&context.state!=='running';
+   if(!audio.paused&&!resumeGraph){status='playing';notify();return;}
+   const resumed=resumeGraph?context.resume():Promise.resolve();
+   const played=audio.paused?audio.play():Promise.resolve();
    pending=Promise.all([resumed,played]);status='starting';notify();
    pending.then(()=>{if(!wanted())stop(!enabled||!active);else status='playing';},e=>{
     audio.pause();if(wanted()){blocked=e?.name==='NotAllowedError';unavailable=!blocked;status=blocked?'blocked':'unavailable';}
