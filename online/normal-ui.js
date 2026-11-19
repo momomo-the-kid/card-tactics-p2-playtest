@@ -83,7 +83,7 @@ function dispelEffectLabel(effect){
  if(effect?.cardId)return `${effect.cardId}（残り${effect.remainingTurns}ターン）`;
  return '一時効果：移動・攻撃禁止を解除';
 }
-function mandatoryPrompt(kind,tokenId='バリケード'){return kind==='guardian'?'肩代わり：色の付いたガーディアンを1体選んでください。取消はできません。':kind==='guardianWait'?'相手が肩代わりするガーディアンを選んでいます。':kind==='effectMove'?'竜巻：色の付いた空きマスへ移動してください。支払い・ダメージは解決済みで、取消はできません。':kind==='promotion'?'暗殺者に変身するか選んでください。':kind==='token'?tokenId+'の生成先：色の付いた空きマスを選んでください。取消はできません。':'';}
+function mandatoryPrompt(kind,tokenId='バリケード'){return kind==='guardian'?'肩代わり：色の付いたガーディアンを1体選んでください。取消はできません。':kind==='guardianWait'?'相手が肩代わりするガーディアンを選んでいます。':kind==='effectMove'?'竜巻：色の付いた空きマスへ移動してください。支払い・ダメージは解決済みで、取消はできません。':kind==='token'?tokenId+'の生成先：色の付いた空きマスを選んでください。取消はできません。':'';}
 function renderDetailStatus(context){
  const info=$('infoContent');if(!info)return;const changed=detailContext?.scope!==context.scope;detailContext=context;
  if(detailNotice?.scope!==context.scope)detailNotice=null;
@@ -595,7 +595,7 @@ function presentBattleAction(events,context){
 const turnPresentationMs=Object.freeze({dice:2310,diceHold:700,order:2000,turn:1050});
 let turnSequence=null;
 const turnQueue=[];
-let advanceChoice=null,advanceChoiceContext=null;
+let battleChoice=null,battleChoiceContext=null;
 const turnPresentationBusy=()=>turnSequence!==null;
 
 function diceForMatch(seed,first){
@@ -680,7 +680,7 @@ function positionBoardAnnouncement(rects){
  }
 }
 function cancelTurnPresentation(preserveChoice=false){
- if(!preserveChoice)advanceChoice=null;
+ if(!preserveChoice){battleChoice=null;battleChoiceContext=null;}
  turnQueue.length=0;
  if(!turnSequence)return;
  clearTimeout(turnSequence.timer);turnSequence.stopStage?.();turnSequence=null;
@@ -749,40 +749,60 @@ function showTurn(activeSide,viewer,done){
  if(openingTurn){Object.assign(openingTurn,stage);return;}
  showTurnSequence([stage],done,true);
 }
-function syncAdvanceDrawChoice(choice,viewer,submit,enabled=true){
- advanceChoiceContext={choice,viewer,submit,enabled};
- const pending=choice&&(choice.type==='advanceDraw'||['advanceDraw','advanceDrawWait'].includes(choice.kind));
- const key=pending?[choice.side,choice.instanceId,choice.cell].join(':'):null;
- if(advanceChoice?.key===key){
-  for(const button of advanceChoice.buttons)button.disabled=!enabled;
-  return;
- }
- if(advanceChoice){
-  const remove=stages=>{for(let i=stages.length-1;i>=0;i--)if(stages[i].kind==='advanceChoice')stages.splice(i,1);};
-  if(turnSequence)remove(turnSequence.stages);
-  for(const item of turnQueue)remove(item.stages);
-  advanceChoice=null;
-  if(turnSequence?.current?.kind==='advanceChoice')turnSequence.next();
- }
- if(!key||document.visibilityState!=='visible')return;
- const own=choice.side===viewer,content=document.createElement('div'),notice=document.createElement('div');
- const title=document.createElement('strong'),question=document.createElement('small'),buttons=[];
- content.className='boardAnnouncement';notice.className='turnNotification advanceRewardNotification advanceDrawChoice';
- notice.dataset.side=choice.side;notice.setAttribute('role','group');notice.setAttribute('aria-label','敵陣突破のドロー選択');
- title.textContent='敵陣突破！';
- question.textContent=own?'カードを1枚引きますか？':'相手がドローを選択中…';
- notice.append(title,question);
+function updateChoiceButtons(choice){
+ for(const button of choice.buttons)button.disabled=!choice.enabled||choice.submitting;
+}
+function makeBattleChoice(choice,viewer,key,kind,enabled){
+ const own=choice.side===viewer,promotion=kind==='promotion';
+ const content=document.createElement('div'),notice=document.createElement('div');
+ const title=document.createElement('strong'),detail=document.createElement('small'),buttons=[];
+ const stage={kind:promotion?'promotionChoice':'advanceChoice',own,content,hold:true};
+ const popup={key,stage,buttons,enabled,submitting:false};
+ content.className='boardAnnouncement';
+ notice.className='turnNotification advanceRewardNotification battleChoiceNotification '+(promotion?'promotionChoice':'advanceDrawChoice');
+ notice.dataset.side=choice.side;notice.setAttribute('role','group');
+ notice.setAttribute('aria-label',promotion?'暗殺者への進化選択':'敵陣突破のドロー選択');
+ title.textContent=promotion?(own?'暗殺者に進化しますか？':'相手が進化を選択中…'):'敵陣突破！';
+ detail.textContent=promotion
+  ?(own?'受けたダメージを引き継ぎ、行動権・付属効果・所有者を維持します。':'隠密から暗殺者への進化確認')
+  :(own?'カードを1枚引きますか？':'相手がドローを選択中…');
+ notice.append(title,detail);
  if(own){
   const actions=document.createElement('div');actions.className='advanceDrawButtons';
-  for(const [accept,text]of [[true,'1枚引く'],[false,'引かない']]){
-   const button=document.createElement('button');button.type='button';button.textContent=text;button.disabled=!enabled;
-   button.onclick=()=>{for(const b of buttons)b.disabled=true;submit(accept);};
+  const labels=promotion?['進化する','進化しない']:['1枚引く','引かない'];
+  for(const [index,label] of labels.entries()){
+   const button=document.createElement('button');button.type='button';button.textContent=label;
+   button.onclick=()=>{
+    if(battleChoice!==popup||!popup.enabled||popup.submitting)return;
+    popup.submitting=true;updateChoiceButtons(popup);
+    try{battleChoiceContext.submit(kind,index===0);}
+    finally{popup.submitting=false;updateChoiceButtons(popup);}
+   };
    buttons.push(button);actions.append(button);
   }
   notice.append(actions);
  }
- content.append(notice);advanceChoice={key,buttons};
- showTurnSequence([{kind:'advanceChoice',own,content,hold:true}],undefined,true);
+ content.append(notice);updateChoiceButtons(popup);
+ return popup;
+}
+function syncBattleChoice(choice,viewer,submit,enabled=true){
+ battleChoiceContext={choice,viewer,submit,enabled};
+ const type=choice?.type??choice?.kind;
+ const kind=type==='advanceDrawWait'?'advanceDraw':type;
+ const key=['advanceDraw','promotion'].includes(kind)&&document.visibilityState==='visible'
+  ?[kind,viewer,choice.side,choice.instanceId,choice.cell].join(':'):null;
+ if(battleChoice?.key===key){
+  battleChoice.enabled=enabled;updateChoiceButtons(battleChoice);return;
+ }
+ const previous=battleChoice,popup=key?makeBattleChoice(choice,viewer,key,kind,enabled):null;
+ battleChoice=popup;
+ if(previous){
+  const remove=stages=>{const index=stages.indexOf(previous.stage);if(index!==-1)stages.splice(index,1);};
+  if(turnSequence)remove(turnSequence.stages);
+  for(const item of turnQueue)remove(item.stages);
+  if(turnSequence?.current===previous.stage)turnSequence.next();
+ }
+ if(popup&&battleChoice===popup)showTurnSequence([popup.stage],undefined,true);
 }
 function presentAdvanceRewards(events,viewer,ended=false,done){
  if(ended||document.visibilityState!=='visible')return;
@@ -890,8 +910,8 @@ window.visualViewport?.addEventListener('resize',positionBattleOverlays);
 window.visualViewport?.addEventListener('scroll',positionBattleOverlays);
 window.addEventListener('scroll',positionBattleOverlays,{passive:true});
 document.addEventListener('visibilitychange',()=>{
- if(document.visibilityState!=='visible'){clearAttackDamage();clearOpponentCards();finishTurnPresentation();advanceChoice=null;}
- else if(advanceChoiceContext){const {choice,viewer,submit,enabled}=advanceChoiceContext;syncAdvanceDrawChoice(choice,viewer,submit,enabled);}
+ if(document.visibilityState!=='visible'){clearAttackDamage();clearOpponentCards();finishTurnPresentation();battleChoice=null;}
+ else if(battleChoiceContext){const {choice,viewer,submit,enabled}=battleChoiceContext;syncBattleChoice(choice,viewer,submit,enabled);}
 });
 window.addEventListener('pagehide',event=>{clearAttackDamage();clearOpponentCards();if(event.persisted)finishTurnPresentation();else cancelTurnPresentation();});
 document.addEventListener('p2b1:exit',()=>{clearAttackDamage();clearOpponentCards();});
@@ -1462,5 +1482,5 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,syncAdvanceDrawChoice,presentAdvanceRewards,attackImpacts,presentDamageNumbers,clearAttackDamage,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){advanceChoiceContext=null;globalThis.CardResourceUI?.clear();current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearAttackDamage();clearOpponentCards();cancelTurnPresentation();SummonPresentation.clear();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,landscapeRoyalResourceGroup,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst,showOpening,showTurn,turnPresentationBusy,cancelTurnPresentation,clearOpponentCards});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,syncBattleChoice,presentAdvanceRewards,attackImpacts,presentDamageNumbers,clearAttackDamage,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){battleChoiceContext=null;globalThis.CardResourceUI?.clear();current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearAttackDamage();clearOpponentCards();cancelTurnPresentation();SummonPresentation.clear();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,landscapeRoyalResourceGroup,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst,showOpening,showTurn,turnPresentationBusy,cancelTurnPresentation,clearOpponentCards});
 })();

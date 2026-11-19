@@ -795,8 +795,10 @@ body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
 .turnDie i{width:100%;aspect-ratio:1;border-radius:50%;background:currentColor}
 .turnPip1{grid-area:1/1}.turnPip3{grid-area:1/3}.turnPip4{grid-area:2/1}.turnPip5{grid-area:2/2}.turnPip6{grid-area:2/3}.turnPip7{grid-area:3/1}.turnPip9{grid-area:3/3}
 
-.advanceDrawChoice{max-width:calc(100vw - 20px);box-sizing:border-box;white-space:normal}
-.advanceDrawChoice small{font-size:.68em}
+.battleChoiceNotification{max-width:calc(100vw - 20px);box-sizing:border-box;white-space:normal}
+.battleChoiceNotification small{font-size:.68em}
+.promotionChoice{max-width:min(320px,calc(100% - 12px))}
+.promotionChoice small{max-width:26em;line-height:1.4}
 .advanceDrawButtons{display:flex;gap:8px;margin-top:5px;pointer-events:auto}
 .advanceDrawButtons button{min-height:44px;min-width:88px;padding:7px 12px;font:700 14px/1.2 system-ui;touch-action:manipulation}
 

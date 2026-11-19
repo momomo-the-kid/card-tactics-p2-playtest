@@ -23,7 +23,7 @@
  function button(text,fn,disabled=false){const b=document.createElement('button');b.type='button';b.textContent=text;b.disabled=disabled;b.onclick=fn;return b;}
  function detailScope(){return JSON.stringify([state?.view?.revision,selected,source,mode,state?.status,state?.inFlight]);}
  function choose(o){if(o&&usable()){const result=B3Poc.choose(o.choiceId);if(result&&!result.ok){N.setNotice('操作を確定できませんでした：'+result.code,detailScope());renderInfo();}}}
- function belongs(o,v){const a=o.action;if(v.choice)return ['chooseTokenCell','choosePromotion','chooseEffectCell','chooseGuardian'].includes(a.type);if(!selected)return false;
+ function belongs(o,v){const a=o.action;if(v.choice)return ['chooseTokenCell','chooseEffectCell','chooseGuardian'].includes(a.type);if(!selected)return false;
   if(selected.kind==='card')return a.instanceId===selected.id;
   if(selected.kind==='piece')return (a.from===selected.cell||a.sourceInstanceId===v.board[selected.cell]?.sourceInstanceId)&&(['heal','generate_golem','wind_push'].includes(mode)?a.abilityId===mode:mode==='ability'?a.type==='activate_ability'&&a.abilityId==='sorcerer_bolt':['move','attack_creature','attack_king'].includes(a.type));
   return selected.kind==='king'&&selected.side===v.viewer&&a.abilityId===(mode==='wind'?'royal_wind':mode==='ability'?'awaken_attack':null);
@@ -102,8 +102,7 @@
   else if(selected?.kind==='cell'){title((Math.floor(selected.cell/5)+1)+'行 '+(selected.cell%5+1)+'列');if(!v.enchantments.some(e=>e.target?.k===selected.cell))line('確認できるエンチャントはありません。');for(const e of v.enchantments.filter(e=>e.target?.k===selected.cell)){line(e.cardId+' 残り'+e.remainingTurns+'ターン');description(e.cardId);}}
 
   for(const o of options()){const a=o.action;
-   if(a.type==='choosePromotion')addChoice(actions,o,a.accept?'進化する':'進化しない');
-   else if(target&&selected?.cardId==='解呪')addChoice(actions,o,effectName(a));
+   if(target&&selected?.cardId==='解呪')addChoice(actions,o,effectName(a));
    else if(a.target?.kind==='global'||!a.target&&a.type==='play_spell'){
     if(selected?.cardId==='解呪'){if(!actions.querySelector('[data-global]')){const b=button('盤面全体を対象にする',()=>{target=a=>a.target?.kind==='global';render(state);},!usable());b.className='useCardButton';b.dataset.global='true';actions.append(b);}}
     else addChoice(actions,o,'使用する');
@@ -147,9 +146,10 @@
   }
   if(current.status!=='connected'){N.clearAttackDamage();CardResourceUI.clearAnimations();}
   if(current.status!=='connected'||current.waitingRecovery||current.aborted)SummonPresentation.clear();
-  const rewardChoice=['advanceDraw','advanceDrawWait'].includes(v.choice?.kind)?v.choice:null;
-  N.syncAdvanceDrawChoice(current.status==='connected'&&!v.gameOver&&!current.aborted?rewardChoice:null,v.viewer,accept=>{
-   const option=state?.view?.options.find(o=>o.action.type==='chooseAdvanceDraw'&&o.action.accept===accept);
+  const choice=v.choice?.kind==='promotion'?{...v.choice,side:v.choice.side??v.viewer}:v.choice;
+  N.syncBattleChoice(current.status==='connected'&&!current.waitingRecovery&&!v.gameOver&&!current.aborted?choice:null,v.viewer,(kind,accept)=>{
+   const type=kind==='promotion'?'choosePromotion':'chooseAdvanceDraw';
+   const option=state?.view?.options.find(o=>o.action.type===type&&o.action.accept===accept);
    if(option&&state.status==='connected'&&!state.inFlight&&!state.view.gameOver){
     const result=B3Poc.choose(option.choiceId);if(result&&!result.ok)render(state);
    }
