@@ -22,10 +22,14 @@
   // GainNode works on iOS where HTMLMediaElement.volume may be read-only in practice.
   if(gain){gain.gain.value=volume/100;audio.volume=1;}else audio.volume=volume/100;
  }
+ function getAudioContext(){
+  if(!context&&AudioContext)context=new AudioContext();
+  return context;
+ }
  function prepare(){
   if(!audio){audio=new Audio(source);audio.loop=true;audio.preload='none';audio.addEventListener('error',()=>{unavailable=true;audio.pause();status='unavailable';notify();});}
-  if(!context&&AudioContext){
-   try{const ctx=new AudioContext(),node=ctx.createMediaElementSource(audio),g=ctx.createGain();node.connect(g);g.connect(ctx.destination);context=ctx;gain=g;}catch(e){/* Native volume remains a fallback. */}
+  if(!gain&&AudioContext){
+   try{const ctx=getAudioContext(),node=ctx.createMediaElementSource(audio),g=ctx.createGain();node.connect(g);g.connect(ctx.destination);gain=g;}catch(e){/* Native volume remains a fallback. */}
   }
   applyVolume();
  }
@@ -52,6 +56,7 @@
  const win=document.defaultView;
  win?.addEventListener('pagehide',()=>{active=false;stop(true);notify();});
  const api={
+  getAudioContext,
   get state(){return {enabled,volume,status};},
   setEnabled(value){enabled=value===true;blocked=false;if(enabled)unavailable=false;save();reconcile();},
   setVolume(value){if(!Number.isFinite(value))return;volume=Math.max(0,Math.min(100,value));save();applyVolume();notify();},

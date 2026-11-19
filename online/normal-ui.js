@@ -249,7 +249,7 @@ function bindPresentation(){
 function startPlayPresentation(){
  detailContext=null;detailNotice=null;
  const log=document.querySelector('.layoutLog');if(log)log.open=false;
- setLatestAction();clearOpponentCards();clearAttackDamage();
+ setLatestAction();clearOpponentCards();clearAttackDamage();SummonPresentation.clear();
  previousLogExplanation=false;tutorialExplanation=null;
 }
 // The projected stream also includes the legacy identity of a face-down Mine.
@@ -879,7 +879,7 @@ function positionOpponentCard(){
  panel.style.top=(bottom-height)+'px';
  panel.style.transform=scale<1?'scale('+Math.max(0,scale)+')':'';
 }
-function positionBattleOverlays(){positionBattleLog();positionOpponentCard();positionBoardAnnouncement();positionAttackDamage();globalThis.CardResourceUI?.position();}
+function positionBattleOverlays(){positionBattleLog();positionOpponentCard();positionBoardAnnouncement();positionAttackDamage();globalThis.CardResourceUI?.position();SummonPresentation.position();}
 window.addEventListener('resize',positionBattleOverlays);
 window.visualViewport?.addEventListener('resize',positionBattleOverlays);
 window.visualViewport?.addEventListener('scroll',positionBattleOverlays);
@@ -1293,6 +1293,7 @@ function renderPieces(model){
   const x=foot.x,y=foot.y;
   const v=document.createElement("div");
   v.dataset.cell=String(index);v.className="overlayPiece "+(p.side===model.viewer?"player":"cpu");
+  v.dataset.summonIdentity=String(p.sourceInstanceId);
   const enchantVisual=model.enchantVisual(p);
   if(enchantVisual)v.classList.add("hasCreatureEnchant");
   v.style.left=x+"px";v.style.top=y+"px";
@@ -1314,6 +1315,7 @@ function renderPieces(model){
  });
  for(const key of statusPhase.keys())if(!seenStatuses.has(key))statusPhase.delete(key);
  if(model.afterRender)model.afterRender();
+ SummonPresentation.position();
  if(landscapeQuery.matches&&!$('latestAction').closest('details').open)positionBattleLog();
  positionOpponentCard();
  refreshTutorialGeometry();queueTutorialPresentation();
@@ -1398,17 +1400,19 @@ document.getElementById('settingsClose').addEventListener('click',closeSettings)
 document.getElementById('settingsOverlay').addEventListener('click',e=>{if(e.target.id==='settingsOverlay')closeSettings()});
 document.querySelectorAll('.settingsChoices[data-setting]').forEach(g=>g.addEventListener('click',e=>{const b=e.target.closest('button[data-value]');if(b)VisualSettings.set(g.dataset.setting,b.dataset.value)}));
 document.getElementById('creatureNameChoices').addEventListener('click',e=>{const b=e.target.closest('button[data-name-visible]');if(b)VisualSettings.set('creatureNames',b.dataset.nameVisible==='true')});
-const bgm=globalThis.CardTacticsBGM;
-if(bgm){
- document.querySelectorAll('[data-bgm-enabled]').forEach(b=>b.addEventListener('click',()=>bgm.setEnabled(b.dataset.bgmEnabled==='true')));
- const slider=$('bgmVolume');
- slider.addEventListener('input',()=>bgm.setVolume(Number(slider.value)));
- bgm.subscribe(({enabled,volume,status})=>{
-  document.querySelectorAll('[data-bgm-enabled]').forEach(b=>{const on=(b.dataset.bgmEnabled==='true')===enabled;b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));});
-  slider.value=String(volume);$('bgmVolumeValue').value=volume+'％';slider.setAttribute('aria-valuetext',volume+'％');
-  $('bgmStatus').textContent=status==='unavailable'?'音源を読み込めません。設定は保存されています。':status==='blocked'?'再生を開始できませんでした。画面を操作すると再試行します。':'対戦中にループ再生します。音量0％は無音です。';
+function bindAudioSettings(name,player,describe){
+ const buttons=document.querySelectorAll('[data-'+name+'-enabled]'),slider=$(name+'Volume');
+ const value=button=>button.getAttribute('data-'+name+'-enabled')==='true';
+ buttons.forEach(button=>button.addEventListener('click',event=>player.setEnabled(value(button),event)));
+ slider.addEventListener('input',event=>player.setVolume(Number(slider.value),event));
+ player.subscribe(({enabled,volume,status})=>{
+  buttons.forEach(button=>{const on=value(button)===enabled;button.classList.toggle('active',on);button.setAttribute('aria-pressed',String(on));});
+  slider.value=String(volume);$(name+'VolumeValue').value=volume+'％';slider.setAttribute('aria-valuetext',volume+'％');
+  if(describe)$(name+'Status').textContent=describe(status);
  });
 }
+bindAudioSettings('bgm',globalThis.CardTacticsBGM,status=>status==='unavailable'?'音源を読み込めません。設定は保存されています。':status==='blocked'?'再生を開始できませんでした。画面を操作すると再試行します。':'対戦中にループ再生します。音量0％は無音です。');
+bindAudioSettings('summon-se',SummonPresentation);
 bindPresentation();VisualSettings.load();return VisualSettings;
 
 }
@@ -1453,5 +1457,5 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,syncAdvanceDrawChoice,presentAdvanceRewards,presentDamageNumbers,clearAttackDamage,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){advanceChoiceContext=null;globalThis.CardResourceUI?.clear();current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearAttackDamage();clearOpponentCards();cancelTurnPresentation();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,landscapeRoyalResourceGroup,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst,showOpening,showTurn,turnPresentationBusy,cancelTurnPresentation,clearOpponentCards});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,syncAdvanceDrawChoice,presentAdvanceRewards,presentDamageNumbers,clearAttackDamage,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){advanceChoiceContext=null;globalThis.CardResourceUI?.clear();current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearAttackDamage();clearOpponentCards();cancelTurnPresentation();SummonPresentation.clear();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,landscapeRoyalResourceGroup,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst,showOpening,showTurn,turnPresentationBusy,cancelTurnPresentation,clearOpponentCards});
 })();

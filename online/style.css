@@ -743,10 +743,10 @@ body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
 
 /* Keep long settings reachable on small screens, including native range touch targets. */
 .settingsPanel{max-height:calc(100dvh - 36px);overflow-y:auto}
-.bgmVolumeRow{display:flex;align-items:center;gap:10px;margin-top:12px}
-#bgmVolume{flex:1;min-width:0;min-height:44px;accent-color:#e7bc65}
-#bgmVolumeValue{min-width:4em;text-align:right;font-variant-numeric:tabular-nums}
-#bgmVolume:focus-visible{outline:3px solid #ffe095;outline-offset:2px}
+.audioVolumeRow{display:flex;align-items:center;gap:10px;margin-top:12px}
+.audioVolumeRow input{flex:1;min-width:0;min-height:44px;accent-color:#e7bc65}
+.audioVolumeRow output{min-width:4em;text-align:right;font-variant-numeric:tabular-nums}
+.audioVolumeRow input:focus-visible{outline:3px solid #ffe095;outline-offset:2px}
 /* Artwork stays beneath names/stats and never receives game input. */
 .overlayCreatureAsset{object-fit:contain;user-select:none;-webkit-user-drag:none}
 
@@ -1055,6 +1055,10 @@ html body.layout-landscape #app .royalPedestal .crownModel{background-position:c
  100%{opacity:0;transform:translate(-50%,-65%)}
 }
 @media(prefers-reduced-motion:reduce){.attackDamageNumber{animation:none}}
+
+#summonLayer{position:fixed;inset:0;z-index:905;overflow:hidden;pointer-events:none}
+.summonStrike{position:absolute;pointer-events:none}
+.summonStrike>.fx{position:absolute;left:0;top:0;translate:-50% -50%;opacity:0;pointer-events:none}
 
 /* Screen-facing public combat information; no hit targets or board geometry. */
 .overlayPiece.combatHUD{--hud-owner:#439aff;--hud-w:76px;--hud-hp:64px;--hud-name:-52px;--hud-foot:0px;transform:translate(-50%,-50%);pointer-events:none}

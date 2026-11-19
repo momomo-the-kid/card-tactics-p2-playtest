@@ -146,6 +146,7 @@
     {viewer:v.viewer,activeSide:v.activeSide,turn:v.turn,definitions:D,revision:0,animate:false});
   }
   if(current.status!=='connected'){N.clearAttackDamage();CardResourceUI.clearAnimations();}
+  if(current.status!=='connected'||current.waitingRecovery||current.aborted)SummonPresentation.clear();
   const rewardChoice=['advanceDraw','advanceDrawWait'].includes(v.choice?.kind)?v.choice:null;
   N.syncAdvanceDrawChoice(current.status==='connected'&&!v.gameOver&&!current.aborted?rewardChoice:null,v.viewer,accept=>{
    const option=state?.view?.options.find(o=>o.action.type==='chooseAdvanceDraw'&&o.action.accept===accept);
@@ -183,6 +184,7 @@
   presentedRevision=revision;
   const before=presentationBefore;
   if(!awaitingGuardian(v)){
+   SummonPresentation.present(events,v.board);
    N.presentDamageNumbers(events,v.viewer);
    CardResourceUI.presentDraws(events,v.viewer);
    N.presentAdvanceRewards(events,v.viewer,v.gameOver,()=>render(state));
