@@ -146,6 +146,7 @@
   }
   if(current.status!=='connected'){N.clearAttackDamage();CardResourceUI.clearAnimations();}
   if(current.status!=='connected'||current.waitingRecovery||current.aborted)SummonPresentation.clear();
+  if(current.waitingRecovery||current.aborted)N.clearBattleOutcome();
   const choice=v.choice?.kind==='promotion'?{...v.choice,side:v.choice.side??v.viewer}:v.choice;
   N.syncBattleChoice(current.status==='connected'&&!current.waitingRecovery&&!v.gameOver&&!current.aborted?choice:null,v.viewer,(kind,accept)=>{
    const type=kind==='promotion'?'choosePromotion':'chooseAdvanceDraw';
@@ -185,7 +186,8 @@
   const before=presentationBefore,impacts=[...N.attackImpacts(events,v.viewer)];
   if(!awaitingGuardian(v)){
    SummonPresentation.present(events,v.board,v.viewer,D,impacts);
-   N.presentDamageNumbers(events,v.viewer,impacts);
+   N.presentHpNumbers(events,v.viewer,impacts);
+   if(v.gameOver)N.presentBattleOutcome(events,v.viewer,v.players);
    CardResourceUI.presentDraws(events,v.viewer);
    N.presentAdvanceRewards(events,v.viewer,v.gameOver,()=>render(state));
    N.presentBattleAction(events,{viewer:v.viewer,activeSide:v.activeSide,before,after:v,definitions:D,revision,animate:!v.gameOver&&!state.aborted});

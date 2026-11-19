@@ -761,6 +761,25 @@ body:not(.king-external-loaded) .crownModel .crownSvg{display:block!important}
  font-size:clamp(17px,4vmin,23px);font-weight:800;pointer-events:none
 }
 #turnPopup[hidden]{display:none}
+#battleOutcomePopup{
+ position:fixed;inset:0;z-index:907;pointer-events:none;text-align:center;
+ font:900 clamp(25px,6vmin,42px)/1.25 system-ui,sans-serif
+}
+.battleOutcomeNotice{
+ position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);white-space:nowrap;
+ padding:10px 28px;border:2px solid #9dabbc;border-radius:12px;background:#222a34;color:#f4f6f8;
+ box-shadow:0 6px 22px #0009
+}
+.battleOutcomeNotice[data-outcome=win]{background:#3c2d15;border-color:#d4a856;color:#ffdfa0}
+.battleOutcomeNotice[data-outcome=loss]{background:#3f2329;border-color:#9a656e;color:#ffdce0}
+body.battleOutcomeActive #overlay,body.battleOutcomeActive #tutorialCoach{visibility:hidden}
+.royalDefeated .crownModel{animation:royalDefeat var(--royal-defeat-duration) ease-out forwards}
+@keyframes royalDefeat{
+ 0%{opacity:1;filter:brightness(1)}
+ 26%{opacity:1;filter:brightness(1.9) drop-shadow(0 0 7px #fff2b6)}
+ 100%{opacity:0;filter:brightness(1.15)}
+}
+@media(prefers-reduced-motion:reduce){.royalDefeated .crownModel{animation:none;opacity:.42}}
 .boardAnnouncement{position:absolute;visibility:hidden}
 .openingPresentation{
  --opening-order-height:calc(1.15em + 14px);
@@ -1050,6 +1069,7 @@ html body.layout-landscape #app .royalPedestal .crownModel{background-position:c
  text-shadow:0 1px 2px #000;transform:translate(-50%,-50%);
  animation:attackDamageNumber var(--damage-duration) ease-out both
 }
+.attackDamageNumber.healingNumber{color:#75f39a}
 @keyframes attackDamageNumber{
  0%{opacity:1;transform:translate(-50%,-50%) scale(.82)}
  14%{transform:translate(-50%,-50%) scale(1.18)}

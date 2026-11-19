@@ -637,6 +637,7 @@ globalThis.SummonPresentation=(()=>{
  const effect=effects.choices.find(e=>e.id==='E11'),sound=sounds.choices.find(s=>s.id==='S04');
  const attackEffect=AttackEffects.choices.find(e=>e.id==='A09');
  const attackSound=ActionSounds.attack.find(s=>s.id==='H03'),cardSound=ActionSounds.card.find(s=>s.id==='C06');
+ const abilitySound=ActionSounds.card.find(s=>s.id==='C03');
  const buffers=new Map();
  const storageKey='cardTacticsSummonSE';
  const voices=new Set(),effectsOnBoard=new Set(),listeners=new Set();
@@ -750,6 +751,7 @@ globalThis.SummonPresentation=(()=>{
     playSound(attackSound);
     continue;
    }
+   if(type==='creature:ability-used'){playSound(abilitySound);continue;}
    if(type==='card:played'){
     const cardType=definitions[cardId]?.type;
     // An opponent's face-down mine stays private; the generic cue must not reveal it.

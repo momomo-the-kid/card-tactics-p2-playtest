@@ -249,7 +249,7 @@ function bindPresentation(){
 function startPlayPresentation(){
  detailContext=null;detailNotice=null;
  const log=document.querySelector('.layoutLog');if(log)log.open=false;
- setLatestAction();clearOpponentCards();clearAttackDamage();SummonPresentation.clear();
+ setLatestAction();clearOpponentCards();clearAttackDamage();clearBattleOutcome();SummonPresentation.clear();
  previousLogExplanation=false;tutorialExplanation=null;
 }
 // The projected stream also includes the legacy identity of a face-down Mine.
@@ -520,8 +520,8 @@ function positionAttackDamage(){
   element.style.top=Math.min(innerHeight-18,Math.max(18,y-Math.abs(offset)*.3))+'px';
  }
 }
-function showDamageNumber(target,amount){
- if(!Number.isSafeInteger(amount)||amount<0)return;
+function showHpNumber(target,amount,healing=false){
+ if(!Number.isSafeInteger(amount)||amount<0||healing&&amount===0)return;
  let layer=$('attackDamageLayer');
  if(!layer){
   layer=document.createElement('div');layer.id='attackDamageLayer';
@@ -532,6 +532,7 @@ function showDamageNumber(target,amount){
  const element=document.createElement('span');
  element.className='attackDamageNumber';
  element.dataset.damageTarget=String(target);
+ if(healing)element.classList.add('healingNumber');
  element.textContent=String(amount);
  element.style.setProperty('--damage-duration',damageDuration+'ms');
  damageNumbers.set(element,{target,offset,timer:setTimeout(()=>{
@@ -559,17 +560,22 @@ function* attackImpacts(events,viewer){
    yield {target,amount:0,event:hit};
  }
 }
-function presentDamageNumbers(events,viewer,impacts=[...attackImpacts(events,viewer)]){
+function presentHpNumbers(events,viewer,impacts=[...attackImpacts(events,viewer)]){
  if(document.visibilityState!=='visible')return;
  const byEvent=new Map(impacts.map(impact=>[impact.event,impact]));
  for(const event of events){
   const impact=byEvent.get(event);
-  if(impact){showDamageNumber(impact.target,impact.amount);continue;}
-  if(event.selfInflicted!==true)continue;
-  if(event.type==='king:damaged'&&['p','c'].includes(event.side))
-   showDamageNumber(event.side===viewer?'player':'enemy',event.amount);
-  if(event.type==='creature:damaged'&&Number.isInteger(event.cell)&&event.cell>=0&&event.cell<25)
-   showDamageNumber(event.cell,event.amount);
+  if(impact){showHpNumber(impact.target,impact.amount);continue;}
+  switch(event.type){
+   case 'king:damaged':if(event.selfInflicted!==true)break;
+   case 'king:healed':
+    if(['p','c'].includes(event.side))showHpNumber(event.side===viewer?'player':'enemy',event.amount,event.type==='king:healed');
+    break;
+   case 'creature:damaged':if(event.selfInflicted!==true)break;
+   case 'creature:healed':
+    if(Number.isInteger(event.cell)&&event.cell>=0&&event.cell<25)showHpNumber(event.cell,event.amount,event.type==='creature:healed');
+    break;
+  }
  }
 }
 
@@ -660,24 +666,67 @@ function rollDice(pair,dice){
 }
 // Use the rendered cells in screen space, including the projected board.
 function positionBoardAnnouncement(rects){
- const panel=$('turnPopup'),group=panel?.firstElementChild;
- if(!group)return;
+ const panels=[$('turnPopup'),$('battleOutcomePopup')].filter(panel=>panel?.firstElementChild);
+ if(!panels.length)return;
  rects??=Array.from($('board').querySelectorAll('.cell'),cell=>cell.getBoundingClientRect());
  if(!rects.length)return;
- const viewport=window.visualViewport,origin=panel.getBoundingClientRect();
+ const viewport=window.visualViewport;
  const x=viewport?.offsetLeft??0,y=viewport?.offsetTop??0;
  const left=Math.max(x,Math.min(...rects.map(r=>r.left)));
  const top=Math.max(y,Math.min(...rects.map(r=>r.top)));
  const right=Math.min(x+(viewport?.width??innerWidth),Math.max(...rects.map(r=>r.right)));
  const bottom=Math.min(y+(viewport?.height??innerHeight),Math.max(...rects.map(r=>r.bottom)));
  const width=right-left,height=bottom-top;
- group.style.visibility=width>0&&height>0?'visible':'hidden';
- if(width<=0||height<=0)return;
- Object.assign(group.style,{left:(left-origin.left)+'px',top:(top-origin.top)+'px',width:width+'px',height:height+'px'});
- if(group.classList.contains('openingPresentation')){
-  group.style.setProperty('--opening-board-height',height+'px');
-  group.style.setProperty('--opening-die-limit',Math.min(height,width)*.28+'px');
+ for(const panel of panels){
+  const group=panel.firstElementChild;
+  group.style.visibility=width>0&&height>0?'visible':'hidden';
+  if(width<=0||height<=0)continue;
+  const origin=panel.getBoundingClientRect();
+  Object.assign(group.style,{left:(left-origin.left)+'px',top:(top-origin.top)+'px',width:width+'px',height:height+'px'});
+  if(group.classList.contains('openingPresentation')){
+   group.style.setProperty('--opening-board-height',height+'px');
+   group.style.setProperty('--opening-die-limit',Math.min(height,width)*.28+'px');
+  }
  }
+}
+const royalDefeatMs=220,outcomeNoticeMs=850;
+let battleOutcomeTimer=null;
+function finishBattleOutcome(){
+ clearTimeout(battleOutcomeTimer);battleOutcomeTimer=null;
+ $('battleOutcomePopup')?.remove();
+ document.body.classList.remove('battleOutcomeActive');
+}
+function clearBattleOutcome(){
+ finishBattleOutcome();
+ for(const pedestal of document.querySelectorAll('.royalDefeated')){
+  pedestal.classList.remove('royalDefeated');pedestal.style.removeProperty('--royal-defeat-duration');
+ }
+}
+function presentBattleOutcome(events,viewer,players){
+ const end=events.find(event=>event.type==='game:over');
+ if(!end||document.visibilityState!=='visible'||battleOutcomeTimer!==null)return;
+ const label=end.winner==null?'引き分け':end.winner===viewer?'勝利':'敗北';
+ const style=end.winner==null?'draw':end.winner===viewer?'win':'loss';
+ document.body.classList.add('battleOutcomeActive');
+ let defeated=false;
+ for(const side of ['p','c']){
+  if(players[side].kingHp!==0)continue;
+  const pedestal=$(side===viewer?'playerPedestal':'enemyPedestal');
+  pedestal.style.setProperty('--royal-defeat-duration',royalDefeatMs+'ms');
+  pedestal.classList.add('royalDefeated');
+  defeated=true;
+ }
+ function announce(){
+  const panel=document.createElement('div'),group=document.createElement('div'),notice=document.createElement('span');
+  panel.id='battleOutcomePopup';panel.setAttribute('role','status');
+  group.className='boardAnnouncement';
+  notice.className='battleOutcomeNotice';notice.dataset.outcome=style;notice.textContent=label;
+  group.append(notice);panel.append(group);document.body.append(panel);
+  positionBoardAnnouncement();
+  battleOutcomeTimer=setTimeout(finishBattleOutcome,outcomeNoticeMs);
+ }
+ if(defeated)battleOutcomeTimer=setTimeout(announce,royalDefeatMs);
+ else announce();
 }
 function cancelTurnPresentation(preserveChoice=false){
  if(!preserveChoice){battleChoice=null;battleChoiceContext=null;}
@@ -910,11 +959,11 @@ window.visualViewport?.addEventListener('resize',positionBattleOverlays);
 window.visualViewport?.addEventListener('scroll',positionBattleOverlays);
 window.addEventListener('scroll',positionBattleOverlays,{passive:true});
 document.addEventListener('visibilitychange',()=>{
- if(document.visibilityState!=='visible'){clearAttackDamage();clearOpponentCards();finishTurnPresentation();battleChoice=null;}
+ if(document.visibilityState!=='visible'){clearAttackDamage();clearOpponentCards();finishBattleOutcome();finishTurnPresentation();battleChoice=null;}
  else if(battleChoiceContext){const {choice,viewer,submit,enabled}=battleChoiceContext;syncBattleChoice(choice,viewer,submit,enabled);}
 });
-window.addEventListener('pagehide',event=>{clearAttackDamage();clearOpponentCards();if(event.persisted)finishTurnPresentation();else cancelTurnPresentation();});
-document.addEventListener('p2b1:exit',()=>{clearAttackDamage();clearOpponentCards();});
+window.addEventListener('pagehide',event=>{clearAttackDamage();clearOpponentCards();finishBattleOutcome();if(event.persisted)finishTurnPresentation();else cancelTurnPresentation();});
+document.addEventListener('p2b1:exit',()=>{clearAttackDamage();clearOpponentCards();clearBattleOutcome();});
 function fitLatestAction(latest,left,bottom){
  latest.style.removeProperty('max-width');
  const wrap=$('board')?.closest('.boardWrap'),max=latest.offsetWidth;
@@ -1482,5 +1531,5 @@ const escape=x=>String(x).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
  function globalDetailHTML(card,definition,description){return card?`<div class="infoName">${escape(card.cardId)}</div>`+infoLine(`全体エンチャント / コスト ${definition?.cost??'-'}`)+(card.remainingTurns!=null?infoLine(`残り ${card.remainingTurns}ターン`):'')+`<div class="infoEffect">${escape(description||'')}</div><button type="button" class="useCardButton" data-effects-back>一覧に戻る</button>`:`<div class="infoName">全体エンチャント</div>`+infoLine('このエンチャントの効果は終了しました。');}
  function bindInfoScroll(){const panel=$('infoContent'),up=$('infoScrollUp'),down=$('infoScrollDown');if(!panel||!up||!down)return ()=>{};const update=()=>{const r=panel.getBoundingClientRect(),can=panel.scrollHeight>panel.clientHeight+3;for(const [el,on,y]of [[up,can&&panel.scrollTop>3,r.top+4],[down,can&&panel.scrollTop+panel.clientHeight<panel.scrollHeight-3,r.bottom-20]]){el.classList.toggle('show',on);el.style.left=(r.left+r.width/2-8)+'px';el.style.top=y+'px';}};panel.addEventListener('scroll',update,{passive:true});window.addEventListener('resize',update);if(typeof ResizeObserver!=='undefined')new ResizeObserver(update).observe(panel);return update;}
  function hitBurst(element,{id,remaining=710}={}){if(!element||matchMedia('(prefers-reduced-motion: reduce)').matches)return;element.querySelectorAll('.sharedHitBurst').forEach(n=>n.remove());const burst=document.createElement('span');burst.className='sharedHitBurst';burst.textContent='✴️';burst.dataset.hitFx=String(id);burst.style.animationDuration=Math.max(80,remaining)+'ms';element.append(burst);return burst;}
-globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,syncBattleChoice,presentAdvanceRewards,attackImpacts,presentDamageNumbers,clearAttackDamage,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){battleChoiceContext=null;globalThis.CardResourceUI?.clear();current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearAttackDamage();clearOpponentCards();cancelTurnPresentation();SummonPresentation.clear();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,landscapeRoyalResourceGroup,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst,showOpening,showTurn,turnPresentationBusy,cancelTurnPresentation,clearOpponentCards});
+globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReason,mandatoryPrompt,dispelEffectLabel,creaturePairGuide,paidAbilityReason,paidAbilitySelection,startPlayPresentation,presentBattleAction,syncBattleChoice,presentAdvanceRewards,attackImpacts,presentHpNumbers,clearAttackDamage,presentBattleOutcome,clearBattleOutcome,battleLogNotice,restoreLatestAction,tutorialSelectors,refreshTutorialGeometry,presentTutorial,clear(){battleChoiceContext=null;globalThis.CardResourceUI?.clear();current=null;detailContext=null;detailNotice=null;statusPhase.clear();clearAttackDamage();clearBattleOutcome();clearOpponentCards();cancelTurnPresentation();SummonPresentation.clear();},renderPieces,creatureDisplay,ACTION_SVG,positionRoyalPedestals,landscapeRoyalResourceGroup,cardHTML,rangeDiagram,rangePair,requestCreatureAsset,renderCreatureDetailImage,createVisualSettings,renderTurn,bindHandScroll,attackStatus,creatureInfoHTML,graveyardHTML,globalEffectsHTML,globalDetailHTML,bindInfoScroll,hitBurst,showOpening,showTurn,turnPresentationBusy,cancelTurnPresentation,clearOpponentCards});
 })();
