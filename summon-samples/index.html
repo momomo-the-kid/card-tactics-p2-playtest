@@ -4,38 +4,53 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#11161d">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=3">
   <script src="effects.js?v=2" defer></script>
   <script src="sounds.js?v=2" defer></script>
-  <script src="preview.js?v=2" defer></script>
-  <title>召喚エフェクト・SE比較 | CARD × TACTICS</title>
+  <script src="attack-effects.js?v=3" defer></script>
+  <script src="action-sounds.js?v=3" defer></script>
+  <script src="preview.js?v=3" defer></script>
+  <title>エフェクト・SE比較 | CARD × TACTICS</title>
 </head>
 <body>
   <main>
     <header>
       <span class="brand">CARD × TACTICS</span>
-      <h1>召喚エフェクト・SE比較</h1>
-      <p>候補を選び、同じ盤面で聞き比べ・見比べができます。</p>
+      <h1>エフェクト・SE比較</h1>
     </header>
     <div class="comparison">
-      <section class="preview" aria-label="召喚プレビュー">
+      <section class="preview" aria-label="演出プレビュー">
         <div class="stage">
           <div id="board" class="board" aria-hidden="true"></div>
-          <div class="summon" aria-hidden="true">
+          <div id="summonScene" class="summon" aria-hidden="true">
             <img id="unit" src="../assets/creature/gold.png" alt="" width="512" height="341" draggable="false">
             <div id="effects" class="effects"></div>
           </div>
+          <div id="attackScene" class="attackScene" aria-hidden="true" hidden>
+            <img class="attackUnit attacker" src="../assets/creature/gold.png" alt="" width="512" height="341" draggable="false">
+            <img class="attackUnit target" id="target" src="../assets/creature/infantry.png" alt="" width="512" height="341" draggable="false">
+            <div id="attackImpact" class="attackImpact"></div>
+          </div>
+          <div id="cardScene" class="cardScene" aria-hidden="true" hidden>ファイヤーボルト</div>
         </div>
-        <p class="stage-caption"><span>比較用の駒 · 金級兵</span><span>比較版 2</span></p>
+        <p class="stage-caption"><span id="stageLabel">比較用の駒 · 金級兵</span><span>比較版 3</span></p>
       </section>
       <section class="controls" aria-label="候補と再生設定">
         <div class="candidate">
-          <label for="effect">召喚エフェクト</label>
+          <label for="category">カテゴリ</label>
+          <select id="category">
+            <option value="summon">召喚</option>
+            <option value="attack">通常攻撃</option>
+            <option value="card">カード使用SE</option>
+          </select>
+        </div>
+        <div class="candidate" id="effectChoice">
+          <label for="effect" id="effectLabel">召喚エフェクト</label>
           <select id="effect" aria-describedby="effectInfo"></select>
           <p id="effectInfo"></p>
         </div>
         <div class="candidate">
-          <label for="sound">召喚SE</label>
+          <label for="sound" id="soundLabel">召喚SE</label>
           <select id="sound" aria-describedby="soundInfo"></select>
           <p id="soundInfo"></p>
         </div>
@@ -54,6 +69,7 @@
           </div>
           <label class="check"><input type="checkbox" id="mute">ミュート</label>
           <label class="check"><input type="checkbox" id="gentle">動きを減らす</label>
+          <label class="check" id="damageChoice" hidden><input type="checkbox" id="damage" checked>試演ダメージ4を表示</label>
         </div>
         <p id="status" class="status" role="status">再生ボタンを押すと試せます。</p>
       </section>

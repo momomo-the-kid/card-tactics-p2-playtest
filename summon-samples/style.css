@@ -8,6 +8,7 @@
   --gold: #f1cc78;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   margin: 0;
   padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right))
@@ -126,4 +127,86 @@ input { accent-color: #e8ba61; }
   border: 2px solid #dec9fe;
   clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
   rotate: 45deg;
+}
+
+.attackScene { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.attackUnit {
+  position: absolute;
+  width: clamp(66px, 26%, 112px);
+  height: auto;
+  translate: -50% -50%;
+  filter: drop-shadow(0 4px 3px #000b);
+}
+.attackUnit.attacker { left: 34%; top: 74%; }
+.attackUnit.target, .attackImpact { left: 63%; top: 57%; }
+.attackImpact { position: absolute; }
+.attackShape, .sampleDamage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+.attackShape { opacity: 0; }
+.attackSlash {
+  height: 11px;
+  background: linear-gradient(90deg, transparent, currentColor 52%, transparent);
+  clip-path: polygon(0 57%, 63% 22%, 100% 45%, 50% 64%);
+}
+.attackArc {
+  width: 65px;
+  height: 50px;
+  border-radius: 50%;
+  border-bottom: 3px solid #e0f1ff;
+  border-right: 2px solid #addcff;
+  box-shadow: 2px 3px 6px -2px #b6dcff;
+}
+.attackFlash {
+  width: 31px;
+  height: 31px;
+  background: #ffebbb;
+  clip-path: polygon(50% 0, 59% 41%, 100% 50%, 59% 59%, 50% 100%, 41% 59%, 0 50%, 41% 41%);
+}
+.attackRing {
+  top: 15px;
+  width: 52px;
+  height: 24px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+.attackSpark {
+  width: 7px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  box-shadow: 0 0 5px currentColor;
+}
+.attackGust {
+  width: 74px;
+  height: 33px;
+  border-radius: 50%;
+  background: repeating-linear-gradient(9deg, transparent 0 6px, #dcf5ff80 7px 8px, transparent 9px 11px);
+}
+.attackBaseline { font-size: clamp(28px, 9vmin, 54px); }
+.sampleDamage {
+  left: clamp(54px, 14vw, 72px);
+  top: -46px;
+  color: #fff;
+  font: 900 clamp(22px, 4vmin, 30px)/1 system-ui, sans-serif;
+  -webkit-text-stroke: 3px #111;
+  paint-order: stroke fill;
+  text-shadow: 0 1px 2px #000;
+}
+.cardScene {
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: min(44%, 134px);
+  aspect-ratio: 4 / 5;
+  border: 2px solid #b87861;
+  border-radius: 10px;
+  background: #342c39;
+  box-shadow: 0 6px 18px #0009;
+  color: #fff5eb;
+  font-weight: 700;
 }

@@ -1,6 +1,7 @@
 'use strict';
 
 window.SummonEffects = (() => {
+  const e11Impact = 115;
   const ring = (scene, color, options = {}) => {
     const { delay = 0, scale = 1.35, width = 100, height = 40, line = 2 } = options;
     scene.shape({
@@ -171,7 +172,7 @@ window.SummonEffects = (() => {
       ring(scene, '#e7cba0', { delay: 210, width: 88, height: 27 });
     }],
     ['鋭い落雷', '細い稲妻が真上から落ち、足元の光と火花が素早く消える。', 690, scene => {
-      const impact = 115, color = '#8bdbff';
+      const impact = e11Impact, color = '#8bdbff';
       lightning(scene, { impact, color, width: 1.5, paths: [
         [[63, 2], [52, 24], [67, 36], [58, 55], [68, 69], [64, 90]]
       ] });
@@ -252,5 +253,5 @@ window.SummonEffects = (() => {
     };
   }
 
-  return { choices, play };
+  return { choices, play, e11Impact };
 })();

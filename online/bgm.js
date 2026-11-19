@@ -5,7 +5,7 @@
  else if(!root.CardTacticsBGM)root.CardTacticsBGM=factory({
   storage:(()=>{try{return root.localStorage;}catch(e){return null;}})(),document:root.document,Audio:root.Audio,
   AudioContext:root.AudioContext||root.webkitAudioContext,
-  source:new URL(root.document.body.dataset.bgmSource||'assets/audio/battle.mp3',root.document.baseURI).href
+  source:new URL(root.document.body.dataset.bgmSource||'assets/audio/battle.m4a',root.document.baseURI).href
  });
 })(typeof globalThis==='object'?globalThis:this,function({storage,document,Audio,AudioContext,source}){
  const key='cardTacticsBGM';

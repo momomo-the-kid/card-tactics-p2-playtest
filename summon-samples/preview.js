@@ -2,24 +2,47 @@
 
 (() => {
   const get = id => document.getElementById(id);
-  const effectSelect = get('effect'), soundSelect = get('sound');
+  const category = get('category'), effectSelect = get('effect'), soundSelect = get('sound');
   const volume = get('volume'), mute = get('mute'), gentle = get('gentle'), status = get('status');
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  const fills = [SummonEffects.choices, SummonSounds.choices];
+  const modes = {
+    summon: { label: '召喚', effects: SummonEffects.choices, sounds: SummonSounds.choices, preview: '比較用の駒 · 金級兵' },
+    attack: { label: '通常攻撃', effects: AttackEffects.choices, sounds: ActionSounds.attack, preview: '金級兵 → 歩兵' },
+    card: { label: 'カード使用', effects: [], sounds: ActionSounds.card, preview: 'カード使用SEの試演' }
+  };
+  const selections = new Map();
   const buffers = new Map();
-  let context, master, source, visual, visualTimer, timer, playback = 0;
+  let context, master, source, visual, visualTimer, timer, playback = 0, selectedCategory;
 
   get('board').append(...Array.from({ length: 25 }, () => document.createElement('span')));
 
-  for (const [index, select] of [effectSelect, soundSelect].entries()) {
-    for (const item of fills[index]) select.add(new Option(item.id + '  ' + item.name, item.id));
-    select.addEventListener('change', updateChoices);
+  function selectCategory() {
+    stop();
+    if (selectedCategory) selections.set(selectedCategory, { effect: effectSelect.value, sound: soundSelect.value });
+    selectedCategory = category.value;
+    const mode = modes[selectedCategory], previous = selections.get(selectedCategory);
+    for (const [kind, select, items] of [['effect', effectSelect, mode.effects], ['sound', soundSelect, mode.sounds]]) {
+      select.replaceChildren(...items.map(item => new Option(item.id + '  ' + item.name, item.id)));
+      if (previous?.[kind]) select.value = previous[kind];
+    }
+    for (const key of Object.keys(modes)) get(key + 'Scene').hidden = key !== selectedCategory;
+    get('effectChoice').hidden = !mode.effects.length;
+    get('damageChoice').hidden = selectedCategory !== 'attack';
+    get('reference').hidden = selectedCategory !== 'summon';
+    for (const button of document.querySelectorAll('[data-play="effect"],[data-play="both"]')) button.hidden = !mode.effects.length;
+    get('effectLabel').textContent = mode.label + 'エフェクト';
+    get('soundLabel').textContent = mode.label + 'SE';
+    get('stageLabel').textContent = mode.preview;
+    updateChoices();
+    status.textContent = '再生ボタンを押すと試せます。';
   }
 
   function updateChoices() {
-    const effect = fills[0][effectSelect.selectedIndex], sound = fills[1][soundSelect.selectedIndex];
-    get('effectInfo').textContent = effect.id + ' · ' + effect.duration + 'ms — ' + effect.summary
-      + (gentle.checked ? '（軽減時 300ms）' : '');
+    const mode = modes[selectedCategory];
+    const effect = mode.effects[effectSelect.selectedIndex], sound = mode.sounds[soundSelect.selectedIndex];
+    const reducedDuration = selectedCategory === 'attack' ? 200 : 300;
+    get('effectInfo').textContent = effect ? effect.id + ' · ' + effect.duration + 'ms — ' + effect.summary
+      + (gentle.checked ? '（軽減時 ' + reducedDuration + 'ms）' : '') : '';
     get('soundInfo').textContent = sound.id + ' · ' + sound.duration + 'ms — ' + sound.summary;
   }
 
@@ -80,8 +103,9 @@
   async function play(mode) {
     stop();
     const token = playback;
-    const effect = fills[0][effectSelect.selectedIndex], sound = fills[1][soundSelect.selectedIndex];
-    const showEffect = mode !== 'sound', wantsSound = mode !== 'effect';
+    const items = modes[selectedCategory];
+    const effect = items.effects[effectSelect.selectedIndex], sound = items.sounds[soundSelect.selectedIndex];
+    const showEffect = mode !== 'sound' && effect, wantsSound = mode !== 'effect';
     let audioNote = '';
     let audioDuration = 0;
 
@@ -104,7 +128,9 @@
 
     let effectDuration = 0;
     if (showEffect) {
-      visual = SummonEffects.play(effect, get('unit'), get('effects'), gentle.checked);
+      visual = selectedCategory === 'attack'
+        ? AttackEffects.play(effect, get('target'), get('attackImpact'), gentle.checked, get('damage').checked)
+        : SummonEffects.play(effect, get('unit'), get('effects'), gentle.checked);
       effectDuration = visual.duration;
       visualTimer = setTimeout(() => {
         visual.stop();
@@ -122,6 +148,12 @@
   for (const button of document.querySelectorAll('[data-play]')) {
     button.addEventListener('click', () => play(button.dataset.play));
   }
+  category.addEventListener('change', selectCategory);
+  for (const select of [effectSelect, soundSelect, get('damage')]) select.addEventListener('change', () => {
+    stop();
+    updateChoices();
+    status.textContent = '再生ボタンを押すと試せます。';
+  });
   get('stop').addEventListener('click', () => {
     stop();
     status.textContent = '停止しました。';
@@ -152,6 +184,6 @@
     }
   });
   window.addEventListener('pagehide', stop);
-  updateChoices();
+  selectCategory();
   updateVolume();
 })();

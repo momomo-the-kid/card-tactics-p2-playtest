@@ -1198,7 +1198,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-summon-e11-s04-v73">ver p3-summon-e11-s04-v73</div>
+  <div class="titleVersion" data-build="p3-attack-samples-bgm-v74">ver p3-attack-samples-bgm-v74</div>
   <p id="benchmarkTrialLabel">クリーチャー基準・試験版</p><div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -1240,7 +1240,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
  else if(!root.CardTacticsBGM)root.CardTacticsBGM=factory({
   storage:(()=>{try{return root.localStorage;}catch(e){return null;}})(),document:root.document,Audio:root.Audio,
   AudioContext:root.AudioContext||root.webkitAudioContext,
-  source:new URL(root.document.body.dataset.bgmSource||'assets/audio/battle.mp3',root.document.baseURI).href
+  source:new URL(root.document.body.dataset.bgmSource||'assets/audio/battle.m4a',root.document.baseURI).href
  });
 })(typeof globalThis==='object'?globalThis:this,function({storage,document,Audio,AudioContext,source}){
  const key='cardTacticsBGM';
@@ -6082,10 +6082,11 @@ function tutorialSteps(){
 
 
 function startTutorial(){TutorialController.start()}
-let cpuDeckMatchStarted=false;function startGameScreen(){NormalGameUI.startPlayPresentation();CardTacticsBGM.setActive(!S.gameOver);const startsCpuMatch=!TutorialController.active&&!cpuDeckMatchStarted;if(startsCpuMatch){initializeCpuDeckMatch();cpuDeckMatchStarted=true;}
+let cpuDeckMatchStarted=false;function startGameScreen(){NormalGameUI.startPlayPresentation();const startsCpuMatch=!TutorialController.active&&!cpuDeckMatchStarted;if(startsCpuMatch){initializeCpuDeckMatch();cpuDeckMatchStarted=true;}
   sessionStorage.removeItem("cardTacticsStartInGame");
   document.getElementById("titleScreen").style.display="none";
   document.getElementById("app").classList.remove("gameScreenHidden");
+  CardTacticsBGM.setActive(!S.gameOver);
   if(TutorialController.active)render();else renderPieceOverlay();
   syncInfoPanelHeight();
   NormalGameUI.bindHandScroll()();
