@@ -59,6 +59,24 @@ window.SummonSounds = (() => {
       noise(410, 4700, .14, .63, { attack: .004, decay: 5.8 }),
       tone(230, 66, .22, .54, { attack: .005, decay: 4.2, partials: [[1, .85], [2.13, .24]] }),
       tone(780, 297, .068, .22, { attack: .004, decay: 5 })
+    ]],
+    ['鋭い電撃', '高い帯域の「バチッ」に、短く割れる電気音が続く。', [
+      noise(900, 7500, .15, .77, { attack: .006, decay: 2.9, sweep: -.88 }),
+      tone(1590, 610, .11, .22, { start: .009, attack: .007, partials: [[1, .86], [2.48, .29]] }),
+      noise(550, 4600, .11, .4, { start: .04, attack: .007, decay: 3.8 }),
+      noise(780, 6200, .105, .32, { start: .085, attack: .008, decay: 4.4 })
+    ]],
+    ['雷撃と低い雷鳴', '硬い着弾の下に、短く沈み込む雷鳴が重なる。', [
+      noise(210, 5400, .15, .49, { attack: .007, decay: 3.9, sweep: -.78 }),
+      tone(166, 48, .48, .53, { start: .009, attack: .014, decay: 3, partials: [[1, .87], [2, .33], [3, .14]] }),
+      noise(40, 315, .54, .72, { start: .04, attack: .05, decay: 2.8, sweep: -.57 })
+    ]],
+    ['魔法的な雷', '割れる電撃が、少し濁った暗い残響に変わる。', [
+      noise(510, 5780, .16, .59, { attack: .01, decay: 3.9, sweep: -.64 }),
+      tone(930, 224, .18, .2, { start: .018, attack: .009, partials: [[1, 1], [2.17, .29]] }),
+      noise(880, 4200, .17, .31, { start: .075, attack: .012, decay: 4.1 }),
+      tone(221, 112, .69, .49, { start: .034, attack: .047, decay: 2.65, partials: [[1, .86], [1.49, .39], [2.02, .15]] }),
+      tone(231, 104, .54, .28, { start: .122, attack: .058, decay: 2.65 })
     ]]
   ].map(([name, summary, voices], index) => ({
     id: 'S' + String(index + 1).padStart(2, '0'), name, summary, voices,

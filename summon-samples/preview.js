@@ -126,6 +126,13 @@
     stop();
     status.textContent = '停止しました。';
   });
+  get('reference')?.addEventListener('click', () => {
+    stop();
+    effectSelect.value = 'E10';
+    soundSelect.value = 'S08';
+    updateChoices();
+    status.textContent = 'E10 ＋ S08 を選択しました。';
+  });
   volume.addEventListener('input', updateVolume);
   mute.addEventListener('change', updateVolume);
   const motionChanged = () => {

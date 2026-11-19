@@ -42,6 +42,60 @@ window.SummonEffects = (() => {
     ]);
   };
 
+  function lightning(scene, { impact, color, width, paths }) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 192;
+    canvas.style.cssText = 'display:block;width:100%;height:100%';
+    const ink = canvas.getContext('2d');
+    ink.scale(2, 2);
+    ink.lineCap = 'round';
+    ink.lineJoin = 'round';
+    for (const [index, points] of paths.entries()) {
+      ink.beginPath();
+      ink.moveTo(...points[0]);
+      for (const point of points.slice(1)) ink.lineTo(...point);
+      const weight = index ? width * .55 : width;
+      ink.strokeStyle = color;
+      ink.shadowColor = color;
+      ink.shadowBlur = 10;
+      ink.lineWidth = weight + 2;
+      ink.stroke();
+      ink.shadowBlur = 0;
+      ink.strokeStyle = '#fff4fb';
+      ink.lineWidth = weight;
+      ink.stroke();
+    }
+
+    const bolt = scene.shape({ width: '128px', height: '96px', top: '-42px' });
+    bolt.append(canvas);
+    const hit = impact / scene.duration;
+    scene.animate(bolt, [
+      { opacity: .64, clipPath: 'inset(0 0 96% 0)' },
+      { opacity: 1, clipPath: 'inset(0)', offset: hit },
+      { opacity: .16, clipPath: 'inset(0)', offset: hit + .13 },
+      { opacity: 0, clipPath: 'inset(0)', offset: hit + .27 },
+      { opacity: 0, clipPath: 'inset(0)' }
+    ], { duration: scene.duration, easing: 'linear' });
+    scene.reveal([
+      { opacity: 0 }, { opacity: 0, offset: hit },
+      { opacity: 1, offset: hit + .055 }, { opacity: 1 }
+    ], 'linear');
+  }
+
+  function lightningSparks(scene, impact, color) {
+    for (const [x, y] of [[-24, -13], [-12, -28], [8, -21], [22, -13], [17, 4]]) {
+      scene.shape({
+        width: '3px', height: '5px', borderRadius: '50%',
+        background: color, boxShadow: '0 0 6px ' + color
+      }, [
+        { opacity: 0, transform: 'scale(.75)' },
+        { opacity: .85, offset: .08 },
+        { opacity: 0, transform: 'translate(' + x + 'px,' + y + 'px) scale(.35)' }
+      ], impact, .48);
+    }
+  }
+
   const choices = [
     ['光輪', '足元の輪がひとつ広がり、静かに消える。', 650, scene => {
       ring(scene, '#f7da89');
@@ -115,6 +169,40 @@ window.SummonEffects = (() => {
         { transform: 'none' }
       ]);
       ring(scene, '#e7cba0', { delay: 210, width: 88, height: 27 });
+    }],
+    ['鋭い落雷', '細い稲妻が真上から落ち、足元の光と火花が素早く消える。', 690, scene => {
+      const impact = 115, color = '#8bdbff';
+      lightning(scene, { impact, color, width: 1.5, paths: [
+        [[63, 2], [52, 24], [67, 36], [58, 55], [68, 69], [64, 90]]
+      ] });
+      ring(scene, color, { delay: impact, width: 47, height: 16, line: 1, scale: 1 });
+      lightningSparks(scene, impact, '#e8fbff');
+    }],
+    ['重い落雷', '太い一撃が落ち、着弾点から小さな衝撃波が広がる。', 820, scene => {
+      const impact = 150, color = '#ffce82';
+      lightning(scene, { impact, color, width: 4.5, paths: [
+        [[72, 3], [55, 31], [70, 38], [48, 64], [61, 62], [64, 90]]
+      ] });
+      ring(scene, color, { delay: impact, width: 100, height: 28, scale: 1.18, line: 3 });
+      scene.shape({
+        width: '80px', height: '29px',
+        background: 'radial-gradient(ellipse, #ffd99bba, transparent 69%)'
+      }, [
+        { opacity: 0, transform: 'scale(.55)' },
+        { opacity: .8, offset: .08 },
+        { opacity: 0, transform: 'scale(1.12)' }
+      ], impact, .55);
+    }],
+    ['暗い魔雷', '紫の枝が着弾点に集まり、足元に短い放電が残る。', 860, scene => {
+      const impact = 215, color = '#b171ff';
+      lightning(scene, { impact, color, width: 2.5, paths: [
+        [[60, 3], [70, 21], [56, 44], [72, 58], [64, 90]],
+        [[25, 18], [37, 30], [29, 41], [43, 48], [56, 44]],
+        [[112, 11], [96, 28], [103, 38], [87, 48], [92, 62], [71, 70], [64, 90]],
+        [[18, 50], [32, 55], [35, 65], [54, 66], [64, 90]]
+      ] });
+      lightningSparks(scene, impact + 45, '#d799ff');
+      ring(scene, '#9a64dd', { delay: impact, width: 65, height: 24, line: 1, scale: 1.13 });
     }]
   ].map(([name, summary, duration, draw], index) => ({
     id: 'E' + String(index + 1).padStart(2, '0'), name, summary, duration, draw
@@ -131,16 +219,16 @@ window.SummonEffects = (() => {
     const scene = {
       duration,
       animate,
-      reveal(frames) {
+      reveal(frames, easing = 'ease-out') {
         revealed = true;
-        animate(unit, frames, { duration });
+        animate(unit, frames, { duration, easing });
       },
       shape(style, frames, delay = 0, fraction = 1) {
         const element = document.createElement('span');
         element.className = 'fx';
         Object.assign(element.style, style);
         layer.append(element);
-        animate(element, frames, { delay, duration: (duration - delay) * fraction });
+        if (frames) animate(element, frames, { delay, duration: (duration - delay) * fraction });
         return element;
       }
     };
