@@ -950,6 +950,7 @@ body.projected-board .overlayDot{top:21%;width:8px;height:8px}.projected-board .
 body.projected-board .royalPedestal{transform:translate(-50%,-50%)!important;border-radius:8px!important;min-height:32px;padding:0 3px;align-items:flex-end}
 body.projected-board .overlayPiece .overlayNameLayer{color:#fff!important;-webkit-text-fill-color:#fff!important;-webkit-text-stroke-width:0!important;text-shadow:none!important}
 #tutorialCoach.tutorialChoosing{visibility:hidden}
+#tutorialText{white-space:pre-line}
 .tutorialDrawGuide{color:#ffe277}
 body.layout-landscape.tutorial-mode #app{padding-bottom:2px}
 body.layout-landscape #tutorialCoach{transform:none;box-sizing:border-box;min-width:0;z-index:1000;overflow:auto;padding:8px 10px}
@@ -1228,7 +1229,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-tutorial-rewards-v79">ver p3-tutorial-rewards-v79</div>
+  <div class="titleVersion" data-build="p3-tutorial-playtest-v80">ver p3-tutorial-playtest-v80</div>
   <p id="benchmarkTrialLabel">クリーチャー基準・試験版</p><div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -6518,7 +6519,7 @@ const TutorialController={
   if(!this.active||S.side!=='c'||this.current.action?.kind!=='cpu'||this.running)return;
   const epoch=this.epoch;this.running=true;
   // Fixed tutorial sequence; GameCore remains authoritative for legality.
-  const sequences={1:[['summon','歩兵',3],['move',3,8]],2:[['attack',8,13],['summon','ヒーラー',1]],3:[['summon','銀級兵',0],['move',0,5]],4:[['move',5,10],['summon','金級兵',1],['move',1,6]]};
+  const sequences={1:[['summon','歩兵',3],['move',3,8]],2:[['attack',8,13],['summon','ヒーラー',1]],3:[['summon','銀級兵',0],['move',0,5]],4:[['move',5,10],['summon','金級兵',0],['move',0,5]]};
   try{
    for(const [kind,from,to] of sequences[S.turn]||[]){
     if(!this.active||this.epoch!==epoch)return;
@@ -6580,11 +6581,14 @@ function tutorialSteps(){
  add('01','それじゃあ相手の歩兵を倒してみよう。あなたの歩兵は攻撃を受けて残りHP2。ATKは3のままなので、残りHP2の相手の歩兵を倒せるよ。',{glow:['#board .cell[data-cell="13"] .pieceHudStats','#board .cell[data-cell="8"] .pieceHudStats']});
  cell('01_SELECT',13,'あなたの歩兵をタップしよう。');cell('01_ATTACK',8,'相手の歩兵を攻撃しよう。');
  add('01_RESULT','HPが0になると、クリーチャーは破壊されて盤面からいなくなる。');
- cell('02_PAWN',8,'相手の王に近づこう。歩兵を光っているマスへ進めよう。');
+ add('01_GRAVE_OPEN','倒されたクリーチャーカードは使用プレイヤーの墓地にいくよ。ここをタップすると相手の墓地にあるカードを見ることができる。',{action:{kind:'graveyard',value:'c'},glow:['.kingZone.enemy .graveButton']});
+ add('01_GRAVE_READ','墓地を利用したり参照するカードもあるけど、今は簡単に「使用済みカードはここに置かれるんだな」とだけ分かれば十分。',{glow:['#infoContent .infoName']});
+ cell('02_PAWN',8,'相手の王に近づこう。歩兵を光っているマスへ進めよう。',{select:13});
  step=8;
- add('01_BREAKTHROUGH','敵陣2行目に初めて到達すると、カードを1枚引くか選べるよ。各クリーチャーにつき1回で、各プレイヤーは自分のターン開始から次の自分のターン開始までに最大1回だよ。',{arrival:{kind:'draw',cell:8}});
+ add('01_BREAKTHROUGH','敵陣2行目に到達すると、カードを1枚引くか選べるよ。各ターン最大1回だよ。\n（同一ターンに2体のクリーチャーが2行目に到達しても1回しか発動しない。また同一クリーチャーによる2度目の2行目到達でも発動しない。）',{arrival:{kind:'draw',cell:8}});
  add('02_LIMIT','引かない場合も、そのクリーチャーの機会とそのターンの枠は使ったことになるよ。山札が少ないときは、引かない選択もできる。今回は1枚引いてみよう。');
  add('03_DRAW','「敵陣突破！」で「1枚引く」を押そう。',{action:{kind:'advanceDraw',value:true}});
+ add('04_TACTICS','まずは敵陣2行目（敵陣突破）を目指す。そして敵を自陣2行目に入れない。この攻防がとても重要になってくるよ。');
  step=9;
  cell('02_LINE_SELECT',17,'次は戦列兵をタップしよう。');cell('02_LINE_MOVE',12,'戦列兵を光っているマスへ進めよう。');
  step=10;cell('01',1,'さっき相手が召喚したヒーラーは、特殊な能力を持っているみたい。タップして見てみよう。',{clear:true});
@@ -6599,7 +6603,7 @@ function tutorialSteps(){
  step=12;add('CPU','相手は銀級兵を召喚して前進するよ。',{action:{kind:'cpu'}});
  cell('01_SELECT',8,'いよいよ相手の王は目の前だ。歩兵をタップしよう。');cell('01_MOVE',3,'歩兵を光っているマスへ進めよう。');
  step=13;
- add('01_MORALE','敵陣の最奥に初めて到達して「士気高揚！」。最大マナが1増えるよ。各プレイヤーにつき1対戦に1回で、最大マナは10まで。その場で使えるマナは増えず、今は5/6だよ。',{arrival:{kind:'mana',cell:3},glow:['.kingZone.player .manaStat']});
+ add('01_MORALE','敵陣の最奥に初めて到達すると「士気高揚！」。最大マナが1増えるよ。各プレイヤーにつき1対戦に1回で、最大マナは10まで。その場で使えるマナは増えず、今は5/6だよ。',{arrival:{kind:'mana',cell:3},glow:['.kingZone.player .manaStat']});
  step=14;
  add('01_ATTACK','相手の王をタップして攻撃しよう。',{action:{kind:'king',value:'c'}});
  add('01_RESULT','王のHPを減らすことができた。このまま一気に攻め立てよう。');
@@ -6609,7 +6613,7 @@ function tutorialSteps(){
  cell('03_SUMMON',24,'チャリオットを光っているマスに召喚しよう。');cell('03_SELECT',24,'チャリオットをタップしよう。');cell('03_MOVE',14,'光っているマスまで進もう。');end('04');
  add('CPU4','相手は銀級兵を前進させ、金級兵を召喚して前進させるよ。',{action:{kind:'cpu'}});
  step=15;
- card('01_DANCER','踊り子','士気高揚のおかげで、今は7/7マナ。あと少し。このターンで決めちゃおう！ 手札の踊り子をタップしてね。');
+ card('01_DANCER','踊り子','あと少し。このターンで決めちゃおう！ 手札の踊り子をタップしてね。');
  cell('01_SUMMON',24,'踊り子を光っているマスに召喚しよう。');
  add('01_AURA','踊り子は配置されている間、ほかの味方クリーチャー全体の攻撃力を1上げるよ。強化した攻撃で一気に決めちゃおう。',{select:24,glow:['#infoContent .infoEffect']});
  cell('01_PAWN',3,'ATKが4になった歩兵をタップしよう。');
@@ -9213,6 +9217,7 @@ function tutorialWrap(name,kind,valueOf){const original=window[name];window[name
 tutorialWrap('pickCard','card',i=>S.hand[i]);
 tutorialWrap('clickCell','cell',(r,c)=>I(r,c));
 tutorialWrap('clickKing','king',side=>side);
+tutorialWrap('showGraveyard','graveyard',side=>side);
 tutorialWrap('useSelectedMana','use',()=>null);
 tutorialWrap('endTurn','end',()=>null);
 $('endTurn').onclick=()=>endTurn();
@@ -9224,7 +9229,7 @@ document.querySelectorAll('[data-cpu-speed]').forEach(button=>button.onclick=()=
 document.addEventListener('click',event=>{
  if(!TutorialController.active)return;
  const target=event.target.closest('button,[onclick],.card,.cell');if(!target)return;
- if(target.id==='settingsButton'||target.id==='settingsClose'||target.closest('#settingsOverlay [data-setting=view],#turnPopup .advanceDrawChoice')||target.id==='tutorialNext'||target.id==='tutorialBack'||target.closest('.gameTopBar')&&target.textContent.includes('タイトルへ戻る')||target.closest('#hand')||target.closest('#board')||target.id==='enemyPedestal'||target.id==='playerPedestal'||target.matches('.king')||target.id==='endTurn'||target.matches('.useCardButton')&&TutorialController.current.action?.kind==='use')return;
+ if(target.id==='settingsButton'||target.id==='settingsClose'||target.closest('#settingsOverlay [data-setting=view],#turnPopup .advanceDrawChoice')||target.matches('.graveButton')&&target.querySelector('#cGrave')&&TutorialController.allows('graveyard','c')||target.id==='tutorialNext'||target.id==='tutorialBack'||target.closest('.gameTopBar')&&target.textContent.includes('タイトルへ戻る')||target.closest('#hand')||target.closest('#board')||target.id==='enemyPedestal'||target.id==='playerPedestal'||target.matches('.king')||target.id==='endTurn'||target.matches('.useCardButton')&&TutorialController.current.action?.kind==='use')return;
  event.preventDefault();event.stopImmediatePropagation();TutorialController.blockedMessage();
 },true);
 const tutorialOriginalUndo=undoOneAction;
