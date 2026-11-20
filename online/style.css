@@ -904,6 +904,8 @@ body.projected-board .overlayOrb{top:47%;width:55%}
 body.projected-board .overlayDot{top:21%;width:8px;height:8px}.projected-board .overlayDot.attack{right:12%}.projected-board .overlayDot.move{right:-2%}
 body.projected-board .royalPedestal{transform:translate(-50%,-50%)!important;border-radius:8px!important;min-height:32px;padding:0 3px;align-items:flex-end}
 body.projected-board .overlayPiece .overlayNameLayer{color:#fff!important;-webkit-text-fill-color:#fff!important;-webkit-text-stroke-width:0!important;text-shadow:none!important}
+#tutorialCoach.tutorialChoosing{visibility:hidden}
+.tutorialDrawGuide{color:#ffe277}
 body.layout-landscape.tutorial-mode #app{padding-bottom:2px}
 body.layout-landscape #tutorialCoach{transform:none;box-sizing:border-box;min-width:0;z-index:1000;overflow:auto;padding:8px 10px}
 body.layout-landscape .tutorialText{font-size:13px;line-height:1.4}

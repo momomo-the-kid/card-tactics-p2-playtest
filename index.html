@@ -949,6 +949,8 @@ body.projected-board .overlayOrb{top:47%;width:55%}
 body.projected-board .overlayDot{top:21%;width:8px;height:8px}.projected-board .overlayDot.attack{right:12%}.projected-board .overlayDot.move{right:-2%}
 body.projected-board .royalPedestal{transform:translate(-50%,-50%)!important;border-radius:8px!important;min-height:32px;padding:0 3px;align-items:flex-end}
 body.projected-board .overlayPiece .overlayNameLayer{color:#fff!important;-webkit-text-fill-color:#fff!important;-webkit-text-stroke-width:0!important;text-shadow:none!important}
+#tutorialCoach.tutorialChoosing{visibility:hidden}
+.tutorialDrawGuide{color:#ffe277}
 body.layout-landscape.tutorial-mode #app{padding-bottom:2px}
 body.layout-landscape #tutorialCoach{transform:none;box-sizing:border-box;min-width:0;z-index:1000;overflow:auto;padding:8px 10px}
 body.layout-landscape .tutorialText{font-size:13px;line-height:1.4}
@@ -1226,7 +1228,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-battle-feedback-v78">ver p3-battle-feedback-v78</div>
+  <div class="titleVersion" data-build="p3-tutorial-rewards-v79">ver p3-tutorial-rewards-v79</div>
   <p id="benchmarkTrialLabel">クリーチャー基準・試験版</p><div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -3167,14 +3169,15 @@ function showTurn(activeSide,viewer,done){
  showTurnSequence([stage],done,true);
 }
 function updateChoiceButtons(choice){
- for(const button of choice.buttons)button.disabled=!choice.enabled||choice.submitting;
+ for(const [index,button] of choice.buttons.entries())
+  button.disabled=!choice.enabled||choice.submitting||choice.drawRequired&&index===1;
 }
-function makeBattleChoice(choice,viewer,key,kind,enabled){
+function makeBattleChoice(choice,viewer,key,kind,enabled,drawRequired){
  const own=choice.side===viewer,promotion=kind==='promotion';
  const content=document.createElement('div'),notice=document.createElement('div');
  const title=document.createElement('strong'),detail=document.createElement('small'),buttons=[];
  const stage={kind:promotion?'promotionChoice':'advanceChoice',own,content,hold:true};
- const popup={key,stage,buttons,enabled,submitting:false};
+ const popup={key,stage,buttons,enabled,drawRequired,submitting:false};
  content.className='boardAnnouncement';
  notice.className='turnNotification advanceRewardNotification battleChoiceNotification '+(promotion?'promotionChoice':'advanceDrawChoice');
  notice.dataset.side=choice.side;notice.setAttribute('role','group');
@@ -3184,13 +3187,17 @@ function makeBattleChoice(choice,viewer,key,kind,enabled){
   ?(own?'受けたダメージを引き継ぎ、行動権・付属効果・所有者を維持します。':'隠密から暗殺者への進化確認')
   :(own?'カードを1枚引きますか？':'相手がドローを選択中…');
  notice.append(title,detail);
+ if(drawRequired){
+  const guide=document.createElement('small');
+  guide.className='tutorialDrawGuide';guide.textContent='今回は「1枚引く」を押してみよう。';notice.append(guide);
+ }
  if(own){
   const actions=document.createElement('div');actions.className='advanceDrawButtons';
   const labels=promotion?['進化する','進化しない']:['1枚引く','引かない'];
   for(const [index,label] of labels.entries()){
    const button=document.createElement('button');button.type='button';button.textContent=label;
    button.onclick=()=>{
-    if(battleChoice!==popup||!popup.enabled||popup.submitting)return;
+    if(battleChoice!==popup||button.disabled)return;
     popup.submitting=true;updateChoiceButtons(popup);
     try{battleChoiceContext.submit(kind,index===0);}
     finally{popup.submitting=false;updateChoiceButtons(popup);}
@@ -3202,16 +3209,16 @@ function makeBattleChoice(choice,viewer,key,kind,enabled){
  content.append(notice);updateChoiceButtons(popup);
  return popup;
 }
-function syncBattleChoice(choice,viewer,submit,enabled=true){
- battleChoiceContext={choice,viewer,submit,enabled};
+function syncBattleChoice(choice,viewer,submit,enabled=true,drawRequired=false){
+ battleChoiceContext={choice,viewer,submit,enabled,drawRequired};
  const type=choice?.type??choice?.kind;
  const kind=type==='advanceDrawWait'?'advanceDraw':type;
  const key=['advanceDraw','promotion'].includes(kind)&&document.visibilityState==='visible'
-  ?[kind,viewer,choice.side,choice.instanceId,choice.cell].join(':'):null;
+  ?[kind,viewer,choice.side,choice.instanceId,choice.cell,drawRequired].join(':'):null;
  if(battleChoice?.key===key){
   battleChoice.enabled=enabled;updateChoiceButtons(battleChoice);return;
  }
- const previous=battleChoice,popup=key?makeBattleChoice(choice,viewer,key,kind,enabled):null;
+ const previous=battleChoice,popup=key?makeBattleChoice(choice,viewer,key,kind,enabled,drawRequired):null;
  battleChoice=popup;
  if(previous){
   const remove=stages=>{const index=stages.indexOf(previous.stage);if(index!==-1)stages.splice(index,1);};
@@ -3328,7 +3335,7 @@ window.visualViewport?.addEventListener('scroll',positionBattleOverlays);
 window.addEventListener('scroll',positionBattleOverlays,{passive:true});
 document.addEventListener('visibilitychange',()=>{
  if(document.visibilityState!=='visible'){clearAttackDamage();clearOpponentCards();finishBattleOutcome();finishTurnPresentation();battleChoice=null;}
- else if(battleChoiceContext){const {choice,viewer,submit,enabled}=battleChoiceContext;syncBattleChoice(choice,viewer,submit,enabled);}
+ else if(battleChoiceContext){const {choice,viewer,submit,enabled,drawRequired}=battleChoiceContext;syncBattleChoice(choice,viewer,submit,enabled,drawRequired);}
 });
 window.addEventListener('pagehide',event=>{clearAttackDamage();clearOpponentCards();finishBattleOutcome();if(event.persisted)finishTurnPresentation();else cancelTurnPresentation();});
 document.addEventListener('p2b1:exit',()=>{clearAttackDamage();clearOpponentCards();clearBattleOutcome();});
@@ -3365,7 +3372,7 @@ function positionBattleLog(){
  if(!landscapeQuery.matches||!log.open)for(const key of ['width','left','top','max-height','--log-space'])panel.style.removeProperty(key);
  if(!landscapeQuery.matches)return;
  const r=log.querySelector('summary').getBoundingClientRect();
- const explaining=document.body.classList.contains('tutorial-mode')&&tutorialExplanation?.step===4&&tutorialExplanation.glow?.includes('#log');
+ const explaining=document.body.classList.contains('tutorial-mode')&&tutorialExplanation?.glow?.includes('#log');
  const width=Math.min(360,innerWidth-16,explaining?tutorialLogWidthCap??Infinity:Infinity);
  const left=Math.max(8,Math.min((explaining?tutorialLogLeft:null)??r.left,innerWidth-width-8));
  if(!log.open){
@@ -3430,8 +3437,14 @@ function positionTutorialExplanation(){
  const panel=$('infoPanel'),content=$('infoContent');let selectors=tutorialSelectors(step.glow||[]);
  if(step.action?.kind==='use')selectors=[...selectors,'#infoContent .useCardButton'];
  const targets=selectors.flatMap(s=>[...document.querySelectorAll(s)]),infoTarget=targets.find(e=>panel?.contains(e)),logTarget=targets.some(e=>e.id==='log');
- // Scroll only the internal detail scroller, never the page or the board.
+ // Keep the highlighted detail or drawn card inside its own scroller.
  if(infoTarget&&content?.contains(infoTarget)){const a=infoTarget.getBoundingClientRect(),b=content.getBoundingClientRect();if(a.top<b.top||a.bottom>b.bottom)content.scrollTop+=a.top-b.top-4;}
+ const hand=$('hand'),handTarget=targets.find(e=>hand?.contains(e));
+ if(handTarget&&handTarget!==hand){
+  const card=handTarget.getBoundingClientRect(),strip=hand.getBoundingClientRect();
+  if(card.right>strip.right)hand.scrollLeft+=Math.ceil(card.right-strip.right);
+  else if(card.left<strip.left)hand.scrollLeft-=Math.ceil(strip.left-card.left);
+ }
  coach.classList.toggle('tutorialBesideInfo',!!infoTarget);
  const flowLog=logTarget&&!landscapeQuery.matches;
  if(flowLog){
@@ -3441,7 +3454,7 @@ function positionTutorialExplanation(){
   if(tutorialLogScrollPending){tutorialLogScrollPending=false;coach.scrollIntoView({block:'start',behavior:'instant'});}return;
  }
  restoreLayoutNode(coach);coach.classList.remove('tutorialAtLog');
- if(landscapeQuery.matches){const host=infoTarget?document.querySelector('.boardColumn'):panel,r=host.getBoundingClientRect();coach.style.left=Math.max(4,r.left+6)+'px';coach.style.width=Math.max(195,Math.min(infoTarget?350:r.width-12,r.width-12))+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';coach.style.top=Math.max(4,r.bottom-coach.offsetHeight-6)+'px';if(logTarget&&step.step===4)positionTutorialLog(coach);}
+ if(landscapeQuery.matches){const host=infoTarget?document.querySelector('.boardColumn'):panel,r=host.getBoundingClientRect();coach.style.left=Math.max(4,r.left+6)+'px';coach.style.width=Math.max(195,Math.min(infoTarget?350:r.width-12,r.width-12))+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';coach.style.top=Math.max(4,r.bottom-coach.offsetHeight-6)+'px';if(logTarget)positionTutorialLog(coach);}
 
  else{for(const k of ['left','top','width','max-height','bottom','right','overflow-y','transform'])coach.style.removeProperty(k);}
 }
@@ -6417,25 +6430,86 @@ const TutorialController={
  active:false,index:0,phase:null,epoch:0,steps:[],cpuDelay:700,historyViewing:false,
  get current(){return this.steps[this.index]},
  start(){
-  this.epoch++;this.running=false;this.error=null;this.active=true;this.index=0;this.historyViewing=false;this.steps=tutorialSteps();
-   msg('説明を読んで「次へ」を押して下さい。','routine');
-  delete S.cardIdentities;delete S.coreBridge;delete S.pendingCardTransfers;delete S.pendingSummon;delete S.pendingEntry;delete S.pendingChoice;delete S.pendingEntryHtml;Object.assign(S,{turn:1,side:'p',manaBySide:{p:1,c:1},maxManaBySide:{p:1,c:1},manaBonus:{p:0,c:0},pHp:20,cHp:20,board:Array(25).fill(null),hand:['歩兵','歩兵','戦列兵','戦列兵','バーサーク'],deck:[...Array(31).fill('歩兵'),'踊り子','チャリオット','ファイヤーボルト','マナ'],cHand:['歩兵','ヒーラー','金級兵','チャリオット','銀級兵'],cDeck:Array(35).fill('歩兵'),card:null,piece:null,inspect:null,gameOver:false,mines:Array(25).fill(null),enchantments:[],battles:[],graveyards:{p:[],c:[]},nextCardInstanceId:1,kingAction:{p:{},c:{}},kingAttackMode:false,sorcererMode:false,tokenPlacement:null,teleportSource:null,dispelTarget:null,cpuPreview:null});
-  S.rules=R12Core.normalizeRules();
+  if(this.active)return;
+  this.epoch++;this.running=false;this.opening=false;this.arrival=null;this.error=null;
+  this.active=true;this.index=0;this.historyViewing=false;this.steps=tutorialSteps();
+  const state=R12Core.createGame({advanceRewards:true,decks:{
+   // In Core the first card is next to draw. The first five are dealt together.
+   p:['歩兵','歩兵','戦列兵','戦列兵','金級兵','マナ','ファイヤーボルト','バーサーク','チャリオット','踊り子',...Array(30).fill('歩兵')],
+   c:['歩兵','ヒーラー','金級兵','チャリオット','銀級兵',...Array(35).fill('歩兵')]
+  }});
+  R4Command.commit(S,state,[]);
+  Object.assign(S,{card:null,piece:null,inspect:null,kingAttackMode:false,sorcererMode:false,tokenPlacement:null,teleportSource:null,dispelTarget:null,cpuPreview:null});
+  msg('説明を読んで「次へ」を押して下さい。','routine');
   $('log').innerHTML='';clearOneStepUndo();document.body.classList.add('tutorial-mode');startGameScreen();
-  const epoch=this.epoch;
-  NormalGameUI.showOpening(cpuOpening('p'),()=>{if(this.active&&this.epoch===epoch)this.show();});
+  this.show();
  },
  clearGlow(){document.querySelectorAll('.tutorialGlow,.tutorialZoom').forEach(e=>e.classList.remove('tutorialGlow','tutorialZoom'));NormalGameUI.refreshTutorialGeometry()},
- show(){const s=this.current;if(!s)return;this.historyViewing=false;this.phase=s.id;if(s.clear){S.card=null;S.piece=null;S.inspect=null}if(s.select!=null){S.card=null;S.piece=s.select;S.inspect=null}render();this.showCurrentExplanation();$('tutorialCoach').classList.add('show');this.decorate();NormalGameUI.presentTutorial(this.current);},
- showCurrentExplanation(){const s=this.current;if(!s)return;this.historyViewing=false;$('tutorialStep').textContent=`step${s.step}. ${s.title||''}`;$('tutorialText').textContent=s.text;$('tutorialBack').disabled=this.index===0;$('tutorialNext').style.display=s.action?'none':'inline-block';$('tutorialNext').textContent=s.finish?'タイトルへ戻る':'次へ';this.decorate();NormalGameUI.presentTutorial(s);},
- backExplanation(){if(!this.active||this.index<=0||this.historyViewing)return;const prev=this.steps[this.index-1];if(!prev)return;this.historyViewing=true;$('tutorialStep').textContent=`step${prev.step}. ${prev.title||''}`;$('tutorialText').textContent=prev.text;$('tutorialBack').disabled=true;$('tutorialNext').style.display='inline-block';$('tutorialNext').textContent='現在の説明へ';this.decorate();NormalGameUI.presentTutorial(prev);},
- next(){if(!this.active)return;if(this.historyViewing){this.showCurrentExplanation();return}if(this.current.finish){this.finish();return}if(this.current.action){this.blockedMessage();return}this.advance()},
- advance(){if(this.index+1<this.steps.length){this.index++;this.show()}},
+ show(){
+  const step=this.current;if(!step)return;
+  this.historyViewing=false;this.phase=step.id;
+  if(step.clear){S.card=null;S.piece=null;S.inspect=null}
+  if(step.select!=null){S.card=null;S.piece=step.select;S.inspect=null}
+  render();this.showCurrentExplanation();$('tutorialCoach').classList.add('show');
+ },
+ showExplanation(step,history){
+  this.historyViewing=history;
+  $('tutorialStep').textContent='step'+step.step;
+  $('tutorialText').textContent=step.text;
+  $('tutorialBack').disabled=this.index===0||history;
+  $('tutorialNext').style.display=!history&&step.action?'none':'inline-block';
+  $('tutorialNext').textContent=history?'現在の説明へ':step.finish?'タイトルへ戻る':step.opening?'ダイスを振る':'次へ';
+  $('tutorialCoach').classList.toggle('tutorialChoosing',!history&&step.action?.kind==='advanceDraw');
+  this.decorate();NormalGameUI.presentTutorial(step);
+ },
+ showCurrentExplanation(){this.showExplanation(this.current,false)},
+ backExplanation(){
+  if(!this.active||this.opening||this.index<=0||this.historyViewing||this.current.action?.kind==='advanceDraw')return;
+  this.showExplanation(this.steps[this.index-1],true);
+ },
+ next(){
+  if(!this.active||this.opening)return;
+  if(this.historyViewing){this.showCurrentExplanation();return}
+  if(this.current.finish){this.finish();return}
+  if(this.current.action){this.blockedMessage();return}
+  if(this.current.opening){
+   const epoch=this.epoch;
+   this.opening=true;$('tutorialCoach').classList.remove('show');this.clearGlow();
+   NormalGameUI.showOpening(cpuOpening('p'),()=>{
+    if(!this.active||this.epoch!==epoch)return;
+    this.opening=false;this.advance();
+   });
+   return;
+  }
+  this.advance();
+ },
+ onBattleEvents(events){
+  for(const event of events){
+   if(event.side!=='p')continue;
+   if(event.type==='advance:offered')this.arrival={kind:'draw',cell:event.cell};
+   if(event.type==='advance:rewarded'&&event.kind==='mana')this.arrival={kind:'mana',cell:event.cell};
+  }
+ },
+ advance(){
+  const next=this.steps[this.index+1];
+  if(!next)return;
+  if(next.arrival){
+   if(this.arrival?.kind!==next.arrival.kind||this.arrival.cell!==next.arrival.cell){
+    this.error='対象マスへの到達報酬を確認できませんでした。';msg(this.error);return;
+   }
+   this.arrival=null;
+  }
+  this.index++;this.show();
+ },
  blockedMessage(){msg(this.current?.action?'今は案内で光っている対象を操作してください。':'説明を読んで「次へ」を押してください。')},
- allows(kind,value){if(!this.active)return true;const a=this.current?.action;return !this.historyViewing&&!!a&&a.kind===kind&&a.value===value&&S.side==='p'},
- decorate(){if(!this.active)return;this.clearGlow();const s=this.historyViewing?this.steps[this.index-1]:this.current;if(!s)return;let selectors=NormalGameUI.tutorialSelectors([...(s.glow||[])]);const a=s.action;if(a?.kind==='card'){S.hand.forEach((card,i)=>{if(card===a.value)selectors.push(`#hand .card:nth-child(${i+1})`)})}if(a?.kind==='cell')selectors.push(`#board .cell[data-cell="${a.value}"]`);if(a?.kind==='king')selectors.push('#enemyPedestal');if(a?.kind==='end')selectors.push('#endTurn');if(a?.kind==='use')selectors.push('#infoContent .useCardButton');
+ allows(kind,value){
+  if(!this.active)return true;
+  const a=this.current?.action;
+  return !this.opening&&!this.historyViewing&&a?.kind===kind&&(a.value===undefined||a.value===value)&&S.side==='p';
+ },
+ decorate(){if(!this.active||this.opening)return;this.clearGlow();const s=this.historyViewing?this.steps[this.index-1]:this.current;if(!s)return;let selectors=NormalGameUI.tutorialSelectors([...(s.glow||[])]);const a=s.action;if(a?.kind==='card'){S.hand.forEach((card,i)=>{if(card===a.value)selectors.push(`#hand .card:nth-child(${i+1})`)})}if(a?.kind==='cell')selectors.push(`#board .cell[data-cell="${a.value}"]`);if(a?.kind==='king')selectors.push('#enemyPedestal');if(a?.kind==='end')selectors.push('#endTurn');if(a?.kind==='use')selectors.push('#infoContent .useCardButton');
   selectors=selectors.flatMap(selector=>{const m=selector.match(/^#board \.cell\[data-cell="(\d+)"\] \.(pieceHudStats|actionDot)$/);if(!m)return [selector];const root=`#pieceOverlay [data-cell="${Number(m[1])}"]`;return m[2]==='actionDot'?[`${root} .actionBadge:not(.none)`,`${root} .creatureATK`]:[`${root} .creatureHealth`,`${root} .creatureATK`];});
-  for(const selector of selectors)document.querySelectorAll(selector).forEach(e=>{e.classList.add('tutorialGlow');if(!e.matches('.cell,.rangePair,.infoEffect,.actionDot,.actionBadge,.creatureHealth,.creatureATK,.overlayStatsLayer'))e.classList.add('tutorialZoom')});
+  for(const selector of selectors)document.querySelectorAll(selector).forEach(e=>{e.classList.add('tutorialGlow');if(!e.matches('.cell,.rangePair,.infoEffect,.actionDot,.actionBadge,.creatureHealth,.creatureATK,.overlayStatsLayer,.resourceDeck'))e.classList.add('tutorialZoom')});
   if(s.color)document.querySelectorAll('#board .cell').forEach(e=>{if(s.color==='move'){e.classList.remove('attackTarget');if(e.classList.contains('bothTarget')){e.classList.remove('bothTarget');e.classList.add('moveTarget')}}if(s.color==='attack'){e.classList.remove('moveTarget');if(e.classList.contains('bothTarget')){e.classList.remove('bothTarget');e.classList.add('attackTarget')}}});
   $('undoOne').disabled=true;NormalGameUI.refreshTutorialGeometry();
  },
@@ -6470,9 +6544,7 @@ function tutorialSteps(){
  add('03_KING','あなたの王のHPが0になったら、あなたの敗北となります。',{glow:['#playerPedestal']});
  add('03_HP','あなたの王のHPはここで確認できるよ。',{glow:['.kingZone.player .kingStat:not(.manaStat)']});
  add('04','カードを使うには、そのコスト分のマナを支払う必要があります。',{glow:['.kingZone.player .manaStat']});
- add('05_DECK','自分のターンが始まると、デッキからカードを1枚ドローするよ。',{glow:['#deck']});
- add('05_HAND','引いたカードは手札に加わるよ。',{glow:['#hand']});
- add('06','ただし、デッキが0枚の状態でカードを引こうとすると敗北になる。長期戦では残りのデッキ枚数にも注意しよう。',{glow:['#deck']});
+ add('05_DICE','ゲームが始まるとまず最初に先攻後攻を決めるダイスロールをするよ',{opening:true});
  step=1;add('01','まずはクリーチャーを召喚してみよう。今は1マナあるから…',{glow:['.kingZone.player .manaStat']});
  card('02','歩兵','コスト1で召喚できる「歩兵」を召喚しよう。手札の「歩兵」をタップしてみて。');
  cell('03',23,'召喚できる範囲が表示されたね。まずは光っているマスをタップしてみよう。');
@@ -6487,7 +6559,11 @@ function tutorialSteps(){
  step=3;end('01');
   step=4;add('CPU','相手にターンを渡すと、CPUは自動で行動するよ。',{action:{kind:'cpu'}});
  add('LOG','相手がどんな行動をしたかは、画面下部の『戦闘ログ』で確認できるよ。',{glow:['#log']});
- step=5;cell('A01_SELECT',18,'次はクリーチャーで攻撃してみよう。歩兵をタップしてね。');
+ step=5;
+ add('01_DRAW','自分のターン開始時に山札から1枚引くよ。先攻の最初のターンだけは引かないよ。',{glow:['.resourceDeck.own']});
+ add('02_HAND','引いたカードは手札に加わるよ。今は手札の右端に「マナ」が加わったね。',{glow:['#hand .card:last-child']});
+ add('03_EMPTY','山札が0枚になっても、その時点では負けないよ。山札が0枚の状態でカードを引こうとすると敗北するから、残り枚数に注意しよう。',{glow:['.resourceDeck.own']});
+ step=6;cell('A01_SELECT',18,'次はクリーチャーで攻撃してみよう。歩兵をタップしてね。');
  cell('A01_MOVE',13,'さっきやったように歩兵を1歩進めてみよう。');
  cell('A02_ATTACK',8,'相手の歩兵が攻撃範囲に入った。相手の歩兵をタップしてみよう。');
  add('A02_RESULT','これで攻撃完了。自分のATKと同じだけ相手のHPを減らせるよ。歩兵のATKは3だから、相手の歩兵のHPは5から2になった。',{glow:['#board .cell[data-cell="13"] .pieceHudStats','#board .cell[data-cell="8"] .pieceHudStats']});
@@ -6500,31 +6576,40 @@ function tutorialSteps(){
  add('B04_RESULT','戦列兵はまだ1回攻撃できる。でも今は攻撃範囲内に敵がいないから、今回は攻撃できない。');
  add('B05_INFO','移動範囲や攻撃範囲は、各クリーチャーの情報欄でも確認できるよ。',{glow:['#infoContent .rangePair']});
  add('B05_ORDER','移動・攻撃・カードの使用は好きな順番でOK。攻撃してから移動することもできるよ。');end('B06');
- step=6;add('CPU','相手の歩兵が攻撃し、ヒーラーを召喚するよ。',{action:{kind:'cpu'}});
+ step=7;add('CPU','相手の歩兵が攻撃し、ヒーラーを召喚するよ。',{action:{kind:'cpu'}});
  add('01','それじゃあ相手の歩兵を倒してみよう。あなたの歩兵は攻撃を受けて残りHP2。ATKは3のままなので、残りHP2の相手の歩兵を倒せるよ。',{glow:['#board .cell[data-cell="13"] .pieceHudStats','#board .cell[data-cell="8"] .pieceHudStats']});
  cell('01_SELECT',13,'あなたの歩兵をタップしよう。');cell('01_ATTACK',8,'相手の歩兵を攻撃しよう。');
  add('01_RESULT','HPが0になると、クリーチャーは破壊されて盤面からいなくなる。');
  cell('02_PAWN',8,'相手の王に近づこう。歩兵を光っているマスへ進めよう。');
+ step=8;
+ add('01_BREAKTHROUGH','敵陣2行目に初めて到達すると、カードを1枚引くか選べるよ。各クリーチャーにつき1回で、各プレイヤーは自分のターン開始から次の自分のターン開始までに最大1回だよ。',{arrival:{kind:'draw',cell:8}});
+ add('02_LIMIT','引かない場合も、そのクリーチャーの機会とそのターンの枠は使ったことになるよ。山札が少ないときは、引かない選択もできる。今回は1枚引いてみよう。');
+ add('03_DRAW','「敵陣突破！」で「1枚引く」を押そう。',{action:{kind:'advanceDraw',value:true}});
+ step=9;
  cell('02_LINE_SELECT',17,'次は戦列兵をタップしよう。');cell('02_LINE_MOVE',12,'戦列兵を光っているマスへ進めよう。');
-  step=7;cell('01',1,'さっき相手が召喚したヒーラーは、特殊な能力を持っているみたい。タップして見てみよう。',{clear:true});
+ step=10;cell('01',1,'さっき相手が召喚したヒーラーは、特殊な能力を持っているみたい。タップして見てみよう。',{clear:true});
  add('02','クリーチャーには、いろいろな特殊能力を持つものがいるよ。能力を組み合わせることで、戦い方も大きく変わる。',{glow:['#infoContent .infoEffect']});
- step=8;card('01_CARD','マナ','次はクリーチャー以外のカードを使ってみよう。まずはスペル。手札の「マナ」をタップしよう。');
+ step=11;card('01_CARD','マナ','次はクリーチャー以外のカードを使ってみよう。まずはスペル。手札の「マナ」をタップしよう。');
  add('01_USE','情報欄の「使用する」を押してみよう。',{action:{kind:'use',value:null}});
  add('01_RESULT','「マナ」は自分の最大マナを上げることができるぞ。コストを払って、残りマナは2/4になった。',{glow:['.kingZone.player .manaStat']});
  card('02_CARD','ファイヤーボルト','次はファイヤーボルトを使ってみよう。');
  cell('02_CAST',1,'選んだ対象に2ダメージを与えるスペルだよ。ヒーラーのHPは1だから、使えば倒せるはずだ。ヒーラーをタップしよう。');
  add('02_RESULT','スペルは使うと、その場で効果を発揮して墓地へ送られる。');
  add('02_EFFECT','スペルには様々な効果がある。上手く使って戦況を有利に進めよう。');end('03');
- step=9;add('CPU','相手は銀級兵を召喚して前進するよ。',{action:{kind:'cpu'}});
+ step=12;add('CPU','相手は銀級兵を召喚して前進するよ。',{action:{kind:'cpu'}});
  cell('01_SELECT',8,'いよいよ相手の王は目の前だ。歩兵をタップしよう。');cell('01_MOVE',3,'歩兵を光っているマスへ進めよう。');
+ step=13;
+ add('01_MORALE','敵陣の最奥に初めて到達して「士気高揚！」。最大マナが1増えるよ。各プレイヤーにつき1対戦に1回で、最大マナは10まで。その場で使えるマナは増えず、今は5/6だよ。',{arrival:{kind:'mana',cell:3},glow:['.kingZone.player .manaStat']});
+ step=14;
  add('01_ATTACK','相手の王をタップして攻撃しよう。',{action:{kind:'king',value:'c'}});
  add('01_RESULT','王のHPを減らすことができた。このまま一気に攻め立てよう。');
  cell('02_SELECT',12,'戦列兵をタップしよう。');cell('02_MOVE',7,'戦列兵を光っているマスへまっすぐ進めよう。');
- card('03_CARD','チャリオット','「マナ」を使ったおかげで5マナある。強力なチャリオットを召喚してラストスパートだ！');
+ add('02_DRAW','戦列兵も敵陣2行目に到達したよ。引くか引かないか、どちらか選ぼう。',{arrival:{kind:'draw',cell:7},action:{kind:'advanceDraw'}});
+ card('03_CARD','チャリオット','今使える5マナで、強力なチャリオットを召喚してラストスパートだ！');
  cell('03_SUMMON',24,'チャリオットを光っているマスに召喚しよう。');cell('03_SELECT',24,'チャリオットをタップしよう。');cell('03_MOVE',14,'光っているマスまで進もう。');end('04');
  add('CPU4','相手は銀級兵を前進させ、金級兵を召喚して前進させるよ。',{action:{kind:'cpu'}});
- step=10;
- card('01_DANCER','踊り子','あと少し。このターンで決めちゃおう！ 手札の踊り子をタップしてね。');
+ step=15;
+ card('01_DANCER','踊り子','士気高揚のおかげで、今は7/7マナ。あと少し。このターンで決めちゃおう！ 手札の踊り子をタップしてね。');
  cell('01_SUMMON',24,'踊り子を光っているマスに召喚しよう。');
  add('01_AURA','踊り子は配置されている間、ほかの味方クリーチャー全体の攻撃力を1上げるよ。強化した攻撃で一気に決めちゃおう。',{select:24,glow:['#infoContent .infoEffect']});
  cell('01_PAWN',3,'ATKが4になった歩兵をタップしよう。');
@@ -6536,7 +6621,7 @@ function tutorialSteps(){
  add('02_ATTACK','戦列兵で相手の王を攻撃しよう。',{action:{kind:'king',value:'c'}});
  add('03_DURATION','エンチャントは、一定ターン効果が続くカードが基本だよ。');
  add('03_TYPES','クリーチャーに付与するものだけでなく、マスや王に付与するものもある。組み合わせ次第で、かなりトリッキーな戦い方もできるよ。');
- step=11;
+ step=16;
  add('02_INTRO','王への攻撃には、少し特殊なルールがあるよ。');
  add('02_CENTER','歩兵やバーサーク状態の正面しか攻撃できないクリーチャーは、中央3列から王を狙える。',{glow:['#board .cell[data-cell="1"]','#board .cell[data-cell="2"]','#board .cell[data-cell="3"]']});
  add('02_EDGE','両端からは、正面攻撃では王に届かないから注意して。',{glow:['#board .cell[data-cell="0"]','#board .cell[data-cell="4"]']});
@@ -6545,6 +6630,7 @@ function tutorialSteps(){
  cell('03_MOVE',4,'光ってるマスに進めてみよう。');
  add('03_EDGE','チャリオットは斜め攻撃ができるから、端からでも王に攻撃が届く！',{glow:['#enemyPedestal']});
  add('04_FINISH','チャリオットの攻撃でフィニッシュだ！相手の王を攻撃しよう！',{action:{kind:'king',value:'c'}});
+ step=17;
  add('05_WIN','勝利おめでとう‼️🎉');add('05_BEGIN','でも、ここからが本番！');
  add('05_COMBINATIONS','クリーチャー、スペル、エンチャント――組み合わせ次第で戦い方は大きく広がる。');
  add('05_DECK','お気に入りのカードを組み合わせて、キミだけの戦術と最強のデッキを作ってみよう！');
@@ -7295,10 +7381,10 @@ function presentCpuBattleAction(result,initial=false){
  NormalGameUI.presentHpNumbers(events,'p',impacts);
  CardResourceUI.presentDraws(events,'p');
  if(state.server.gameOver)NormalGameUI.presentBattleOutcome(events,'p',state.players);
- if(TutorialController.active)return;
  if(events.some(e=>e.type==='card:drawn'&&e.reason==='advance-reward'))clearOneStepUndo();
  if(state.server.gameOver)NormalGameUI.cancelTurnPresentation();
  else NormalGameUI.presentAdvanceRewards(events,'p',false,()=>{render();updateUndoButton();});
+ if(TutorialController.active){TutorialController.onBattleEvents(events);return;}
  // An empty guardian revision is a staged choice. Keep the pre-command
  // snapshot until the committed events for the original action arrive.
  if(events.length)NormalGameUI.presentBattleAction(events,{viewer:'p',activeSide:state.activeSide,before:initial?null:cpuBattleBefore,
@@ -7467,7 +7553,7 @@ for(const [side,id] of [['enemy','enemyPedestal'],['player','playerPedestal']]){
 let pieceOverlayResizeQueued=false;
 window.addEventListener("resize",()=>{if(pieceOverlayResizeQueued)return;pieceOverlayResizeQueued=true;requestAnimationFrame(()=>{pieceOverlayResizeQueued=false;renderPieceOverlay()})});
 
-function render(){if(S.gameOver){NormalGameUI.cancelTurnPresentation();NormalGameUI.clearOpponentCards();}CardTacticsBGM.setActive(!S.gameOver&&!document.getElementById("app").classList.contains("gameScreenHidden"));NormalGameUI.renderTurn({activeSide:S.side,viewer:"p",ended:S.gameOver});rememberCpuBattleBoard();NormalGameUI.syncBattleChoice(S.gameOver?null:S.pendingChoice,"p",choosePlayerPopup); const targetHighlights=GameCore.selectedTargets();const combatHighlights=S.piece!==null||S.cpuPreview?GameCore.queryCombat(S.cpuPreview?.from??S.piece):null;updateUndoButton();$("pGrave").textContent=S.graveyards.p.length;$("cGrave").textContent=S.graveyards.c.length;$("pHp").textContent=S.pHp;$("cHp").textContent=S.cHp;document.querySelectorAll(".kingZone").forEach(z=>{const side=z.classList.contains("player")?"p":"c";z.querySelector(".king").textContent=(side==="p"?"あなたの王":"相手の王")+(spellsBlocked(side)?" 🔒封魔":"")});$("mana").textContent=S.manaBySide.p+"/"+S.maxManaBySide.p;$("cpuMana").textContent=S.manaBySide.c+"/"+S.maxManaBySide.c;$("turn").textContent=S.turn;CardResourceUI.render({enemyHand:S.cHand.length,ownDeck:S.deck.length,enemyDeck:S.cDeck.length});$("globalEnchantCount").textContent=activeGlobalEnchantments().length;document.querySelector(".kingZone.enemy").classList.toggle("attackable",S.side==="p"&&S.piece!==null&&!!S.board[S.piece]&&kingAtk(S.board[S.piece],S.piece));
+function render(){if(S.gameOver){NormalGameUI.cancelTurnPresentation();NormalGameUI.clearOpponentCards();}CardTacticsBGM.setActive(!S.gameOver&&!document.getElementById("app").classList.contains("gameScreenHidden"));NormalGameUI.renderTurn({activeSide:S.side,viewer:"p",ended:S.gameOver});rememberCpuBattleBoard();syncCpuBattleChoice(); const targetHighlights=GameCore.selectedTargets();const combatHighlights=S.piece!==null||S.cpuPreview?GameCore.queryCombat(S.cpuPreview?.from??S.piece):null;updateUndoButton();$("pGrave").textContent=S.graveyards.p.length;$("cGrave").textContent=S.graveyards.c.length;$("pHp").textContent=S.pHp;$("cHp").textContent=S.cHp;document.querySelectorAll(".kingZone").forEach(z=>{const side=z.classList.contains("player")?"p":"c";z.querySelector(".king").textContent=(side==="p"?"あなたの王":"相手の王")+(spellsBlocked(side)?" 🔒封魔":"")});$("mana").textContent=S.manaBySide.p+"/"+S.maxManaBySide.p;$("cpuMana").textContent=S.manaBySide.c+"/"+S.maxManaBySide.c;$("turn").textContent=S.turn;CardResourceUI.render({enemyHand:S.cHand.length,ownDeck:S.deck.length,enemyDeck:S.cDeck.length});$("globalEnchantCount").textContent=activeGlobalEnchantments().length;document.querySelector(".kingZone.enemy").classList.toggle("attackable",S.side==="p"&&S.piece!==null&&!!S.board[S.piece]&&kingAtk(S.board[S.piece],S.piece));
 document.querySelectorAll('.kingZone').forEach(z=>{const side=z.classList.contains('enemy')?'c':'p';z.classList.toggle('spellTarget',S.side==='p'&&(targetHighlights.choices.some(a=>R13View.atKing(a,side))||targetHighlights.stage==='none'&&S.card!=null&&S.hand[S.card]==='マナ'&&side==='p'&&targetHighlights.choices.length>0));});
 for(const [id,side] of [['enemyPedestal','enemy'],['playerPedestal','player']]){
  const pedestal=$(id),zone=document.querySelector('.kingZone.'+side);
@@ -8255,13 +8341,23 @@ function chooseGuardianCell(k){
  S.card=null;S.piece=null;S.sorcererMode=false;S.kingAttackMode=false;
  finishPlayerChoice();
 }
+function syncCpuBattleChoice(){
+ let choice=S.gameOver?null:S.pendingChoice;
+ const lesson=TutorialController.active&&choice?.type==='advanceDraw';
+ const drawRequired=lesson&&TutorialController.current.action?.value===true;
+ if(lesson&&!TutorialController.allows('advanceDraw',true))choice=null;
+ NormalGameUI.syncBattleChoice(choice,'p',choosePlayerPopup,true,drawRequired);
+}
 function choosePlayerPopup(kind,accept){
  if(S.gameOver||S.pendingChoice?.side!=='p'||S.pendingChoice.type!==kind)return;
+ const lesson=TutorialController.active;
+ if(lesson&&!TutorialController.allows(kind,accept))return;
  const result=kind==='promotion'
   ?R5Command.choosePromotion(S,accept,CARD_DEFINITIONS)
   :R4Command.execute(S,{type:'chooseAdvanceDraw',side:'p',accept},CARD_DEFINITIONS);
  if(!finishR5Command(result).ok){msg('選択を確定できませんでした。');render();return;}
  finishPlayerChoice();
+ if(lesson)TutorialController.advance();
 }
 
 const cpuWait=async()=>{await waitForPlayerChoice();return CpuPresentation.wait();};
@@ -9128,7 +9224,7 @@ document.querySelectorAll('[data-cpu-speed]').forEach(button=>button.onclick=()=
 document.addEventListener('click',event=>{
  if(!TutorialController.active)return;
  const target=event.target.closest('button,[onclick],.card,.cell');if(!target)return;
- if(target.id==='settingsButton'||target.id==='settingsClose'||target.closest('#settingsOverlay [data-setting=view]')||target.id==='tutorialNext'||target.id==='tutorialBack'||target.closest('.gameTopBar')&&target.textContent.includes('タイトルへ戻る')||target.closest('#hand')||target.closest('#board')||target.id==='enemyPedestal'||target.id==='playerPedestal'||target.matches('.king')||target.id==='endTurn'||target.matches('.useCardButton')&&TutorialController.current.action?.kind==='use')return;
+ if(target.id==='settingsButton'||target.id==='settingsClose'||target.closest('#settingsOverlay [data-setting=view],#turnPopup .advanceDrawChoice')||target.id==='tutorialNext'||target.id==='tutorialBack'||target.closest('.gameTopBar')&&target.textContent.includes('タイトルへ戻る')||target.closest('#hand')||target.closest('#board')||target.id==='enemyPedestal'||target.id==='playerPedestal'||target.matches('.king')||target.id==='endTurn'||target.matches('.useCardButton')&&TutorialController.current.action?.kind==='use')return;
  event.preventDefault();event.stopImmediatePropagation();TutorialController.blockedMessage();
 },true);
 const tutorialOriginalUndo=undoOneAction;

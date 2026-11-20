@@ -799,14 +799,15 @@ function showTurn(activeSide,viewer,done){
  showTurnSequence([stage],done,true);
 }
 function updateChoiceButtons(choice){
- for(const button of choice.buttons)button.disabled=!choice.enabled||choice.submitting;
+ for(const [index,button] of choice.buttons.entries())
+  button.disabled=!choice.enabled||choice.submitting||choice.drawRequired&&index===1;
 }
-function makeBattleChoice(choice,viewer,key,kind,enabled){
+function makeBattleChoice(choice,viewer,key,kind,enabled,drawRequired){
  const own=choice.side===viewer,promotion=kind==='promotion';
  const content=document.createElement('div'),notice=document.createElement('div');
  const title=document.createElement('strong'),detail=document.createElement('small'),buttons=[];
  const stage={kind:promotion?'promotionChoice':'advanceChoice',own,content,hold:true};
- const popup={key,stage,buttons,enabled,submitting:false};
+ const popup={key,stage,buttons,enabled,drawRequired,submitting:false};
  content.className='boardAnnouncement';
  notice.className='turnNotification advanceRewardNotification battleChoiceNotification '+(promotion?'promotionChoice':'advanceDrawChoice');
  notice.dataset.side=choice.side;notice.setAttribute('role','group');
@@ -816,13 +817,17 @@ function makeBattleChoice(choice,viewer,key,kind,enabled){
   ?(own?'受けたダメージを引き継ぎ、行動権・付属効果・所有者を維持します。':'隠密から暗殺者への進化確認')
   :(own?'カードを1枚引きますか？':'相手がドローを選択中…');
  notice.append(title,detail);
+ if(drawRequired){
+  const guide=document.createElement('small');
+  guide.className='tutorialDrawGuide';guide.textContent='今回は「1枚引く」を押してみよう。';notice.append(guide);
+ }
  if(own){
   const actions=document.createElement('div');actions.className='advanceDrawButtons';
   const labels=promotion?['進化する','進化しない']:['1枚引く','引かない'];
   for(const [index,label] of labels.entries()){
    const button=document.createElement('button');button.type='button';button.textContent=label;
    button.onclick=()=>{
-    if(battleChoice!==popup||!popup.enabled||popup.submitting)return;
+    if(battleChoice!==popup||button.disabled)return;
     popup.submitting=true;updateChoiceButtons(popup);
     try{battleChoiceContext.submit(kind,index===0);}
     finally{popup.submitting=false;updateChoiceButtons(popup);}
@@ -834,16 +839,16 @@ function makeBattleChoice(choice,viewer,key,kind,enabled){
  content.append(notice);updateChoiceButtons(popup);
  return popup;
 }
-function syncBattleChoice(choice,viewer,submit,enabled=true){
- battleChoiceContext={choice,viewer,submit,enabled};
+function syncBattleChoice(choice,viewer,submit,enabled=true,drawRequired=false){
+ battleChoiceContext={choice,viewer,submit,enabled,drawRequired};
  const type=choice?.type??choice?.kind;
  const kind=type==='advanceDrawWait'?'advanceDraw':type;
  const key=['advanceDraw','promotion'].includes(kind)&&document.visibilityState==='visible'
-  ?[kind,viewer,choice.side,choice.instanceId,choice.cell].join(':'):null;
+  ?[kind,viewer,choice.side,choice.instanceId,choice.cell,drawRequired].join(':'):null;
  if(battleChoice?.key===key){
   battleChoice.enabled=enabled;updateChoiceButtons(battleChoice);return;
  }
- const previous=battleChoice,popup=key?makeBattleChoice(choice,viewer,key,kind,enabled):null;
+ const previous=battleChoice,popup=key?makeBattleChoice(choice,viewer,key,kind,enabled,drawRequired):null;
  battleChoice=popup;
  if(previous){
   const remove=stages=>{const index=stages.indexOf(previous.stage);if(index!==-1)stages.splice(index,1);};
@@ -960,7 +965,7 @@ window.visualViewport?.addEventListener('scroll',positionBattleOverlays);
 window.addEventListener('scroll',positionBattleOverlays,{passive:true});
 document.addEventListener('visibilitychange',()=>{
  if(document.visibilityState!=='visible'){clearAttackDamage();clearOpponentCards();finishBattleOutcome();finishTurnPresentation();battleChoice=null;}
- else if(battleChoiceContext){const {choice,viewer,submit,enabled}=battleChoiceContext;syncBattleChoice(choice,viewer,submit,enabled);}
+ else if(battleChoiceContext){const {choice,viewer,submit,enabled,drawRequired}=battleChoiceContext;syncBattleChoice(choice,viewer,submit,enabled,drawRequired);}
 });
 window.addEventListener('pagehide',event=>{clearAttackDamage();clearOpponentCards();finishBattleOutcome();if(event.persisted)finishTurnPresentation();else cancelTurnPresentation();});
 document.addEventListener('p2b1:exit',()=>{clearAttackDamage();clearOpponentCards();clearBattleOutcome();});
@@ -997,7 +1002,7 @@ function positionBattleLog(){
  if(!landscapeQuery.matches||!log.open)for(const key of ['width','left','top','max-height','--log-space'])panel.style.removeProperty(key);
  if(!landscapeQuery.matches)return;
  const r=log.querySelector('summary').getBoundingClientRect();
- const explaining=document.body.classList.contains('tutorial-mode')&&tutorialExplanation?.step===4&&tutorialExplanation.glow?.includes('#log');
+ const explaining=document.body.classList.contains('tutorial-mode')&&tutorialExplanation?.glow?.includes('#log');
  const width=Math.min(360,innerWidth-16,explaining?tutorialLogWidthCap??Infinity:Infinity);
  const left=Math.max(8,Math.min((explaining?tutorialLogLeft:null)??r.left,innerWidth-width-8));
  if(!log.open){
@@ -1062,8 +1067,14 @@ function positionTutorialExplanation(){
  const panel=$('infoPanel'),content=$('infoContent');let selectors=tutorialSelectors(step.glow||[]);
  if(step.action?.kind==='use')selectors=[...selectors,'#infoContent .useCardButton'];
  const targets=selectors.flatMap(s=>[...document.querySelectorAll(s)]),infoTarget=targets.find(e=>panel?.contains(e)),logTarget=targets.some(e=>e.id==='log');
- // Scroll only the internal detail scroller, never the page or the board.
+ // Keep the highlighted detail or drawn card inside its own scroller.
  if(infoTarget&&content?.contains(infoTarget)){const a=infoTarget.getBoundingClientRect(),b=content.getBoundingClientRect();if(a.top<b.top||a.bottom>b.bottom)content.scrollTop+=a.top-b.top-4;}
+ const hand=$('hand'),handTarget=targets.find(e=>hand?.contains(e));
+ if(handTarget&&handTarget!==hand){
+  const card=handTarget.getBoundingClientRect(),strip=hand.getBoundingClientRect();
+  if(card.right>strip.right)hand.scrollLeft+=Math.ceil(card.right-strip.right);
+  else if(card.left<strip.left)hand.scrollLeft-=Math.ceil(strip.left-card.left);
+ }
  coach.classList.toggle('tutorialBesideInfo',!!infoTarget);
  const flowLog=logTarget&&!landscapeQuery.matches;
  if(flowLog){
@@ -1073,7 +1084,7 @@ function positionTutorialExplanation(){
   if(tutorialLogScrollPending){tutorialLogScrollPending=false;coach.scrollIntoView({block:'start',behavior:'instant'});}return;
  }
  restoreLayoutNode(coach);coach.classList.remove('tutorialAtLog');
- if(landscapeQuery.matches){const host=infoTarget?document.querySelector('.boardColumn'):panel,r=host.getBoundingClientRect();coach.style.left=Math.max(4,r.left+6)+'px';coach.style.width=Math.max(195,Math.min(infoTarget?350:r.width-12,r.width-12))+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';coach.style.top=Math.max(4,r.bottom-coach.offsetHeight-6)+'px';if(logTarget&&step.step===4)positionTutorialLog(coach);}
+ if(landscapeQuery.matches){const host=infoTarget?document.querySelector('.boardColumn'):panel,r=host.getBoundingClientRect();coach.style.left=Math.max(4,r.left+6)+'px';coach.style.width=Math.max(195,Math.min(infoTarget?350:r.width-12,r.width-12))+'px';coach.style.maxHeight=Math.max(100,r.height-12)+'px';coach.style.bottom='auto';coach.style.right='auto';coach.style.top=Math.max(4,r.bottom-coach.offsetHeight-6)+'px';if(logTarget)positionTutorialLog(coach);}
 
  else{for(const k of ['left','top','width','max-height','bottom','right','overflow-y','transform'])coach.style.removeProperty(k);}
 }
