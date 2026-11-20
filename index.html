@@ -1220,6 +1220,16 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 .resourceDeckLabel{color:#dae4ed;font:700 10px/1.15 system-ui;max-width:49px;text-shadow:0 1px 2px #000}
 #drawFlightLayer{position:fixed;inset:0;z-index:890;pointer-events:none}
 .drawFlight{position:absolute;width:18px;height:26px;pointer-events:none;will-change:transform}
+
+#storyScreen[hidden],#storyScreen [hidden],#storyContinue[hidden]{display:none!important}
+#storyScreen{position:fixed;inset:0;z-index:1600;overflow:auto;padding:max(16px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(18px,env(safe-area-inset-bottom));background:#fff4df;color:#24344a;font-family:system-ui,sans-serif;box-sizing:border-box}
+#storyScreen button{font:inherit;cursor:pointer;touch-action:manipulation;min-height:48px;border:2px solid #24344a;border-radius:14px;color:#24344a;background:#fff;box-shadow:3px 4px 0 #24344a;padding:12px 18px}
+#storyScreen button:focus-visible{outline:4px solid #df4774;outline-offset:4px}
+.storyHeader{max-width:880px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px}.storyEyebrow{font-size:11px;font-weight:800;letter-spacing:.12em}.storyHeader h1{font-size:clamp(22px,4vw,32px);margin:7px 0 15px}.storyHeader button{flex-shrink:0;font-size:14px!important}
+#storyMap,#storyConversation{max-width:760px;margin:12px auto}.storyMessage{background:#fff;border-left:6px solid #df4774;border-radius:14px;padding:16px 20px;line-height:1.65}.storyMessage p{margin:8px 0 0}.storyCity{height:clamp(230px,40vh,350px);position:relative;margin:22px 0 12px;border:3px solid #24344a;border-radius:24px;background:repeating-linear-gradient(90deg,#dbeadd 0 90px,#fff9e9 90px 110px);overflow:hidden}.storyBlock{position:absolute;background:#ffce79;border:2px solid #24344a;border-radius:12px;padding:16px}.block1{top:20px;left:7%}.block2{top:25px;right:8%;background:#a9d9b8}.block3{bottom:20px;left:8%;background:#a6ccea}.storyRoad{position:absolute;left:0;right:0;top:48%;height:30px;background:#fff9e9;border-block:2px dashed #b6b9ac}#storyDestination{position:absolute;right:10%;bottom:18px;background:#ff8aab!important;font-weight:800!important}.storyHint{text-align:center;font-size:14px}
+.storyScene{padding:18px;text-align:center;background:#b8dce4;border:3px solid #24344a;border-radius:22px}.storyScene>span{font-size:42px}.storyScene p{margin:0 0 12px;font-size:13px}.storyPeople{display:flex;justify-content:center;gap:32px}.storyPeople span{border:2px solid #24344a;border-radius:50% 50% 12px 12px;padding:18px 24px;background:#fff3d4;opacity:.65}.storyPeople .speaking{background:#ffca64;opacity:1;box-shadow:0 0 0 4px #fff}
+#storyDialogue{display:flex;flex-direction:column;gap:12px;width:100%;text-align:left;margin-top:18px;padding:20px!important;line-height:1.8;min-height:180px!important}#storyDialogue:disabled{opacity:1;cursor:default}#storySpeaker{color:#b02b57;font-size:18px}#storyLine{font-size:clamp(18px,2.4vw,22px);white-space:pre-line}#storyHint{align-self:flex-end;font-size:12px;color:#5b6473}#storyBattle{display:block;margin:20px auto;background:#ffca64!important;font-weight:bold!important;min-width:180px}#storyEnd{text-align:center;margin:20vh auto}#storyEnd p{font-size:32px;font-weight:800}
+@media(orientation:landscape) and (max-height:540px){.storyHeader h1{font-size:22px;margin:3px 0}.storyHeader{max-width:1000px}#storyConversation{display:grid;grid-template-columns:35% 1fr;gap:16px;max-width:1000px;align-items:start}.storyScene{padding:14px 8px}.storyPeople{gap:12px}.storyPeople span{padding:14px}#storyDialogue{margin:0;min-height:160px!important}#storyBattle{grid-column:2;margin:0 auto}.storyMessage{padding:8px 16px}.storyCity{height:210px;margin-top:12px}}
 </style><style>dialog.surrenderConfirm{max-width:min(90vw,420px);border:2px solid #bfa76a;border-radius:14px;padding:24px;background:#182432;color:#fff;box-shadow:0 12px 50px #0009}dialog.surrenderConfirm::backdrop{background:#0009}.surrenderActions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}#surrenderClose{position:absolute;right:8px;top:6px;background:transparent}#surrenderContinue:focus-visible,#surrenderConfirm:focus-visible{outline:3px solid #ffe095;outline-offset:3px}#surrenderGame[hidden]{display:none!important}</style><style>.resultActions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}.resultActions button[hidden]{display:none!important}</style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1229,10 +1239,10 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-tutorial-playtest-v80">ver p3-tutorial-playtest-v80</div>
+  <div class="titleVersion" data-build="p3-story-episode1-v81">ver p3-story-episode1-v81</div>
   <p id="benchmarkTrialLabel">クリーチャー基準・試験版</p><div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
-    <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
+    <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button id="storyEntry" type="button">ストーリー</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
     <button type="button" onclick="openDeckBuilder()">デッキ編成</button>
   </div>
 </div>
@@ -6765,7 +6775,7 @@ async function exclusive(fn){try{if(globalThis.navigator?.locks)return await nav
 async function openAsync(){const result=await exclusive(open);return result?.state?result:{...read(),blocked:true,error:result.error};}
 function active(){const s=read();return {name:s.state.active.name,counts:copy(s.state.active.counts),error:s.error};}
 function diagnostics(){return JSON.stringify({version:1,events},null,2);}
-return {key,backupKey,historyKey,diagnosticKey,capacity:5,validName,same,open,openAsync,read,write,writeAsync:(s,n)=>exclusive(()=>write(s,n)),active,diagnostics,cardIds(){return rules.toCardIds(active().counts)||rules.toCardIds(rules.defaultCounts());}};
+return {key,backupKey,historyKey,diagnosticKey,capacity:5,initialCardIds(){return rules.toCardIds(initialCounts).slice();},validName,same,open,openAsync,read,write,writeAsync:(s,n)=>exclusive(()=>write(s,n)),active,diagnostics,cardIds(){return rules.toCardIds(active().counts)||rules.toCardIds(rules.defaultCounts());}};
 });
 
 (function(root,factory){const api={create:factory};if(typeof module==='object'&&module.exports)module.exports=api;else root.CardTacticsDeckCode=api;})(globalThis,function(definitions,rules,validName){
@@ -9023,7 +9033,7 @@ async function runTacticalCpu(difficulty) {
   }
 }
 
-async function cpu(){if(!TutorialController.active&&["tactical","gachi"].includes(VisualSettings.state.cpuDifficulty))return runTacticalCpu(VisualSettings.state.cpuDifficulty);if(S.side==="c"&&!S.gameOver){await cpuCreatureAbilities();await cpuRoyalWind();await cpuThreeCards();await cpuTargetSpells();}
+async function cpu(){if(!TutorialController.active&&["tactical","gachi"].includes((globalThis.StoryController?.inBattle?StoryController.episode.match.difficulty:VisualSettings.state.cpuDifficulty)))return runTacticalCpu((globalThis.StoryController?.inBattle?StoryController.episode.match.difficulty:VisualSettings.state.cpuDifficulty));if(S.side==="c"&&!S.gameOver){await cpuCreatureAbilities();await cpuRoyalWind();await cpuThreeCards();await cpuTargetSpells();}
   if(S.gameOver||S.side!=="c")return;
   // この検証版では、封魔を使えるならほかのカードより先に使用する。
   const sealIndex=S.cHand.indexOf("封魔");
@@ -9113,7 +9123,7 @@ async function cpu(){if(!TutorialController.active&&["tactical","gachi"].include
   if(S.gameOver)return;
   // 「つよい」はここからクリーチャー行動だけを攻撃型1手先読みに差し替える。
   // 「よわい」はこの分岐を通らず、以下の従来アルゴリズムをそのまま実行する。
-  if(VisualSettings.state.cpuDifficulty==="strong"){
+  if((globalThis.StoryController?.inBattle?StoryController.episode.match.difficulty:VisualSettings.state.cpuDifficulty)==="strong"){
     await strongCpuCreaturePhase();
     if(S.pHp<=0||S.gameOver)return;
     finishCpuTurn();return;
@@ -9169,7 +9179,7 @@ $("playAgain").onclick=()=>{
   sessionStorage.setItem("cardTacticsStartInGame","1");
   location.reload();
 };
-function initializeCpuDeckMatch(){initializeMatchRandom();S.deck=playerDeck();S.cDeck=CpuDeckSettings.forMatch();publishCoreCommand(R12Core.initializeLegacyMatch(S,undefined,chooseCpuFirstSide(),true),true);render();}
+function initializeCpuDeckMatch(){initializeMatchRandom();S.deck=globalThis.StoryController?.inBattle?StoryController.deckFor("player"):playerDeck();S.cDeck=globalThis.StoryController?.inBattle?StoryController.deckFor("friend"):CpuDeckSettings.forMatch();publishCoreCommand(R12Core.initializeLegacyMatch(S,undefined,chooseCpuFirstSide(),true),true);render();}
 
 
 // Visual settings: deliberately independent from game rules/state.
@@ -9297,7 +9307,7 @@ return {actions,create};
  const replay=document.getElementById('playAgain'),title=document.getElementById('resultToTitle');
  const context=()=>({mode:S.mode,tutorial:TutorialController.active,ended:S.gameOver});
  const controller=P2ResultNavigation.create({context,storage:sessionStorage,stop:()=>{a4StopPresentation();clearOneStepUndo();},onExit:detail=>document.dispatchEvent(new CustomEvent('p2b1:exit',{detail})),navigate:()=>location.reload()});
- function refresh(){const allowed=P2ResultNavigation.actions(context());replay.hidden=!allowed.includes('replay');replay.disabled=replay.hidden||controller.leaving;title.hidden=!allowed.includes('title');title.disabled=title.hidden||controller.leaving;if(S.gameOver&&S.draw&&!TutorialController.active){document.getElementById('resultTitle').textContent='引き分け';document.getElementById('resultText').textContent='この対戦は引き分けです。';}}
+ function refresh(){globalThis.StoryController?.refreshResult();const allowed=globalThis.StoryController?.inBattle?[]:P2ResultNavigation.actions(context());replay.hidden=!allowed.includes('replay');replay.disabled=replay.hidden||controller.leaving;title.hidden=!allowed.includes('title');title.disabled=title.hidden||controller.leaving;if(S.gameOver&&S.draw&&!TutorialController.active){document.getElementById('resultTitle').textContent='引き分け';document.getElementById('resultText').textContent='この対戦は引き分けです。';}}
  function exit(action,options){const result=controller.exit(action,options);refresh();return result;}
  replay.onclick=()=>exit('replay');title.onclick=()=>exit('title');
  const originalTitle=returnToTitle;returnToTitle=function(){if(TutorialController.active)return originalTitle();return exit('title');};
@@ -9308,4 +9318,85 @@ return {actions,create};
 })();
 
 </script>
-</body></html>
+<section id="storyScreen" hidden aria-labelledby="storyHeading">
+ <header class="storyHeader"><div><span class="storyEyebrow">CARD × TACTICS / STORY</span><h1 id="storyHeading"></h1></div><button id="storyExit" type="button">タイトルへ</button></header>
+ <div id="storyMap"><div class="storyMessage"><b>友人からのメッセージ</b><p id="storyMessageText"></p></div>
+ <div class="storyCity" aria-label="街の簡易地図"><div class="storyBlock block1">駅</div><div class="storyBlock block2">公園</div><div class="storyBlock block3">商店街</div><div class="storyRoad"></div><button id="storyDestination" type="button"><span aria-hidden="true">📍</span><br>待ち合わせ場所</button></div><p class="storyHint">目的地をタップして向かおう</p></div>
+ <div id="storyConversation" hidden><div class="storyScene" aria-hidden="true"><span>☕</span><p>待ち合わせのテーブル</p><div class="storyPeople"><span id="storyHero">主人公</span><span id="storyFriend">友人</span></div></div>
+ <button id="storyDialogue" type="button" aria-label="会話を送る"><strong id="storySpeaker"></strong><span id="storyLine" aria-live="polite"></span><small id="storyHint"></small></button>
+ <button id="storyBattle" type="button" hidden>対戦する</button></div>
+ <div id="storyEnd" hidden><p>第1話 おわり</p><button id="storyEndTitle" type="button">タイトルへ</button></div>
+</section>
+<script>// Narrative, encounter configuration and result routes, independent of DOM rendering.
+const StoryEpisodes = Object.freeze({
+ episode1: {
+  title:'第1話「一戦だけ！」', destination:'待ち合わせ場所',
+  message:'面白いゲーム見つけた。ちょっと付き合って',
+  match:{playerDeck:'initial',friendDeck:'initial',difficulty:'weak'},
+  before:[
+   ['友人','『CARD×TACTICS』って知ってる？　お前の分のデッキも組んできた'],
+   ['主人公','俺が『知らない』って答えるところまで見込んでるじゃん'],
+   ['友人','うん。あと負けたときに言うことも考えてきた'],
+   ['主人公','そこはデッキをもうちょっと考えてこいよ']
+  ],
+  resultRoutes:{
+   p:[['友人','……で、これが負けたときに言う予定だった『今のは練習』です'],['主人公','発表用に仕上げてきたんだ']],
+   c:[['主人公','さっきの、負けたときに言うやつ貸して'],['友人','いいよ。せーの'],['主人公','今のは練習！']],
+   draw:[]
+  },
+  closing:[['','（友人がカードショップの大会チラシをテーブルに置く）'],['主人公','……その大会、いつ？'],['友人','お、出る？'],['主人公','その前に、もう一戦']]
+ }
+});
+
+// Session-only story state. Leaving a battle uses the existing title/reload path.
+const StoryController = globalThis.StoryController = (()=>{
+ const episode=StoryEpisodes.episode1,el=id=>document.getElementById(id);
+ let phase='idle',lines=[],index=0,lastAdvance=0;
+ const next=document.createElement('button');next.id='storyContinue';next.type='button';next.textContent='会話へ進む';next.hidden=true;
+ el('resultToTitle').parentNode.append(next);
+ function show(id){for(const name of ['storyMap','storyConversation','storyEnd'])el(name).hidden=name!==id;}
+ function dialogue(){
+  const [speaker,text]=lines[index];el('storySpeaker').textContent=speaker||' ';el('storyLine').textContent=text;
+  el('storyHero').classList.toggle('speaking',speaker==='主人公');el('storyFriend').classList.toggle('speaking',speaker==='友人');
+  const ready=phase==='before'&&index===lines.length-1;
+  el('storyBattle').hidden=!ready;el('storyDialogue').disabled=ready;
+  el('storyHint').textContent=ready?'準備ができたら「対戦する」': 'タップ / クリックで次へ';
+ }
+ function start(){
+  if(phase!=='idle')return;
+  phase='map';index=0;el('storyHeading').textContent=episode.title;el('storyMessageText').textContent=episode.message;
+  el('titleScreen').style.display='none';el('storyScreen').hidden=false;show('storyMap');el('storyDestination').focus();
+ }
+ function advance(){
+  if(!['before','after'].includes(phase)||performance.now()-lastAdvance<180)return;
+  lastAdvance=performance.now();
+  if(index<lines.length-1){index++;dialogue();return;}
+  if(phase==='after'){phase='end';show('storyEnd');el('storyEndTitle').focus();}
+ }
+ function battle(){
+  if(phase!=='before'||index!==lines.length-1)return;
+  phase='battle';el('storyBattle').disabled=true;el('storyScreen').hidden=true;
+  el('cpuDeckMatchNotice').textContent='第1話：友人との対戦 ／ 貸出：初期デッキ ／ よわい';el('cpuDeckMatchNotice').hidden=false;
+  startGameScreen();
+ }
+ function refreshResult(){next.hidden=phase!=='battle'||!S.gameOver;}
+ function after(){
+  if(phase!=='battle'||!S.gameOver)return;
+  phase='after';a4StopPresentation();clearOneStepUndo();CardTacticsBGM.setActive(false);
+  el('overlay').classList.remove('show');document.body.classList.remove('result-open');el('app').classList.add('gameScreenHidden');
+  next.hidden=true;lines=[...(episode.resultRoutes[S.draw?'draw':S.winner]||[]),...episode.closing];index=0;
+  el('storyScreen').hidden=false;show('storyConversation');dialogue();el('storyDialogue').focus();
+ }
+ function exit(){sessionStorage.removeItem('cardTacticsStartInGame');returnToTitle();}
+ el('storyEntry').onclick=start;
+ el('storyDestination').onclick=()=>{if(phase!=='map')return;phase='before';lines=episode.before;index=0;show('storyConversation');dialogue();el('storyDialogue').focus();};
+ el('storyDialogue').onclick=advance;el('storyBattle').onclick=battle;next.onclick=after;
+ el('storyExit').onclick=exit;el('storyEndTitle').onclick=exit;
+ // Prevent changing only the story encounter's CPU settings, while retaining all saved values.
+ const cpuGroup=el('settingsOverlay').querySelector('[data-setting="cpuDifficulty"]').parentElement;
+ const deckGroup=el('cpuDeckChoice').closest('.settingsGroup');
+ el('settingsButton').addEventListener('click',()=>{cpuGroup.hidden=phase==='battle';deckGroup.hidden=phase==='battle';});
+ function deckFor(side){if(episode.match[side+'Deck']!=='initial')throw Error('Unknown story deck');return sh(DeckLibrary.initialCardIds());}
+ return {episode,deckFor,get phase(){return phase;},get inBattle(){return phase==='battle';},refreshResult};
+})();
+</script></body></html>

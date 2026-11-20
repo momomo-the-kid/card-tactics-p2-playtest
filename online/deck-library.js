@@ -90,5 +90,5 @@ async function exclusive(fn){try{if(globalThis.navigator?.locks)return await nav
 async function openAsync(){const result=await exclusive(open);return result?.state?result:{...read(),blocked:true,error:result.error};}
 function active(){const s=read();return {name:s.state.active.name,counts:copy(s.state.active.counts),error:s.error};}
 function diagnostics(){return JSON.stringify({version:1,events},null,2);}
-return {key,backupKey,historyKey,diagnosticKey,capacity:5,validName,same,open,openAsync,read,write,writeAsync:(s,n)=>exclusive(()=>write(s,n)),active,diagnostics,cardIds(){return rules.toCardIds(active().counts)||rules.toCardIds(rules.defaultCounts());}};
+return {key,backupKey,historyKey,diagnosticKey,capacity:5,initialCardIds(){return rules.toCardIds(initialCounts).slice();},validName,same,open,openAsync,read,write,writeAsync:(s,n)=>exclusive(()=>write(s,n)),active,diagnostics,cardIds(){return rules.toCardIds(active().counts)||rules.toCardIds(rules.defaultCounts());}};
 });
