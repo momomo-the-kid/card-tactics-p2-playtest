@@ -1283,7 +1283,7 @@ globalThis.cpuSessionStorage = cpuPageStorage('sessionStorage');
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-attribute-mana-v82">ver p3-attribute-mana-v82</div>
+  <div class="titleVersion" data-build="p3-attribute-mana-decks-v83">ver p3-attribute-mana-decks-v83</div>
   <p id="benchmarkTrialLabel">クリーチャー基準・試験版</p><div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
     <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button id="storyEntry" type="button">ストーリー</button><a id="attributeEntry" href="./?mode=attribute-mana">属性マナ試作</a><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
@@ -9728,22 +9728,40 @@ const StoryController = globalThis.StoryController = (()=>{
   else root.AttributeManaDecks = factory();
 })(globalThis, function() {
   'use strict';
-  const neutral = {歩兵: 4, 銀級兵: 3, 金級兵: 2, 槍兵: 3, 前線兵: 3};
-  return Object.freeze({
-    red: Object.freeze({name: '赤単色', counts: Object.freeze({...neutral,
-      ゴブリン: 4, 戦列兵: 3, 盗賊: 3, 歴戦の傭兵: 3, ファイヤーボルト: 3,
-      サラマンダー: 3, バーサーク: 2, 崩れゆく巨像: 2, 狂信者: 2})}),
-    blue: Object.freeze({name: '青単色', counts: Object.freeze({...neutral,
-      ポーン: 4, ホープ: 3, チャリオット: 3, マナ: 3, 竜巻: 3,
-      ヒーラー: 2, ソーサラー: 3, 踊り子: 2, 隠密: 2})}),
-    mixed: Object.freeze({name: '赤青混合', counts: Object.freeze({...neutral,
-      ゴブリン: 3, ポーン: 3, 盗賊: 3, 戦列兵: 2, 歴戦の傭兵: 3,
-      ファイヤーボルト: 3, ホープ: 2, 踊り子: 2, 竜巻: 2, マナ: 2})})
+  const neutral = {銀級兵: 3, 金級兵: 2, 槍兵: 3, 前線兵: 3};
+  const v82Defaults = {};
+  function preset(id, name, retained, removed, added) {
+    const counts = {...neutral, ...retained};
+    v82Defaults[id] = {...counts, 歩兵: 4, ...removed};
+    return Object.freeze({name, counts: Object.freeze({...counts, ...added})});
+  }
+  const presets = Object.freeze({
+    red: preset('red', '赤単色',
+      {戦列兵: 3, 盗賊: 3, ファイヤーボルト: 3, サラマンダー: 3, バーサーク: 2, 狂信者: 2},
+      {ゴブリン: 4, 崩れゆく巨像: 2, 歴戦の傭兵: 3},
+      {ディアブロ: 2, 精鋭兵: 2, 憤怒の悪鬼: 3, グラディエーター: 3, 遊撃騎兵: 3}),
+    blue: preset('blue', '青単色',
+      {ホープ: 3, チャリオット: 3, マナ: 3, 竜巻: 3, ヒーラー: 2, ソーサラー: 3, 踊り子: 2, 隠密: 2},
+      {ポーン: 4},
+      {求道者: 4, 占い師: 2, 戦術指揮官: 2}),
+    mixed: preset('mixed', '赤青混合',
+      {盗賊: 3, 戦列兵: 2, ファイヤーボルト: 3, ホープ: 2, 踊り子: 2, 竜巻: 2, マナ: 2},
+      {ポーン: 3, ゴブリン: 3, 歴戦の傭兵: 3},
+      {求道者: 4, 覇王の参謀: 3, ヒーラー: 3, 狂信者: 3})
   });
+
+  function isV82Default(id, counts) {
+    const previous = v82Defaults[id];
+    return Object.entries(previous).every(([card, count]) => counts[card] === count)
+      && Object.entries(counts).every(([card, count]) => count === (previous[card] ?? 0));
+  }
+
+  return {presets, isV82Default};
 });
 
 globalThis.AttributeManaScreen = (() => {
-  const M = R12Core.attributeMana, decks = AttributeManaDecks;
+  const M = R12Core.attributeMana;
+  const {presets: decks, isV82Default} = AttributeManaDecks;
   const el = id => document.getElementById(id);
   const labels = {red: '赤', blue: '青', neutral: '無属性'};
   const short = {...labels, neutral: '無'};
@@ -9758,7 +9776,9 @@ globalThis.AttributeManaScreen = (() => {
   const enter = el('attributeStart'), status = el('attributeDeckStatus');
   const definitions = CARD_DEFINITIONS;
   const startLabel = '対戦を始める';
-  let edited = {}, saveError = '';
+  const edited = {};
+  let saveError = '';
+  const countsFor = id => edited[id] ?? decks[id].counts;
 
   function validDraft(counts) {
     return DeckValidation.isRecord(counts)
@@ -9769,8 +9789,10 @@ globalThis.AttributeManaScreen = (() => {
     let data;
     try { data = JSON.parse(cpuLocalStorage.getItem(storageKey)); }
     catch { saveError = '試作データを読み込めませんでした。'; }
-    for (const [id, entry] of Object.entries(decks)) {
-      edited[id] = validDraft(data?.edited?.[id]) ? data.edited[id] : {...entry.counts};
+    for (const id of Object.keys(decks)) {
+      const counts = data?.edited?.[id];
+      // v82 saved every slot even after merely switching the selected preset.
+      if (validDraft(counts) && (data.version === 2 || !isV82Default(id, counts))) edited[id] = counts;
     }
     playerSelect.value = Object.hasOwn(decks, data?.player) ? data.player : 'mixed';
     cpuSelect.value = Object.hasOwn(decks, data?.cpu) ? data.cpu : 'mixed';
@@ -9778,13 +9800,13 @@ globalThis.AttributeManaScreen = (() => {
   }
   function save() {
     try {
-      cpuLocalStorage.setItem(storageKey, JSON.stringify({edited, player: playerSelect.value, cpu: cpuSelect.value}));
+      cpuLocalStorage.setItem(storageKey, JSON.stringify({version: 2, edited, player: playerSelect.value, cpu: cpuSelect.value}));
       saveError = '';
     } catch { saveError = '試作データを保存できませんでした。'; }
   }
   function deckFor(side) {
     const value = side === 'p' ? playerSelect.value : cpuSelect.value;
-    return sh(DeckValidation.toCardIds(edited[value]));
+    return sh(DeckValidation.toCardIds(countsFor(value)));
   }
   function text(id) {
     const {color, cost, required} = M.requirement(id, definitions[id]);
@@ -9806,10 +9828,10 @@ globalThis.AttributeManaScreen = (() => {
     return b;
   }
   function updateSetup() {
-    const totals = [playerSelect, cpuSelect].map(select => DeckValidation.total(edited[select.value]));
+    const totals = [playerSelect, cpuSelect].map(select => DeckValidation.total(countsFor(select.value)));
     enter.disabled = totals.some(total => total !== 40);
     enter.textContent = enter.disabled ? '双方のデッキを40枚にしてください' : startLabel;
-    const counts = edited[editSelect.value], total = DeckValidation.total(counts);
+    const counts = countsFor(editSelect.value), total = DeckValidation.total(counts);
     status.textContent = [decks[editSelect.value].name + ' ' + total + ' / 40枚', saveError].filter(Boolean).join('　');
     const filter = el('attributeFilter').value.trim(), color = el('attributeColorFilter').value;
     const rows = [];
@@ -9838,7 +9860,7 @@ globalThis.AttributeManaScreen = (() => {
     cardList.replaceChildren(...rows);
   }
   function change(id, delta, direction) {
-    const counts = edited[editSelect.value];
+    const counts = edited[editSelect.value] ??= {...decks[editSelect.value].counts};
     counts[id] = (counts[id] ?? 0) + delta;
     save();
     updateSetup();
@@ -10011,7 +10033,7 @@ globalThis.AttributeManaScreen = (() => {
     }
   }
   function start() {
-    if (setup.hidden || enter.disabled || ![playerSelect, cpuSelect].every(item => DeckValidation.valid(edited[item.value]))) return;
+    if (setup.hidden || enter.disabled || ![playerSelect, cpuSelect].every(item => DeckValidation.valid(countsFor(item.value)))) return;
     setup.hidden = true;
     const note = el('cpuDeckMatchNotice');
     note.textContent = '属性マナ試作 ｜ 自分 ' + decks[playerSelect.value].name + '・CPU ' + decks[cpuSelect.value].name;
@@ -10030,7 +10052,7 @@ globalThis.AttributeManaScreen = (() => {
     for (const id of ['attributeEditDeck', 'attributeFilter', 'attributeColorFilter', 'attributeInDeck'])
       el(id).addEventListener('input', updateSetup);
     el('attributeResetDeck').addEventListener('click', () => {
-      edited[editSelect.value] = {...decks[editSelect.value].counts};
+      delete edited[editSelect.value];
       save();
       updateSetup();
     });
