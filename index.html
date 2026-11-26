@@ -1230,8 +1230,52 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 .storyScene{padding:18px;text-align:center;background:#b8dce4;border:3px solid #24344a;border-radius:22px}.storyScene>span{font-size:42px}.storyScene p{margin:0 0 12px;font-size:13px}.storyPeople{display:flex;justify-content:center;gap:32px}.storyPeople span{border:2px solid #24344a;border-radius:50% 50% 12px 12px;padding:18px 24px;background:#fff3d4;opacity:.65}.storyPeople .speaking{background:#ffca64;opacity:1;box-shadow:0 0 0 4px #fff}
 #storyDialogue{display:flex;flex-direction:column;gap:12px;width:100%;text-align:left;margin-top:18px;padding:20px!important;line-height:1.8;min-height:180px!important}#storyDialogue:disabled{opacity:1;cursor:default}#storySpeaker{color:#b02b57;font-size:18px}#storyLine{font-size:clamp(18px,2.4vw,22px);white-space:pre-line}#storyHint{align-self:flex-end;font-size:12px;color:#5b6473}#storyBattle{display:block;margin:20px auto;background:#ffca64!important;font-weight:bold!important;min-width:180px}#storyEnd{text-align:center;margin:20vh auto}#storyEnd p{font-size:32px;font-weight:800}
 @media(orientation:landscape) and (max-height:540px){.storyHeader h1{font-size:22px;margin:3px 0}.storyHeader{max-width:1000px}#storyConversation{display:grid;grid-template-columns:35% 1fr;gap:16px;max-width:1000px;align-items:start}.storyScene{padding:14px 8px}.storyPeople{gap:12px}.storyPeople span{padding:14px}#storyDialogue{margin:0;min-height:160px!important}#storyBattle{grid-column:2;margin:0 auto}.storyMessage{padding:8px 16px}.storyCity{height:210px;margin-top:12px}}
+#attributeSetup:not([hidden]){display:block;width:min(100%,740px);margin:0 auto;padding:16px max(16px,env(safe-area-inset-right)) 24px max(16px,env(safe-area-inset-left));color:#f4f4f4}
+#attributeSetup h1{margin:0;font-size:clamp(1.4rem,4.5vw,2rem)}
+.attributeHeading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.attributeHeading a,#attributeSetup summary{color:#b9dcff}
+.attributeHeading [data-attribute-build]{color:#bcc5d3;font-size:.8rem;margin:.35em 0}
+.attributeDeckChoices,.attributeEditorControls{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:12px 0}
+#attributeSetup label{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+#attributeSetup :is(select,input),#attributeDialog select{color:#f4f4f4;background:#1b2634;border:1px solid #8298ad;border-radius:6px;min-height:36px;font:inherit;padding:4px}
+#attributeEditor{border-top:1px solid #536071;margin:18px 0 0;padding-top:12px}
+#attributeEditor summary{cursor:pointer;padding:8px 0}
+#attributeCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,285px),1fr));gap:5px 10px}
+.attributeDeckRow{display:grid;grid-template-columns:minmax(0,1fr) 34px 2ch 34px;align-items:center;gap:5px;padding:4px;border-bottom:1px solid #536071}
+.attributeDeckRow button{padding:3px;margin:0;min-height:36px}
+.attributeDeckRow small{display:block}
+#attributeDialog{background:#202b3b;color:#f4f4f4;border:1px solid #8298ad;border-radius:12px;box-sizing:border-box;width:min(calc(100% - 24px),450px);max-height:calc(100% - 24px);padding:14px}
+#attributeDialog::backdrop{background:#12161b99}
+#attributeDialog h2{font-size:1.25rem;margin:0 0 8px}
+#attributeDialogHelp{font-size:.95rem;margin:0 0 10px}
+#attributeDialog button{margin:3px;min-height:40px}
+#attributeDialog [hidden]{display:none}
+#attributeDialogContent label{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 8px}
+#attributeDialogContent ol{margin:0 0 8px;padding-left:1.6em;columns:2}
+#attributeEntry{padding:12px;background:#4d86c7;color:white;border-radius:10px;text-decoration:none;font-weight:700}
+body.attribute-mana-page [data-setting="cpuDifficulty"],body.attribute-mana-page #cpuDeckChoice{display:none}
+body.attribute-mana-page #cpuDeckMatchNotice{margin-block:4px;font-size:12px}
+body.attribute-mana-page #app .manaStat{width:128px}
+body.attribute-mana-page #app .manaStat :is(.manaOwner,.manaGlyph,b){display:none}
+#app .attributePool{display:flex;gap:3px;align-items:center;justify-content:center;font:700 10px/1.1 system-ui;margin:0;padding:0;background:none;border:none;min-width:0;min-height:0;white-space:nowrap;color:inherit;touch-action:manipulation}
+#app .attributePool:focus-visible{outline:2px solid #fff;outline-offset:2px}
+#app .attributePool .attributeUsed{color:#fff3b3}
+.attributeColor.red{color:#ff9b91}.attributeColor.blue{color:#8cd2ff}.attributeColor.neutral{color:#e3e7ed}
+body.attribute-mana-page #hand .attributeCost{font-size:11px;line-height:1.25;white-space:normal}
 </style><style>dialog.surrenderConfirm{max-width:min(90vw,420px);border:2px solid #bfa76a;border-radius:14px;padding:24px;background:#182432;color:#fff;box-shadow:0 12px 50px #0009}dialog.surrenderConfirm::backdrop{background:#0009}.surrenderActions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}#surrenderClose{position:absolute;right:8px;top:6px;background:transparent}#surrenderContinue:focus-visible,#surrenderConfirm:focus-visible{outline:3px solid #ffe095;outline-offset:3px}#surrenderGame[hidden]{display:none!important}</style><style>.resultActions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}.resultActions button[hidden]{display:none!important}</style>
-<meta name="apple-mobile-web-app-capable" content="yes">
+<script>// Keep the trial's UI, sound and deck storage separate, including on replay.
+const isAttributeManaPage = new URLSearchParams(location.search).get('mode') === 'attribute-mana';
+function cpuPageStorage(kind) {
+  const key = name => isAttributeManaPage ? 'cardTacticsAttributeMana:' + name : name;
+  return {
+    getItem(name) { return globalThis[kind].getItem(key(name)); },
+    setItem(name, value) { globalThis[kind].setItem(key(name), value); },
+    removeItem(name) { globalThis[kind].removeItem(key(name)); }
+  };
+}
+globalThis.cpuLocalStorage = cpuPageStorage('localStorage');
+globalThis.cpuSessionStorage = cpuPageStorage('sessionStorage');
+</script><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="CARD × TACTICS">
 <link rel="manifest" href="./manifest.webmanifest">
@@ -1239,10 +1283,10 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 </head><body>
 <div id="titleScreen">
   <h1 class="titleLogo">CARD×TACTICS</h1>
-  <div class="titleVersion" data-build="p3-story-episode1-v81">ver p3-story-episode1-v81</div>
+  <div class="titleVersion" data-build="p3-attribute-mana-v82">ver p3-attribute-mana-v82</div>
   <p id="benchmarkTrialLabel">クリーチャー基準・試験版</p><div class="titleMenu">
     <button type="button" onclick="startTutorial()">チュートリアル</button>
-    <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button id="storyEntry" type="button">ストーリー</button><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
+    <p class="activeDeckLabel" role="status"></p><p id="cpuDeckTitle" role="status"></p><button id="cpuTitleSettings" type="button">CPU設定</button><button id="storyEntry" type="button">ストーリー</button><a id="attributeEntry" href="./?mode=attribute-mana">属性マナ試作</a><button type="button" onclick="startGameScreen()">ゲームプレイ</button><a id="onlineEntry" href="./online/" style="padding:12px;background:#4d86c7;color:white;border-radius:10px">オンライン対戦</a>
     <button type="button" onclick="openDeckBuilder()">デッキ編成</button>
   </div>
 </div>
@@ -1279,7 +1323,7 @@ body.view-left .overlayPiece.combatHUD .overlayOrb{transform:translate(-50%,-50%
 (function(root,factory){
  if(typeof module==='object'&&module.exports)module.exports=factory;
  else if(!root.CardTacticsBGM)root.CardTacticsBGM=factory({
-  storage:(()=>{try{return root.localStorage;}catch(e){return null;}})(),document:root.document,Audio:root.Audio,
+  storage:(()=>{try{return root.cpuLocalStorage;}catch(e){return null;}})(),document:root.document,Audio:root.Audio,
   AudioContext:root.AudioContext||root.webkitAudioContext,fetch:root.fetch?.bind(root),
   source:new URL(root.document.body.dataset.bgmSource||'assets/audio/battle.m4a',root.document.baseURI).href
  });
@@ -2072,7 +2116,7 @@ globalThis.SummonPresentation=(()=>{
  let enabled=true,volume=25,context,gain,layer;
 
  try{
-  const saved=JSON.parse(localStorage.getItem(storageKey)||'{}');
+  const saved=JSON.parse(cpuLocalStorage.getItem(storageKey)||'{}');
   if(typeof saved?.enabled==='boolean')enabled=saved.enabled;
   if(Number.isInteger(saved?.volume)&&saved.volume>=0&&saved.volume<=100)volume=saved.volume;
  }catch{}
@@ -2091,7 +2135,7 @@ globalThis.SummonPresentation=(()=>{
  }
  function save(){
   const settings={enabled,volume};
-  try{localStorage.setItem(storageKey,JSON.stringify(settings));}catch{}
+  try{cpuLocalStorage.setItem(storageKey,JSON.stringify(settings));}catch{}
   updateGain();
   for(const listener of listeners)listener(settings);
  }
@@ -2657,11 +2701,12 @@ function describeBattleAction(events,{viewer,activeSide,before,after,turn,defini
  const first=(...types)=>events.find(e=>types.includes(e.type));
  const card=events.find(e=>e.type==='card:played'&&visibleCardUse(e,viewer)&&Object.hasOwn(definitions,e.cardId));
  const hiddenCard=events.some(e=>e.type==='card:played'&&!visibleCardUse(e,viewer));
+ const charge=first('mana:charged');
  const start=first('turn:started'),turnEnd=first('turn:ended');
  const attack=first('creature:attacked','creature:attack-resolved');
  const ability=first('creature:ability-used','king:ability-used','king:attack-targeted'),move=first('creature:moved');
  const end=first('game:over');
- const primary=card||start||ability||attack||move;
+ const primary=card||charge||start||ability||attack||move;
  const lines=[],defeated=[];
  let title='',short='',drawSide=null,drawCount=0;
  const add=(text,summary='')=>lines.push({text,summary});
@@ -2678,6 +2723,7 @@ function describeBattleAction(events,{viewer,activeSide,before,after,turn,defini
   :unit(e.target||board[e.to]);
  const causeNames={salamander_counter:'反撃',attack_destroy_damaged:'破壊能力'};
  if(card)title=label(card.side)+'：'+card.cardId+(definitions[card.cardId].type==='creature'?'を召喚':'を使用');
+ else if(charge)title=label(charge.side)+'：'+charge.cardId+'をマナに置いた';
  else if(start)title='ターン '+(turn??after?.turn??'')+'｜'+label(start.side)+'のターン開始';
  else if(ability){
   const source=ability.type==='creature:ability-used'?name(board[ability.from]):'王';
@@ -3852,11 +3898,11 @@ async function applyKingAsset(kind){
    document.body.classList.remove('king-external-loaded');
  }
 }
-function readStoredVisualSettings(){try{const v=JSON.parse(localStorage.getItem('phase2VisualSettings')||'{}');return v&&typeof v==='object'&&!Array.isArray(v)?v:{};}catch(e){return {};}}
+function readStoredVisualSettings(){try{const v=JSON.parse(cpuLocalStorage.getItem('phase2VisualSettings')||'{}');return v&&typeof v==='object'&&!Array.isArray(v)?v:{};}catch(e){return {};}}
 const VisualSettings={
  state:{view:'current',board:'rich',king:'default',creatureNames:true,...(includeCPU?{cpuDifficulty:'weak'}:{})},
  load(){try{const v=readStoredVisualSettings();if(['current','left'].includes(v.view))this.state.view=v.view;if(['light','antique','rich','simple'].includes(v.board))this.state.board=v.board;if(v.king==='pop')v.king='default';if(v.king==='simple')v.king='simple1';if(['default','dark','simple1','simple2','oldking','oldking2','youngking'].includes(v.king))this.state.king=v.king;if(typeof v.creatureNames==='boolean')this.state.creatureNames=v.creatureNames;if(includeCPU&&['weak','strong','tactical','gachi'].includes(v.cpuDifficulty))this.state.cpuDifficulty=v.cpuDifficulty}catch(e){}this.apply()},
- apply(){presentationView=this.state.view;document.body.classList.remove('board-light','board-antique','board-rich','board-simple','king-default','king-dark','king-simple1','king-simple2','king-oldking','king-oldking2','king-youngking','creature-names-off');document.body.classList.add('board-'+this.state.board,'king-'+this.state.king);if(!this.state.creatureNames)document.body.classList.add('creature-names-off');applyKingAsset(this.state.king);document.querySelectorAll('.settingsChoices[data-setting]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.value===this.state[g.dataset.setting])));document.querySelectorAll('#creatureNameChoices button').forEach(b=>b.classList.toggle('active',(b.dataset.nameVisible==='true')===this.state.creatureNames));try{localStorage.setItem('phase2VisualSettings',JSON.stringify({...readStoredVisualSettings(),...this.state}))}catch(e){}refreshPresentation();},
+ apply(){presentationView=this.state.view;document.body.classList.remove('board-light','board-antique','board-rich','board-simple','king-default','king-dark','king-simple1','king-simple2','king-oldking','king-oldking2','king-youngking','creature-names-off');document.body.classList.add('board-'+this.state.board,'king-'+this.state.king);if(!this.state.creatureNames)document.body.classList.add('creature-names-off');applyKingAsset(this.state.king);document.querySelectorAll('.settingsChoices[data-setting]').forEach(g=>g.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.value===this.state[g.dataset.setting])));document.querySelectorAll('#creatureNameChoices button').forEach(b=>b.classList.toggle('active',(b.dataset.nameVisible==='true')===this.state.creatureNames));try{cpuLocalStorage.setItem('phase2VisualSettings',JSON.stringify({...readStoredVisualSettings(),...this.state}))}catch(e){}refreshPresentation();},
  set(key,value){if(!Object.hasOwn(this.state,key))return;if(key==='cpuDifficulty'&&!['weak','strong','tactical','gachi'].includes(value))return;if(key==='view'&&!['current','left'].includes(value))return;if(key==='king'&&!Object.hasOwn(KING_ASSET_PATHS,value))return;if(key==='board'&&!['light','antique','rich','simple'].includes(value))return;this.state[key]=value;this.apply()}
 };
 function openSettings(){document.getElementById('settingsOverlay').classList.add('show');document.getElementById('settingsOverlay').setAttribute('aria-hidden','false')}
@@ -3931,6 +3977,7 @@ globalThis.NormalGameUI=Object.freeze({setNotice,renderDetailStatus,cardUseReaso
 /** Command boundary. Local one-action Undo is provided by a4-session.cjs; unsupported actions remain explicit. */
 const {createState,playerSnapshot}=require('./game-state.cjs');
 const {applyAction}=require('./action-bridge.cjs');
+const M=require('./attribute-mana.cjs');
 const combat=require('./combat-engine.cjs');
 const clone=x=>JSON.parse(JSON.stringify(x));
 const VERSION='a5.2';
@@ -3940,7 +3987,8 @@ function createGame(config){
  const s=createState(input);if(config.advanceRewards===true)require('./advance-rewards.cjs').initialize(s);require('./match-rules.cjs').attach(s,config.rules??s.server.rules);
  if(config.lossConditions){if(!config.lossRegistryId)throw Error('LOSS_REGISTRY_ID_REQUIRED');require('./outcome-registry.cjs').register(config.lossRegistryId,config.lossConditions);s.server.lossRegistry=config.lossRegistryId;}
  s.server.coreVersion=VERSION;s.server.processedActionIds=[];
- if(config.decks)require('./match-rules.cjs').initialize(s,s.server.rules,events);return s;
+ if(config.attributeMana===true)require('./attribute-mana.cjs').initialize(s);
+ if(config.decks)require('./match-rules.cjs').initialize(s,config.attributeMana===true?{...s.server.rules,initialHandSize:7}:s.server.rules,events,config.firstSide??'p');return s;
 }
 function execute(state,request,actor,definitions){
  if(typeof request?.actionId!=='string'||!request.actionId||request.actionId.length>100)return {ok:false,code:'INVALID_ACTION_ID'};
@@ -3971,7 +4019,7 @@ function finishBoundary(state,runtime){
  const next=clone(state),events=[],before=next.revision;next.revision++;const r=require('./resolution-boundary.cjs').settleBoundary(next,events);if(r.status!=='applied')next.revision=before;
  return {ok:true,status:r.status,state:next,events};
 }
-function initializeLegacyMatch(S,rules,firstSide,advanceRewards=false){const core=require('./legacy-adapter.cjs').fromLegacyState(S),events=[];if(advanceRewards)require('./advance-rewards.cjs').initialize(core);else delete core.server.advanceRewards;require('./match-rules.cjs').initialize(core,rules,events,firstSide);core.server.coreVersion=VERSION;core.server.processedActionIds=[];require('./r4-command-bridge.cjs').commit(S,core,events);return {ok:true,state:core,events};}
+function initializeLegacyMatch(S,rules,firstSide,advanceRewards=false,attributeMana=false){const core=require('./legacy-adapter.cjs').fromLegacyState(S),events=[];if(advanceRewards)require('./advance-rewards.cjs').initialize(core);else delete core.server.advanceRewards;if(attributeMana)require('./attribute-mana.cjs').initialize(core);require('./match-rules.cjs').initialize(core,attributeMana?{...rules,initialHandSize:7}:rules,events,firstSide);core.server.coreVersion=VERSION;core.server.processedActionIds=[];require('./r4-command-bridge.cjs').commit(S,core,events);return {ok:true,state:core,events};}
 function getPlayerView(state,viewer){
  const view=playerSnapshot(state,viewer);
  return {...view,coreVersion:VERSION,gameOver:!!state.server.gameOver,winner:state.server.winner??null};
@@ -4034,7 +4082,8 @@ function planCombat(state,from,to,actor,definitions,runtime){
  if(!queryCombat(state,from,actor,definitions,runtime).moves.includes(to))return emptyCombat();
  const board=state.board.slice();board[to]={...board[from],m:true};board[from]=null;
  const cost=combat.manaCost(state,board[to],definitions);
- const players=cost?{...state.players,[actor]:{...state.players[actor],mana:state.players[actor].mana-cost}}:state.players;
+ const players=cost?{...state.players,[actor]:structuredClone(state.players[actor])}:state.players;
+ if(cost)M.spend(players[actor],cost,M.payment(players[actor],cost));
  return previewCombat({...state,board,players},to,definitions);
 }
 function combatPattern(piece,definitions,kind='move',state){return piece?combat.pattern(piece,definitions,kind,state).map(v=>v.slice()):[];}
@@ -4050,7 +4099,12 @@ function legalCombatActions(state,actor,definitions,runtime){
 }
 const targets=require("./target-queries.cjs");
 const powerQuery=require('./power-query.cjs');
-module.exports={damageReduction:require('./damage-engine.cjs').reduction,initializeLegacyMatch,normalizeRules:require('./match-rules.cjs').normalize,attackLimit:combat.attackLimit,finishBoundary,effectiveAbilities:require('./effective-rules.js').abilities,createGame,queryAdvanceChoice:require("./advance-rewards.cjs").cpuChoice,queryPower:powerQuery.query,powerForPiece:powerQuery.forPiece,spellsBlocked:targets.sealed,dispelEffects:targets.effectChoices,queryCard:targets.queryCard,queryGuardianChoices:require('./damage-choices.cjs').choices,queryEffectChoices:require('./wind-spells.cjs').choices,queryAbility:targets.queryAbility,VERSION,execute,getPlayerView,projectEvents,legalCombatActions,queryCombat,previewCombat,planCombat,combatPattern,combatRights,combatPathClear,combatInputAllowed};
+function flexManaCost(state,action,definitions){
+ if(action.type==='activate_ability')return action.abilityId==='sorcerer_bolt'?2:require('./paid-creature-abilities.cjs').rules[action.abilityId]?.mana??0;
+ if(['move','attack_creature','attack_king'].includes(action.type)&&state.board[action.from])return combat.manaCost(state,state.board[action.from],definitions);
+ return 0;
+}
+module.exports={attributeMana:M,flexManaCost,damageReduction:require('./damage-engine.cjs').reduction,initializeLegacyMatch,normalizeRules:require('./match-rules.cjs').normalize,attackLimit:combat.attackLimit,finishBoundary,effectiveAbilities:require('./effective-rules.js').abilities,createGame,queryAdvanceChoice:require("./advance-rewards.cjs").cpuChoice,queryPower:powerQuery.query,powerForPiece:powerQuery.forPiece,spellsBlocked:targets.sealed,dispelEffects:targets.effectChoices,queryCard:targets.queryCard,queryGuardianChoices:require('./damage-choices.cjs').choices,queryEffectChoices:require('./wind-spells.cjs').choices,queryAbility:targets.queryAbility,VERSION,execute,getPlayerView,projectEvents,legalCombatActions,queryCombat,previewCombat,planCombat,combatPattern,combatRights,combatPathClear,combatInputAllowed};
 
 },
 "./game-state.cjs":function(module,exports,require){
@@ -4068,6 +4122,7 @@ function assertState(s){
   if(!p||!Number.isInteger(p.kingHp)||!Number.isInteger(p.mana)||!Number.isInteger(p.maxMana)||!Array.isArray(p.graveyard))throw new TypeError('Invalid player');
   if(!secret||!Array.isArray(secret.hand)||!Array.isArray(secret.deck))throw new TypeError('Invalid private data');
  }
+ require('./attribute-mana.cjs').assertState(s.players);
  require('./advance-rewards.cjs').assertHistory(s.server.advanceRewards);
  require('./resolution-boundary.cjs').assertSurrenderState(s);assertUniqueHandIds(s);require('./physical-zones.cjs').assertUnique(s);if(s.server.rules!==undefined)require('./match-rules.cjs').get(s);require('./outcome-registry.cjs').validate(s.server.lossRegistry);return true;
 }
@@ -4099,7 +4154,7 @@ module.exports={assertState,createState,publicSnapshot,playerSnapshot,serverSnap
 /** First server-facing boundary: validates transport/action shape only.
  * This is NOT yet an authoritative rules engine. No UI, DOM or globals. */
 const SIDES = Object.freeze(['p','c']);
-const ACTION_TYPES = Object.freeze(['summon','move','attack_creature','attack_king','play_spell','play_enchant','end_turn','chooseTokenCell','choosePromotion','chooseAdvanceDraw','chooseEffectCell','chooseGuardian','activate_ability','surrender']);
+const ACTION_TYPES = Object.freeze(['summon','move','attack_creature','attack_king','play_spell','play_enchant','end_turn','chooseTokenCell','choosePromotion','chooseAdvanceDraw','chooseEffectCell','chooseGuardian','activate_ability','surrender','charge_mana']);
 const CELL_MAX=24;
 const isCell=n=>Number.isInteger(n)&&n>=0&&n<=CELL_MAX;
 const isSide=s=>SIDES.includes(s);
@@ -4116,6 +4171,7 @@ function validateAction(action){
  case 'play_spell':case 'play_enchant':valid=isCard(action.cardId);break;
  case 'chooseGuardian':case 'chooseEffectCell':case 'chooseTokenCell':valid=isCell(action.to);break;
  case 'chooseAdvanceDraw':case 'choosePromotion':valid=typeof action.accept==='boolean';break;
+ case 'charge_mana':valid=isCard(action.instanceId);break;
  case 'end_turn':case 'surrender':valid=true;break;
  case 'activate_ability':valid=['sorcerer_bolt','awaken_attack','royal_wind','heal','fortune_draw','generate_golem','wind_push'].includes(action.abilityId);break;
  }
@@ -4185,6 +4241,152 @@ function forgetCard(state,instanceId){
 module.exports={normalizeHand,assertUniqueHandIds,visibleHand,revealCards,forgetCard};
 
 },
+"./attribute-mana.cjs":function(module,exports,require){
+'use strict';
+
+const colors = Object.freeze(['red', 'blue', 'neutral']);
+const neutral = Object.freeze(['歩兵', '銀級兵', '金級兵', '槍兵', '前線兵']);
+const red = Object.freeze([
+  '盗賊', 'ディアブロ', 'オルトロス', '守備兵', 'ゴーレム使い', '土ゴーレム', 'バジリスク', '憤怒の悪鬼',
+  'サラマンダー', '戦狼', '遊撃騎兵', 'チュパカブラ', '崩れゆく巨像', '歴戦の傭兵', '剣聖',
+  'グラディエーター', '凱旋の英雄', '戦列兵', '精鋭兵',
+  'ベンケイ', 'ゴブリン', '狂信者', '熟練の狩人', 'ティタノボア',
+  'ファイヤーボルト', '圧殺', '裏切り', 'バーサーク', 'マイン', '決戦', 'クロスフレイム',
+  '強制的呪術', 'ポイズンミスト', 'コンプレッションブラスト'
+]);
+const blue = Object.freeze([
+  'チャリオット', 'アーチャー', '踊り子', '隠密', 'ソーサラー', 'ポーン', '天狗', 'ヒーラー', '覇王の参謀',
+  '求道者', '密命を受けし者', '占い師', '献身的なガーディアン', '上級弓兵', '電弧の精霊', '呪文集め',
+  '影武者', '軽歩兵', '戦術指揮官', '風使い', '九尾の狐', 'オオミカミ',
+  '転移魔法', '解呪', 'ホープ', 'マナ', '防御結界', '封魔', '王の覚醒', '突風', '竜巻',
+  'スワップスペル', '恩寵の光', '風精霊の加護', 'エネルヴェイト', 'ヒール', '絶対領域'
+]);
+const byId = new Map([['red', red], ['blue', blue], ['neutral', neutral]]
+  .flatMap(([color, ids]) => ids.map(id => [id, color])));
+const colorOf = id => byId.get(id);
+const sum = values => colors.reduce((total, color) => total + values[color], 0);
+const zero = () => ({red: 0, blue: 0, neutral: 0});
+const snapshot = player => player.attributeMana;
+const validPool = pool => pool && Object.keys(pool).length === 3
+  && colors.every(color => Number.isSafeInteger(pool[color]) && pool[color] >= 0);
+
+function sync(player) {
+  const {total, available} = snapshot(player);
+  player.maxMana = sum(total);
+  player.mana = sum(available);
+}
+
+function initialize(state) {
+  for (const player of Object.values(state.players)) {
+    player.attributeMana = {total: zero(), available: zero(), used: false, cards: []};
+    sync(player);
+  }
+}
+
+function assertState(players) {
+  if (!players.p.attributeMana && !players.c.attributeMana) return;
+  for (const player of [players.p, players.c]) {
+    const pool = snapshot(player);
+    if (!pool || !validPool(pool.total) || !validPool(pool.available) || typeof pool.used !== 'boolean'
+      || !Array.isArray(pool.cards) || pool.cards.some(card => !card?.instanceId || !colorOf(card.cardId))
+      || sum(pool.total) !== player.maxMana || sum(pool.available) !== player.mana
+      || player.maxMana > 10 || player.mana > 10
+      || ['red', 'blue'].some(color => pool.available[color] > pool.total[color]
+        || pool.total[color] !== pool.cards.filter(card => colorOf(card.cardId) === color).length)
+      || pool.total.neutral < pool.cards.filter(card => colorOf(card.cardId) === 'neutral').length) {
+      throw Error('INVALID_ATTRIBUTE_MANA');
+    }
+  }
+}
+
+function refresh(player) {
+  const pool = snapshot(player);
+  pool.available = {...pool.total};
+  pool.used = false;
+  sync(player);
+}
+
+function requirement(cardId, def) {
+  const color = colorOf(cardId);
+  return {color, cost: def.cost,
+    required: def.cost > 0 && color !== 'neutral' ? Math.min(def.cost, def.atk >= 7 ? 2 : 1) : 0};
+}
+
+function options(player, cost, {color, required = 0} = {}, priority = ['neutral', 'blue', 'red']) {
+  const pool = snapshot(player);
+  if (!pool || player.mana < cost || (required && pool.available[color] < required)) return [];
+  const result = [];
+  const [first, second, last] = priority;
+  const base = Object.assign(zero(), required ? {[color]: required} : {});
+  const room = Object.fromEntries(colors.map(key => [key, pool.available[key] - base[key]]));
+  for (let a = Math.min(room[first], cost - required); a >= 0; a--) {
+    const rest = cost - required - a;
+    for (let b = Math.min(room[second], rest); b >= 0; b--) {
+      if (rest - b <= room[last]) result.push({...base, [first]: base[first] + a,
+        [second]: base[second] + b, [last]: base[last] + rest - b});
+    }
+  }
+  return result;
+}
+
+function payment(player, cost, explicit, rule) {
+  if (!snapshot(player)) return player.mana >= cost && explicit === undefined ? true : null;
+  if (explicit === undefined) return options(player, cost, rule)[0] ?? null;
+  return validPool(explicit) && sum(explicit) === cost
+    && colors.every(color => explicit[color] <= player.attributeMana.available[color])
+    && (!rule?.required || explicit[rule.color] >= rule.required) ? explicit : null;
+}
+
+function cardPayment(player, action, def) {
+  if (!snapshot(player)) return payment(player, def.cost, action.payment);
+  if (!colorOf(action.cardId)) return null;
+  return payment(player, def.cost, action.payment, requirement(action.cardId, def));
+}
+
+function spend(player, cost, allocation) {
+  if (!snapshot(player)) {
+    player.mana -= cost;
+    return;
+  }
+  const pool = snapshot(player);
+  for (const color of colors) pool.available[color] -= allocation[color];
+  sync(player);
+}
+
+function gain(player, maxDelta, availableDelta) {
+  const pool = snapshot(player);
+  pool.total.neutral += Math.min(10 - player.maxMana, maxDelta);
+  pool.available.neutral += Math.min(10 - player.mana, availableDelta);
+  sync(player);
+}
+
+function canCharge(player) {
+  return !!snapshot(player) && !player.attributeMana.used && player.maxMana < 10;
+}
+
+function charge(state, action) {
+  const {side, instanceId} = action;
+  if (!canCharge(state.players[side])) return {ok: false, code: 'MANA_CHARGE_UNAVAILABLE'};
+  const index = state.private[side].hand.findIndex(card => card.instanceId === instanceId);
+  const card = state.private[side].hand[index];
+  const color = colorOf(card?.cardId);
+  if (!color) return {ok: false, code: 'INVALID_MANA_CARD'};
+  state.private[side].hand.splice(index, 1);
+  require('./hand-visibility.cjs').forgetCard(state, instanceId);
+  const player = state.players[side];
+  const pool = snapshot(player);
+  pool.cards.push(card);
+  pool.available[color]++;
+  pool.total[color]++;
+  pool.used = true;
+  sync(player);
+  return {ok: true, events: [{type: 'mana:charged', side, cardId: card.cardId, color}]};
+}
+
+module.exports = {colors, neutral, red, blue, colorOf, initialize, assertState, refresh, requirement,
+  options, payment, cardPayment, spend, gain, canCharge, charge};
+
+},
 "./advance-rewards.cjs":function(module,exports,require){
 'use strict';
 
@@ -4218,7 +4420,7 @@ function resolve(state,job,defs,events){
   history.manaClaimed[side]=true;
   const capped=state.players[side].maxMana>=10;
   events.push({type:'advance:rewarded',side,kind:'mana',instanceId,cell:job.cell,capped});
-  require('./mana-delta.cjs').applyManaDelta(state,side,{maxDelta:1},events,'advance-reward');
+  require('./mana-delta.cjs').applyManaDelta(state,side,{maxDelta:1,availableDelta:state.players[side].attributeMana&&!capped?1:0},events,'advance-reward');
  }
 }
 function choose(state,action,defs,events){
@@ -4256,7 +4458,10 @@ function applyManaDelta(s,side,delta,events=[],reason='effect'){
  if(!p||![maxDelta,availableDelta,p.maxMana,p.mana].every(Number.isSafeInteger)||p.maxMana<0||p.mana<0||p.maxMana+maxDelta<0||p.mana+availableDelta<0)return {ok:false,code:'INVALID_MANA_DELTA'};
  const before={maxMana:p.maxMana,mana:p.mana},after={maxMana:Math.min(10,p.maxMana+maxDelta),mana:Math.min(10,p.mana+availableDelta)};
  if(after.maxMana<before.maxMana)after.mana=Math.min(after.mana,after.maxMana);
- Object.assign(p,after);s.server.manaBonus||={p:0,c:0};s.server.manaBonus[side]=(s.server.manaBonus[side]||0)+(after.maxMana-before.maxMana);
+ if(p.attributeMana){
+  if(maxDelta<0||availableDelta<0)return {ok:false,code:'UNSUPPORTED_ATTRIBUTE_MANA_DELTA'};
+  require('./attribute-mana.cjs').gain(p,maxDelta,availableDelta);
+ }else Object.assign(p,after);s.server.manaBonus||={p:0,c:0};s.server.manaBonus[side]=(s.server.manaBonus[side]||0)+(after.maxMana-before.maxMana);
  events.push({type:maxDelta>=0&&availableDelta>=0?'mana:gained':'mana:changed',side,before,after,reason});return {ok:true,before,after};
 }
 module.exports={applyManaDelta};
@@ -4301,7 +4506,7 @@ function initialize(s,input,events=[],firstSide='p'){
  if(firstSide==='c')s.server.firstSide=firstSide;
  else delete s.server.firstSide;
  s.server.turnsStarted={p:Number(firstSide==='p'),c:Number(firstSide==='c')};
- for(const side of ['p','c']){if(s.private[side].hand.length)throw Error('INITIAL_HAND_ALREADY_PRESENT');const mana=1+(side!==firstSide?rules.secondPlayerInitialManaBonus:0);s.players[side].maxMana=mana;s.players[side].mana=mana;}
+ for(const side of ['p','c']){if(s.private[side].hand.length)throw Error('INITIAL_HAND_ALREADY_PRESENT');const mana=s.players[side].attributeMana?0:1+(side!==firstSide?rules.secondPlayerInitialManaBonus:0);s.players[side].maxMana=mana;s.players[side].mana=mana;}
  for(let i=0;i<rules.initialHandSize&&!s.server.gameOver;i++)for(const side of ['p','c'])draw(s,side,1,'initial',events);
  if(rules.firstPlayerFirstDraw&&!s.server.gameOver)draw(s,firstSide,rules.normalDrawCount,'normal-first',events);return events;
 }
@@ -4482,7 +4687,7 @@ function ensureInstances(state){
  state.server??={};let counter=state.server.nextCardSerial;
  if(counter===undefined)counter=1;
  if(!Number.isSafeInteger(counter)||counter<1)throw new TypeError('Invalid nextCardSerial');
- const used=new Set([...state.board.filter(Boolean).map(p=>p.sourceInstanceId),...state.enchantments.map(e=>e.instanceId)].filter(x=>x!==undefined).map(String));for(const {card} of inventory(state))if(typeof card==='object'&&card!==null){
+ const used=new Set([...state.board.filter(Boolean).map(p=>p.sourceInstanceId),...state.enchantments.map(e=>e.instanceId),...SIDES.flatMap(side=>(state.players[side].attributeMana?.cards||[]).map(c=>c.instanceId))].filter(x=>x!==undefined).map(String));for(const {card} of inventory(state))if(typeof card==='object'&&card!==null){
   if(typeof card.instanceId!=='string'||!card.instanceId||typeof card.cardId!=='string'||!card.cardId)throw new TypeError('Invalid card instance');
   if(used.has(card.instanceId))throw new Error('Duplicate instanceId');used.add(card.instanceId);
  }else if(typeof card!=='string'||!card)throw new TypeError('Invalid legacy card');
@@ -4551,7 +4756,7 @@ module.exports={ensureInstances,transferCard,summonFromHand,defeatCreature,drawC
 function assertUnique(state){const seen=new Map();function add(id,where){if(id==null)return;const key=String(id);if(seen.has(key))throw Error('DUPLICATE_PHYSICAL_ID: '+key+' '+seen.get(key)+' '+where);seen.set(key,where);}
  for(const [cell,p]of state.board.entries())if(p)add(p.sourceInstanceId,'board:'+cell);
  for(const [i,e]of (state.enchantments||[]).entries())add(e.instanceId,'enchantment:'+i);
- for(const side of ['p','c']){for(const zone of ['hand','deck'])for(const [i,card]of (state.private?.[side]?.[zone]||[]).entries())if(typeof card==='object')add(card.instanceId,side+':'+zone+':'+i);for(const [i,card]of (state.players?.[side]?.graveyard||[]).entries())if(typeof card==='object')add(card.instanceId,side+':graveyard:'+i);}
+ for(const side of ['p','c']){for(const zone of ['hand','deck'])for(const [i,card]of (state.private?.[side]?.[zone]||[]).entries())if(typeof card==='object')add(card.instanceId,side+':'+zone+':'+i);for(const zone of ['graveyard','attributeMana']){const cards=zone==='graveyard'?state.players?.[side]?.graveyard:state.players?.[side]?.attributeMana?.cards;for(const [i,card] of (cards||[]).entries())if(typeof card==='object')add(card.instanceId,side+':'+zone+':'+i);}}
  return true;
 }
 module.exports={assertUnique};
@@ -4978,11 +5183,12 @@ const A1=require('./a1-rules.js');
 const A5=require('./a5-rules.js');
 const {absoluteDomain,canPlace}=require('./a3-rules.js');
 const {makePort}=require('./a1-port.cjs');
+const M=require('./attribute-mana.cjs');
 const validCell=k=>Number.isInteger(k)&&k>=0&&k<25;
 const abilities=(p,defs,state)=>require('./effective-rules.js').abilities(p,defs,state);
 function manaCost(state,p,defs){return abilities(p,defs,state).includes('pay_normal_action')?1:0;}
 function canPay(state,p,defs){const cost=manaCost(state,p,defs);return cost===0||state?.players?.[p.side]?.mana>=cost;}
-function pay(state,p,defs){const cost=manaCost(state,p,defs);if(cost)state.players[p.side].mana-=cost;}
+function pay(state,p,defs,allocation){const cost=manaCost(state,p,defs);if(cost)M.spend(state.players[p.side],cost,allocation);}
 function attackLimit(p,defs,state){return !A5.hasRights(p)?0:abilities(p,defs,state).includes('orthros_double_attack')?2:1;}
 function used(p,defs,state){return p.attacksUsed??(p.a?attackLimit(p,defs,state):0);}
 function canAttack(p,defs,state){return !A1.blocked(p)&&used(p,defs,state)<attackLimit(p,defs,state);}
@@ -5032,23 +5238,28 @@ function kingReachable(state,from,defs){
 function power(state,p,defs){return require('./power-query.cjs').forPiece(state,p,defs)?.total??0;}
 
 function spend(p,defs,state){p.attacksUsed=used(p,defs,state)+1;p.a=!canAttack(p,defs,state);}
-function move(state,from,to,defs){
+function move(state,from,to,defs,explicit){
  if(!validCell(from)||!validCell(to)||!squares(state,from,defs,'move').includes(to))return {ok:false,code:'ILLEGAL_MOVE'};
- const p=state.board[from];pay(state,p,defs);state.board[to]=p;state.board[from]=null;p.m=true;
+ const p=state.board[from],allocation=M.payment(state.players[p.side],manaCost(state,p,defs),explicit);
+ if(!allocation)return {ok:false,code:'INSUFFICIENT_MANA'};
+ pay(state,p,defs,allocation);state.board[to]=p;state.board[from]=null;p.m=true;
  const events=[{type:'creature:moved',from,to,cardId:p.type}];
  require('./a5-entry.cjs').begin(state,to,defs,events);
  return {ok:true,events};
 }
-function executeAttack(state,from,to,defs){
+function executeAttack(state,from,to,defs,explicit){
  const events=[],port=makePort(state,defs,events);port.beforeResolveCollected=(jobs,context)=>defs.$hooks?.beforeResolveCollected?.({state,events,jobs,context});
  port.legal=(f,t)=>validCell(f)&&(t===null?kingReachable(state,f,defs):validCell(t)&&squares(state,f,defs,'attack').includes(t));
- port.power=p=>power(state,p,defs);port.spend=p=>{pay(state,p,defs);spend(p,defs,state);};
+ port.power=p=>power(state,p,defs);const attacker=state.board[from];
+ const allocation=attacker&&M.payment(state.players[attacker.side],manaCost(state,attacker,defs),explicit);
+ if(attacker&&!allocation)return {ok:false,code:'INSUFFICIENT_MANA'};
+ port.spend=p=>{pay(state,p,defs,allocation);spend(p,defs,state);};
  const result=A1.attack(port,from,to);
  const declaration=events.find(e=>e.type==='creature:attacked'),resolution=result?{rawAmount:declaration?.amount??0,amount:result.interrupted?0:result.amount??0,reduction:result.reduction??0,interrupted:!!result.interrupted,defeated:!!result.defeated}:null;
  return result?{...result,ok:true,events,resolution}:{ok:false,code:to===null?'ILLEGAL_KING_ATTACK':'ILLEGAL_ATTACK'};
 }
-function attackCreature(state,from,to,defs){return executeAttack(state,from,to,defs);}
-function attackKing(state,from,defs){return executeAttack(state,from,null,defs);}
+function attackCreature(state,from,to,defs,explicit){return executeAttack(state,from,to,defs,explicit);}
+function attackKing(state,from,defs,explicit){return executeAttack(state,from,null,defs,explicit);}
 module.exports={squares,attackRange,pattern,pathClear,rights,actionRights,kingReachable,manaCost,power,attackLimit,canAttack,spend,move,attackCreature,attackKing};
 
 },
@@ -5268,6 +5479,7 @@ module.exports={changeController,applyBetrayalEffect,promote};
 },
 "./a2-spells.cjs":function(module,exports,require){
 'use strict';
+const M=require('./attribute-mana.cjs');
 const A2=require('./a2-rules.js');
 const {ensureInstances,playCard}=require('./card-zones.cjs');
 function gainMana(state,side,events=[]){
@@ -5291,13 +5503,14 @@ function cast(state,action,definitions){
  if(side!==state.activeSide)return {ok:false,code:'NOT_YOUR_TURN'};
  if(state.enchantments.some(e=>e.cardId==='封魔'&&e.zone!=='graveyard'&&e.target?.kind==='king'&&e.target.side===side))return {ok:false,code:'SPELLS_BLOCKED'};
  if(!require('./target-queries.cjs').cardValid(state,action,definitions))return {ok:false,code:'INVALID_TARGET'};
- if(state.players[side].mana<def.cost)return {ok:false,code:'INSUFFICIENT_MANA'};
+ const payment=M.cardPayment(state.players[side],action,def);
+ if(!payment)return {ok:false,code:'INSUFFICIENT_MANA'};
  // action-bridge supplies a staged state. Resolve the physical card before payment.
  ensureInstances(state);
  const matches=state.private[side].hand.filter(c=>c.cardId===action.cardId),card=action.instanceId?matches.find(c=>c.instanceId===action.instanceId):matches.length===1?matches[0]:null;
  if(!card)return {ok:false,code:matches.length>1&&!action.instanceId?'AMBIGUOUS_CARD':'CARD_NOT_IN_HAND'};
  const countAtCommit=A2.controlledCount(state.board,side),events=[];
- playCard(state,side,card.instanceId);state.players[side].mana-=def.cost;
+ playCard(state,side,card.instanceId);M.spend(state.players[side],def.cost,payment);
  require('./effect-events.cjs').recordCardUse(state,side,card,definitions,events);
  if(action.cardId==='マナ'){const unit=require('./resolution-boundary.cjs').resolveEffectUnit(state,{unitId:'mana',mode:'sequential',targetPolicy:'valid-only',operations:[{kind:'mana',side,delta:{maxDelta:1,availableDelta:1}}]},{side,targets:[]},definitions);events.push(...unit.events);}
  else {const result=pressureEffect(state,side,countAtCommit,events);events.push({type:'pressure:resolved',side,...result});}
@@ -5325,6 +5538,7 @@ return {gainMana,controlledCount,pressure};
 "./target-queries.cjs":function(module,exports,require){
 'use strict';
 // Shared read-only legality. Results contain only actor-owned hand IDs and public targets.
+const M=require('./attribute-mana.cjs');
 const A3=require('./a3-rules.js'),C=require('./combat-engine.cjs'),K=require('./a5r1-abilities.js');
 const side=s=>s==='p'||s==='c',cell=k=>Number.isInteger(k)&&k>=0&&k<25;
 const creature=(s,t)=>t?.kind==='creature'?s.board.findIndex(p=>p&&t.instanceId!=null&&p.sourceInstanceId===t.instanceId):-1;
@@ -5366,7 +5580,7 @@ function queryCard(s,actor,selection,defs,runtime,options={}){
  const matches=hand.filter(c=>c.cardId===selection?.cardId),card=selection?.instanceId?matches.find(c=>c.instanceId===selection.instanceId):matches.length===1?matches[0]:null;
  const empty={stage:'unavailable',choices:[]};
  if(!side(actor)||!d||!card)return empty;
- if(!options.preview&&(blocked(s,actor,runtime)||s.players[actor].mana<d.cost||d.type==='spell'&&sealed(s,actor)))return empty;
+ if(!options.preview&&(blocked(s,actor,runtime)||!M.cardPayment(s.players[actor],selection,d)||d.type==='spell'&&sealed(s,actor)))return empty;
  const base={side:actor,cardId:card.cardId,instanceId:card.instanceId,type:d.type==='creature'?'summon':d.type==='enchant'?'play_enchant':'play_spell'};
  if(d.type==='creature')return {stage:'target',choices:Array.from({length:25},(_,to)=>({...base,to})).filter(a=>cardValid(s,a,defs))};
  if(selection.cardId==='マナ')return {stage:'none',choices:[base]};
@@ -5493,12 +5707,13 @@ const {abilities}=require('./effective-rules.js');
 const {orthogonalCells}=require('./board-neighbors.cjs');
 const {canPlace}=require('./a3-rules.js');
 const Wind=require('./wind-spells.cjs');
+const M=require('./attribute-mana.cjs');
 const rules={fortune_draw:{mana:2,move:false},generate_golem:{mana:4,move:true},wind_push:{mana:3,move:false}};
 function windTarget(state,target){return target?.kind==='creature'?state.board.findIndex(p=>p&&target.instanceId!=null&&p.sourceInstanceId===target.instanceId):-1;}
 function valid(state,action,defs){
  const {side,target,sourceInstanceId,abilityId}=action;
  const rule=rules[abilityId];
- if(!rule||state.server.gameOver||state.activeSide!==side||typeof sourceInstanceId!=='string'||state.players[side].mana<rule.mana)return false;
+ if(!rule||state.server.gameOver||state.activeSide!==side||typeof sourceInstanceId!=='string'||!M.payment(state.players[side],rule.mana,action.payment))return false;
  const from=state.board.findIndex(p=>p?.sourceInstanceId===sourceInstanceId),source=state.board[from];
  if(!source||source.side!==side||!abilities(source,defs,state).includes(abilityId))return false;
  const rights=Combat.actionRights(source,defs,state);
@@ -5512,7 +5727,7 @@ function apply(state,action,defs){
  if(!valid(state,action,defs))return {ok:false,code:'ILLEGAL_ABILITY'};
  const {side,abilityId,target,sourceInstanceId}=action,rule=rules[abilityId];
  const from=state.board.findIndex(p=>p?.sourceInstanceId===sourceInstanceId),source=state.board[from];
- state.players[side].mana-=rule.mana;
+ M.spend(state.players[side],rule.mana,M.payment(state.players[side],rule.mana,action.payment));
  Combat.spend(source,defs,state);
  const events=[{type:'creature:ability-used',side,abilityId,from}];
  if(rule.move){
@@ -5567,6 +5782,7 @@ module.exports={reason,valid,apply};
 },
 "./a3-actions.cjs":function(module,exports,require){
 'use strict';
+const M=require('./attribute-mana.cjs');
 const R=require('./a3-rules.js'),{ensureInstances}=require('./card-zones.cjs'),{forgetCard}=require('./hand-visibility.cjs');
 const {weakenEffect,clearWeakened,poisonEffect,clearPoison}=require('./creature-status.cjs');
 const {castEnchantment}=require('./enchantment-cast.cjs'),{removeEnchantment}=require('./enchantment-lifecycle.cjs');
@@ -5579,13 +5795,14 @@ function apply(s,a,defs){
  if(!def||!Number.isSafeInteger(def.cost)||def.cost<0||(!dispel&&!R.durations[a.cardId]))return {ok:false,code:'INVALID_CARD'};
  if(dispel&&s.enchantments.some(e=>e.cardId==='封魔'&&e.target?.side===a.side&&e.zone==='attached'))return {ok:false,code:'SPELLS_BLOCKED'};
  if(!require('./target-queries.cjs').cardValid(s,a,defs))return {ok:false,code:'INVALID_TARGET'};
- if(s.players[a.side].mana<def.cost)return {ok:false,code:'INSUFFICIENT_MANA'};
+ const payment=M.cardPayment(s.players[a.side],a,def);
+ if(!payment)return {ok:false,code:'INSUFFICIENT_MANA'};
  ensureInstances(s);const matches=s.private[a.side].hand.filter(c=>c.cardId===a.cardId),card=a.instanceId?matches.find(c=>c.instanceId===a.instanceId):matches.length===1?matches[0]:null;
  if(!card)return {ok:false,code:matches.length>1?'AMBIGUOUS_CARD':'CARD_NOT_IN_HAND'};
  let selected=null,c;
  if(dispel){c=candidates(s,a.target,a.side);selected=c.public.find(e=>String(e.instanceId??e.id)===String(a.effectId));if(c.public.length&&!selected)return {ok:false,code:'PUBLIC_CHOICE_REQUIRED'};if(!c.public.length&&a.effectId!=null)return {ok:false,code:'INVALID_EFFECT'};}
  const events=[];
- s.private[a.side].hand.splice(s.private[a.side].hand.indexOf(card),1);forgetCard(s,card.instanceId);s.players[a.side].mana-=def.cost;
+ s.private[a.side].hand.splice(s.private[a.side].hand.indexOf(card),1);forgetCard(s,card.instanceId);M.spend(s.players[a.side],def.cost,payment);
  if(dispel)s.players[a.side].graveyard.push(card);
  require('./effect-events.cjs').recordCardUse(s,a.side,card,defs,events);
  if(!dispel){castEnchantment(s,{cardId:a.cardId,owner:a.side,controller:a.side,target:a.target,instanceId:card.instanceId},events);return {ok:true,events};}
@@ -5738,6 +5955,7 @@ const clone=x=>JSON.parse(JSON.stringify(x));
 const {resolveSummonTriggers,resolveTokenChoice}=require('./summon-triggers.cjs');
 const combat=require('./combat-engine.cjs');
 const {dispatch}=require('./effect-events.cjs');
+const M=require('./attribute-mana.cjs');
 const {advanceTurn}=require('./turn-lifecycle.cjs');
 function reject(code){return {ok:false,code};}
 function applyAction(state,envelope,authenticatedSide,definitions){
@@ -5787,11 +6005,17 @@ function applyAction(state,envelope,authenticatedSide,definitions){
  // Only the dedicated choice branches above may resume suspended resolution.
  if(Object.keys(state.server.pendingCardTransfers||{}).length)return reject('CARD_TRANSFER_PENDING');
  if(state.server.pendingEntry||state.server.effectQueue?.length)return reject('RESOLUTION_PENDING');
+ if(action.type==='charge_mana'){
+  const next=clone(state),result=M.charge(next,action);
+  if(!result.ok)return reject(result.code);
+  next.revision++;assertState(next);
+  return {ok:true,...makeResult({revision:next.revision,events:result.events,state:next})};
+ }
  if(['move','attack_creature','attack_king'].includes(action.type)){
   const piece=state.board[action.from];
   if(!piece||piece.side!==action.side)return reject('NOT_YOUR_CREATURE');
   const next=clone(state);
-  const result=action.type==='move'?combat.move(next,action.from,action.to,definitions):action.type==='attack_creature'?combat.attackCreature(next,action.from,action.to,definitions):combat.attackKing(next,action.from,definitions);
+  const result=action.type==='move'?combat.move(next,action.from,action.to,definitions,action.payment):action.type==='attack_creature'?combat.attackCreature(next,action.from,action.to,definitions,action.payment):combat.attackKing(next,action.from,definitions,action.payment);
   if(!result.ok)return reject(result.code);
   next.revision++;assertState(next);
   return {ok:true,...makeResult({revision:next.revision,events:result.events,state:next,gameOver:!!next.server.gameOver}),...(result.resolution?{combat:result.resolution}:{})};
@@ -5826,7 +6050,8 @@ function applyAction(state,envelope,authenticatedSide,definitions){
  if(action.side==='p' ? action.to<20 : action.to>4)return reject('INVALID_SUMMON_ROW');
  if(state.board[action.to]!==null)return reject('CELL_OCCUPIED');
  if(!require('./target-queries.cjs').summonValid(state,action,definition))return reject('INVALID_TARGET');
- if(state.players[action.side].mana<definition.cost)return reject('INSUFFICIENT_MANA');
+ const payment=M.cardPayment(state.players[action.side],action,definition);
+ if(!payment)return reject('INSUFFICIENT_MANA');
  const next=clone(state);ensureInstances(next);
  const matching=next.private[action.side].hand.filter(c=>c.cardId===action.cardId);
  const selected=action.instanceId?matching.find(c=>c.instanceId===action.instanceId):matching.length===1?matching[0]:null;
@@ -5834,7 +6059,7 @@ function applyAction(state,envelope,authenticatedSide,definitions){
  // Atomic copy: all mutations occur on a clone, only successful result is returned.
  const piece={type:action.cardId,atk:definition.atk,hp:definition.hp,owner:action.side,side:action.side,m:false,a:false,attacksUsed:0,sourceInstanceId:selected.instanceId};
  summonFromHand(next,action.side,selected.instanceId,action.to,piece);
- next.players[action.side].mana-=definition.cost;
+ M.spend(next.players[action.side],definition.cost,payment);
  next.revision++;
  assertState(next);
  const events=[{type:'card:played',side:action.side,cardId:action.cardId,instanceId:selected.instanceId},{type:'creature:summoned',side:action.side,cell:action.to,cardId:action.cardId}];
@@ -5869,8 +6094,9 @@ function advanceTurn(state,side,definitions){
  state.server.kingAction||={p:{},c:{}};state.server.kingAction[next]={};
  const p=state.players[next];
  const bonus=state.server.manaBonus?.[next]??0;
- const rules=require('./match-rules.cjs').get(state);p.maxMana=Math.max(0,Math.min(10,state.turn+(next!==firstSide?rules.secondPlayerInitialManaBonus:0)+bonus));
- p.mana=p.maxMana;
+ const rules=require('./match-rules.cjs').get(state);
+ if(p.attributeMana)require('./attribute-mana.cjs').refresh(p);
+ else {p.maxMana=Math.max(0,Math.min(10,state.turn+(next!==firstSide?rules.secondPlayerInitialManaBonus:0)+bonus));p.mana=p.maxMana;}
  for(const piece of state.board)if(piece?.side===next)require('./creature-status.cjs').refreshRights(piece);
  expireEnchantments(state,next,events);
  require('./advance-rewards.cjs').resetPeriod(state,next);
@@ -5886,15 +6112,18 @@ module.exports={advanceTurn,expireEnchantments};
 "./a5r1-actions.cjs":function(module,exports,require){
 'use strict';
 const K=require('./a5r1-abilities.js'),C=require('./combat-engine.cjs'),{makePort}=require('./a1-port.cjs');
+const M=require('./attribute-mana.cjs');
 function apply(state,action,defs){
  const paid=require('./paid-creature-abilities.cjs');
  if(Object.hasOwn(paid.rules,action.abilityId))return paid.apply(state,action,defs);
  if(action.abilityId==='heal')return require('./healing.cjs').apply(state,action,defs);
  if(action.abilityId==='royal_wind')return require('./royal-wind.cjs').apply(state,action,defs);
+ const payment=M.payment(state.players[action.side],action.abilityId==='sorcerer_bolt'?2:0,action.payment);
+ if(!payment)return {ok:false,code:'ILLEGAL_ABILITY'};
  const events=[],damage=makePort(state,defs,events);
  const target=action.target?.kind==='king'?{kind:'king',side:action.target.side}:action.target?.kind==='creature'?{kind:'creature',cell:state.board.findIndex(p=>p&&p.sourceInstanceId===action.target.instanceId)}:null;
  const from=state.board.findIndex(p=>p&&p.sourceInstanceId===action.sourceInstanceId);
- const port={gameOver:()=>!!state.server.gameOver,activeSide:()=>state.activeSide,piece:k=>state.board[k],abilities:p=>require('./effective-rules.js').abilities(p,defs,state),remaining:p=>C.attackLimit(p,defs,state)-(p.attacksUsed??(p.a?C.attackLimit(p,defs,state):0)),mana:s=>state.players[s].mana,pay:(s,n)=>state.players[s].mana-=n,spend:p=>{p.attacksUsed=(p.attacksUsed??(p.a?C.attackLimit(p,defs,state):0))+1;p.a=p.attacksUsed>=C.attackLimit(p,defs,state);},validTarget:t=>t?.kind==='king'?['p','c'].includes(t.side):t?.kind==='creature'&&!!state.board[t.cell],damage:(t,n)=>t.kind==='king'?damage.damageKing(t.side,n):damage.damageCreature(t.cell,n),emit:(type,detail)=>events.push({type,...detail}),awakened:s=>state.enchantments.some(e=>e.cardId==='王の覚醒'&&e.zone!=='graveyard'&&e.target?.kind==='king'&&e.target.side===s&&require('./effective-rules.js').enabled(state,{sourceInstanceId:'king:'+s},'awaken_attack','activated',e.instanceId)),kingUsed:s=>state.server.kingAction?.[s]?.awaken_attack||0,spendKing:s=>{state.server.kingAction||={p:{},c:{}};state.server.kingAction[s]||={};state.server.kingAction[s].awaken_attack=(state.server.kingAction[s].awaken_attack||0)+1;}};
+ const port={gameOver:()=>!!state.server.gameOver,activeSide:()=>state.activeSide,piece:k=>state.board[k],abilities:p=>require('./effective-rules.js').abilities(p,defs,state),remaining:p=>C.attackLimit(p,defs,state)-(p.attacksUsed??(p.a?C.attackLimit(p,defs,state):0)),mana:s=>state.players[s].mana,pay:(s,n)=>M.spend(state.players[s],n,payment),spend:p=>{p.attacksUsed=(p.attacksUsed??(p.a?C.attackLimit(p,defs,state):0))+1;p.a=p.attacksUsed>=C.attackLimit(p,defs,state);},validTarget:t=>t?.kind==='king'?['p','c'].includes(t.side):t?.kind==='creature'&&!!state.board[t.cell],damage:(t,n)=>t.kind==='king'?damage.damageKing(t.side,n):damage.damageCreature(t.cell,n),emit:(type,detail)=>events.push({type,...detail}),awakened:s=>state.enchantments.some(e=>e.cardId==='王の覚醒'&&e.zone!=='graveyard'&&e.target?.kind==='king'&&e.target.side===s&&require('./effective-rules.js').enabled(state,{sourceInstanceId:'king:'+s},'awaken_attack','activated',e.instanceId)),kingUsed:s=>state.server.kingAction?.[s]?.awaken_attack||0,spendKing:s=>{state.server.kingAction||={p:{},c:{}};state.server.kingAction[s]||={};state.server.kingAction[s].awaken_attack=(state.server.kingAction[s].awaken_attack||0)+1;}};
  const source=state.board[from],limit=defs[source?.type]?.abilityLimits?.[action.abilityId];if(source&&limit!=null&&(source.abilityUses?.[action.abilityId]||0)>=limit)return {ok:false,code:'ILLEGAL_ABILITY'};
  const ok=action.abilityId==='sorcerer_bolt'?K.bolt(port,action.side,from,target):action.abilityId==='awaken_attack'?K.awaken(port,action.side,target):false;
  if(ok&&source)(source.abilityUses||={})[action.abilityId]=(source.abilityUses?.[action.abilityId]||0)+1;
@@ -5905,6 +6134,7 @@ module.exports={apply};
 },
 "./a5-spells.cjs":function(module,exports,require){
 'use strict';
+const M=require('./attribute-mana.cjs');
 const {ensureInstances,playCard,drawCard}=require('./card-zones.cjs');
 const {makePort}=require('./a1-port.cjs');
 const cell=k=>Number.isInteger(k)&&k>=0&&k<25;
@@ -5920,10 +6150,11 @@ function cast(state,action,defs){
  const index=target?.kind==='creature'&&target.instanceId?state.board.findIndex(p=>p?.sourceInstanceId===target.instanceId):-1;
  const creature=index>=0;
  if(!require('./target-queries.cjs').cardValid(state,action,defs))return {ok:false,code:'INVALID_TARGET'};
- if(state.players[side].mana<d.cost)return {ok:false,code:'INSUFFICIENT_MANA'};
+ const payment=M.cardPayment(state.players[side],action,d);
+ if(!payment)return {ok:false,code:'INSUFFICIENT_MANA'};
  ensureInstances(state);const matches=state.private[side].hand.filter(c=>c.cardId===cardId),card=action.instanceId?matches.find(c=>c.instanceId===action.instanceId):matches.length===1?matches[0]:null;
  if(!card)return {ok:false,code:'CARD_NOT_IN_HAND'};
- playCard(state,side,card.instanceId);state.players[side].mana-=d.cost;
+ playCard(state,side,card.instanceId);M.spend(state.players[side],d.cost,payment);
  const events=[];require('./effect-events.cjs').recordCardUse(state,side,card,defs,events);
  if(cardId==='クロスフレイム'||cardId==='ポイズンミスト'){
   const cells=[target.k,...require('./board-neighbors.cjs').orthogonalCells(target.k)];
@@ -5972,6 +6203,7 @@ function fromLegacyState(S){
  }
  for(const side of ['p','c']){
   players[side]={kingHp:S[side+'Hp'],mana:S.manaBySide?.[side],maxMana:S.maxManaBySide?.[side],graveyard:cards(S.graveyards?.[side]||[],side,'graveyard')};
+  if(S.attributeMana?.[side])players[side].attributeMana=copy(S.attributeMana[side]);
   privateData[side]={hand:cards(S[side==='p'?'hand':'cHand'],side,'hand'),deck:cards(S[side==='p'?'deck':'cDeck'],side,'deck').reverse()};
  }
  function target(t){if(t?.kind!=='creature')return copy(t);const index=t.ref?S.board.indexOf(t.ref):S.board.findIndex(p=>p&&String(p.sourceInstanceId)===String(t.instanceId));if(index<0)throw new Error('UNRESOLVED_CREATURE_REFERENCE');board[index].sourceInstanceId??='adapter-board-'+index;return {kind:'creature',instanceId:String(board[index].sourceInstanceId)};}
@@ -5998,6 +6230,7 @@ function toLegacyState(core){
  s.cardIdentities={p:{},c:{}};
  for(const side of ['p','c']){
   const p=core.players[side],priv=core.private[side],hand=copy(priv.hand),deck=copy(priv.deck).reverse();
+  if(p.attributeMana)(s.attributeMana||={})[side]=copy(p.attributeMana);
   s[side+'Hp']=p.kingHp;s.manaBySide[side]=p.mana;s.maxManaBySide[side]=p.maxMana;s.graveyards[side]=copy(p.graveyard);
   s[side==='p'?'hand':'cHand']=hand.map(c=>typeof c==='string'?c:c.cardId);s[side==='p'?'deck':'cDeck']=deck.map(c=>typeof c==='string'?c:c.cardId);
   s.coreBridge.zones[side]={hand,deck,graveyard:copy(p.graveyard)};
@@ -6030,6 +6263,7 @@ function used(s){return new Set([
  ...(s.enchantments||[]).map(e=>e.instanceId),
  ...sides.flatMap(side=>(s.graveyards?.[side]||[]).map(c=>c.instanceId)),
  ...sides.flatMap(side=>['hand','deck'].flatMap(z=>(s.cardIdentities?.[side]?.[z]||[]).map(c=>c.instanceId))),
+ ...sides.flatMap(side=>(s.attributeMana?.[side]?.cards||[]).map(c=>c.instanceId)),
  ...Object.values(s.pendingCardTransfers||{}).map(c=>c.instanceId)
  ].filter(x=>x!==undefined).map(String));}
 function allocate(s){const ids=used(s);s.nextCardIdentity=Math.max(1,s.nextCardIdentity||1);let id;do{id='html-card-'+s.nextCardIdentity++;}while(ids.has(id));return id;}
@@ -6051,7 +6285,7 @@ function drawIdentity(s,side){ensure(s);const deck=list(s,side,'deck'),hand=list
 function take(s,side,index){ensure(s);const hand=list(s,side,'hand');if(!Number.isInteger(index)||index<0||index>=hand.length)throw Error('INVALID_CARD_INDEX');hand.splice(index,1);const card=s.cardIdentities[side].hand.splice(index,1)[0];for(const viewer of sides){const known=s.coreBridge?.server?.revealedTo?.[viewer];if(known)s.coreBridge.server.revealedTo[viewer]=known.filter(id=>id!==card.instanceId);}return card;}
 function stage(s,side,index){if(s.pendingCardTransfers?.[side])throw Error('CARD_TRANSFER_PENDING');const c=take(s,side,index);(s.pendingCardTransfers||={})[side]=c;return c;}
 function finish(s,side,cardId){const c=s.pendingCardTransfers?.[side];if(!c)return null;if(c.cardId!==cardId)throw Error('CARD_TRANSFER_MISMATCH');delete s.pendingCardTransfers[side];return c.instanceId;}
-function validate(s){ensure(s);const all=[];for(const side of sides)for(const zone of ['hand','deck'])for(const c of s.cardIdentities[side][zone])all.push(c.instanceId);for(const side of sides)for(const c of s.graveyards?.[side]||[])all.push(c.instanceId);for(const p of s.board||[])if(p?.sourceInstanceId!==undefined)all.push(p.sourceInstanceId);for(const e of s.enchantments||[])all.push(e.instanceId);const ids=all.map(String);if(new Set(ids).size!==ids.length)throw Error('DUPLICATE_PHYSICAL_ID');return true;}
+function validate(s){ensure(s);const all=[];for(const side of sides)for(const zone of ['hand','deck'])for(const c of s.cardIdentities[side][zone])all.push(c.instanceId);for(const side of sides){for(const c of s.graveyards?.[side]||[])all.push(c.instanceId);for(const c of s.attributeMana?.[side]?.cards||[])all.push(c.instanceId);}for(const p of s.board||[])if(p?.sourceInstanceId!==undefined)all.push(p.sourceInstanceId);for(const e of s.enchantments||[])all.push(e.instanceId);const ids=all.map(String);if(new Set(ids).size!==ids.length)throw Error('DUPLICATE_PHYSICAL_ID');return true;}
 return {ensure,allocate,draw:drawIdentity,take,stage,finish,validate};
 });
 
@@ -6072,6 +6306,7 @@ function commit(S,core,events){
  if(out.pendingEntryHtml)out.pendingEntryHtml.p=out.board.find(p=>p&&String(p.sourceInstanceId)===String(out.pendingEntryHtml.p.sourceInstanceId))||out.pendingEntryHtml.p;
  for(const side of ['p','c'])out.graveyards[side]=out.graveyards[side].map(c=>({...c,owner:side,zone:'graveyard'}));
  const excluded=new Set(['card','piece','eventHistory']);
+ if(!out.attributeMana)delete S.attributeMana;
  for(const k of ['pendingChoice','pendingSummon','pendingEntry','tokenPlacement','pendingEntryHtml'])delete S[k];
  for(const [k,v] of Object.entries(out))if(!excluded.has(k))S[k]=v;
  // The selected attacker may have died from a resolved counter ability.
@@ -6095,15 +6330,15 @@ function execute(S,action,defs,{autoCpuChoice=false}={}){
  }
  commit(S,r.state,events);return {ok:true,events,state:r.state,...(r.combat?{combat:r.combat}:{})};
 }
-function summon(S,side,index,to,defs){
+function summon(S,side,index,to,defs,payment){
  const hand=side==='p'?S.hand:S.cHand,cardId=hand?.[index];if(!cardId)return {ok:false,code:'CARD_NOT_IN_HAND'};
  const staged=copy(S);I.ensure(staged);const instanceId=staged.cardIdentities[side].hand[index]?.instanceId;
- const result=execute(staged,{type:'summon',side,cardId,instanceId,to},defs,{autoCpuChoice:true});if(!result.ok)return result;
+ const result=execute(staged,{type:'summon',side,cardId,instanceId,to,payment},defs,{autoCpuChoice:true});if(!result.ok)return result;
  commit(S,result.state,result.events);return {...result,piece:S.board[to]};
 }
-function attack(S,from,to,defs){
+function attack(S,from,to,defs,payment){
  const target=to===null?null:S.board[to];
- const result=execute(S,{type:to===null?'attack_king':'attack_creature',side:S.side,from,...(to===null?{}:{to})},defs);if(!result.ok)return result;
+ const result=execute(S,{type:to===null?'attack_king':'attack_creature',side:S.side,from,payment,...(to===null?{}:{to})},defs);if(!result.ok)return result;
  return {...result,hit:{piece:target,amount:0,...result.combat,pending:!result.combat}};
 }
 function chooseToken(S,side,to,defs){return execute(S,{type:'chooseTokenCell',side,to},defs);}
@@ -6184,9 +6419,9 @@ function play(S,side,index,t,defs,extra={}){
  const r=B.execute(staged,{type:d.type==='spell'?'play_spell':'play_enchant',side,cardId,instanceId:staged.cardIdentities[side].hand[index].instanceId,target:target(S,staged,t,cardId),...extra},defs);
  if(r.ok)B.commit(S,r.state,r.events);return r;
 }
-function activate(S,side,abilityId,from,t,defs){
+function activate(S,side,abilityId,from,t,defs,payment){
  const staged=structuredClone(S);I.ensure(staged);
- const r=B.execute(staged,{type:'activate_ability',side,abilityId,sourceInstanceId:staged.board[from]?.sourceInstanceId,target:target(S,staged,t)},defs);
+ const r=B.execute(staged,{type:'activate_ability',side,abilityId,payment,sourceInstanceId:staged.board[from]?.sourceInstanceId,target:target(S,staged,t)},defs);
  if(r.ok)B.commit(S,r.state,r.events);return r;
 }
 function choosePromotion(S,accept,defs){const q=S.pendingChoice;if(!q)return {ok:false,code:'NO_CHOICE'};return B.execute(S,{type:'choosePromotion',side:q.side,accept},defs);}
@@ -6250,7 +6485,7 @@ function target(S,t,cardId){
 }
 function view(S,actor){
  const board=S.board.map((p,k)=>p?.sourceInstanceId?p:p?{...p,sourceInstanceId:id(p,k)}:null);
- const players={p:{mana:S.manaBySide.p},c:{mana:S.manaBySide.c}};
+ const players={p:{mana:S.manaBySide.p,attributeMana:S.attributeMana?.p},c:{mana:S.manaBySide.c,attributeMana:S.attributeMana?.c}};
  const hand=(actor==='p'?S.hand:S.cHand)||[],saved=S.cardIdentities?.[actor]?.hand;
  const cards=hand.map((c,i)=>({cardId:typeof c==='string'?c:c.cardId,instanceId:saved?.[i]?.cardId===(typeof c==='string'?c:c.cardId)?saved[i].instanceId:'query-hand-'+actor+'-'+i}));
  return {abilityControls:S.abilityControls,modifiers:S.modifiers,board,players,private:{[actor]:{hand:cards}},activeSide:S.side,enchantments:(S.enchantments||[]).map(e=>({...e,target:target(S,e.target)})),temporaryEffects:(S.temporaryEffects||[]).map(e=>({...e,target:target(S,e.target)})),server:{gameOver:S.gameOver,kingAction:S.kingAction,pendingChoice:S.pendingChoice,pendingSummon:S.pendingSummon||S.tokenPlacement,pendingEntry:S.pendingEntry||S.pendingEntryHtml,effectQueue:S.effectQueue,pendingCardTransfers:S.pendingCardTransfers}};
@@ -6524,7 +6759,7 @@ const TutorialController={
   if(s.color)document.querySelectorAll('#board .cell').forEach(e=>{if(s.color==='move'){e.classList.remove('attackTarget');if(e.classList.contains('bothTarget')){e.classList.remove('bothTarget');e.classList.add('moveTarget')}}if(s.color==='attack'){e.classList.remove('moveTarget');if(e.classList.contains('bothTarget')){e.classList.remove('bothTarget');e.classList.add('attackTarget')}}});
   $('undoOne').disabled=true;NormalGameUI.refreshTutorialGeometry();
  },
- finish(){NormalGameUI.cancelTurnPresentation();this.epoch++;this.active=false;this.clearGlow();document.body.classList.remove('tutorial-mode');$('tutorialCoach').classList.remove('show');sessionStorage.removeItem('cardTacticsStartInGame');location.reload()},
+ finish(){NormalGameUI.cancelTurnPresentation();this.epoch++;this.active=false;this.clearGlow();document.body.classList.remove('tutorial-mode');$('tutorialCoach').classList.remove('show');cpuSessionStorage.removeItem('cardTacticsStartInGame');location.reload()},
  async runCPU(){
   if(!this.active||S.side!=='c'||this.current.action?.kind!=='cpu'||this.running)return;
   const epoch=this.epoch;this.running=true;
@@ -6658,7 +6893,7 @@ function tutorialSteps(){
 
 function startTutorial(){TutorialController.start()}
 let cpuDeckMatchStarted=false;function startGameScreen(){NormalGameUI.startPlayPresentation();const startsCpuMatch=!TutorialController.active&&!cpuDeckMatchStarted;if(startsCpuMatch){initializeCpuDeckMatch();cpuDeckMatchStarted=true;}
-  sessionStorage.removeItem("cardTacticsStartInGame");
+  cpuSessionStorage.removeItem("cardTacticsStartInGame");
   document.getElementById("titleScreen").style.display="none";
   document.getElementById("app").classList.remove("gameScreenHidden");
   CardTacticsBGM.setActive(!S.gameOver);
@@ -6821,7 +7056,7 @@ return {FORMAT,VERSION,MAX_LENGTH,encode,decode,inspectCounts};
 });
 
 const DeckCardKinds=Object.freeze({creature:{label:'クリーチャー',icon:'♟️'},spell:{label:'スペル',icon:'⚡️'},enchant:{label:'エンチャント',icon:'🔮'}});
-const DeckLibrary=CardTacticsDeckLibrary.create(DeckValidation,{getItem:k=>localStorage.getItem(k),setItem:(k,v)=>localStorage.setItem(k,v)});
+const DeckLibrary=CardTacticsDeckLibrary.create(DeckValidation,{getItem:k=>cpuLocalStorage.getItem(k),setItem:(k,v)=>cpuLocalStorage.setItem(k,v)});
 const DeckRepository={loadConfirmed:()=>DeckLibrary.active().counts,toCardIds:c=>DeckValidation.toCardIds(c)};
 const DeckBuilder={selected:null,dirty:false,
  get slot(){return this.data.slots.find(x=>x.id===this.id)},
@@ -7085,12 +7320,12 @@ const CpuDeckSettings = globalThis.CpuDeckSettings = (() => {
 
   function selectedId() {
     if (unsavedChoice !== null) return unsavedChoice;
-    try { return localStorage.getItem(key) ?? standardId; } catch { return standardId; }
+    try { return cpuLocalStorage.getItem(key) ?? standardId; } catch { return standardId; }
   }
 
   function save(id) {
     try {
-      localStorage.setItem(key, id);
+      cpuLocalStorage.setItem(key, id);
       unsavedChoice = null;
       return true;
     } catch {
@@ -7369,6 +7604,7 @@ function rememberCpuBattleBoard(){
  cpuBattleBefore={board,players,enchantments};
 }
 function restoreCpuBattleAction(){
+ globalThis.AttributeManaScreen?.clearPayments();
  cpuBattleRevision=S.revision??-1;
  NormalGameUI.clearAttackDamage();
  SummonPresentation.clear();
@@ -7567,7 +7803,7 @@ for(const [side,id] of [['enemy','enemyPedestal'],['player','playerPedestal']]){
 let pieceOverlayResizeQueued=false;
 window.addEventListener("resize",()=>{if(pieceOverlayResizeQueued)return;pieceOverlayResizeQueued=true;requestAnimationFrame(()=>{pieceOverlayResizeQueued=false;renderPieceOverlay()})});
 
-function render(){if(S.gameOver){NormalGameUI.cancelTurnPresentation();NormalGameUI.clearOpponentCards();}CardTacticsBGM.setActive(!S.gameOver&&!document.getElementById("app").classList.contains("gameScreenHidden"));NormalGameUI.renderTurn({activeSide:S.side,viewer:"p",ended:S.gameOver});rememberCpuBattleBoard();syncCpuBattleChoice(); const targetHighlights=GameCore.selectedTargets();const combatHighlights=S.piece!==null||S.cpuPreview?GameCore.queryCombat(S.cpuPreview?.from??S.piece):null;updateUndoButton();$("pGrave").textContent=S.graveyards.p.length;$("cGrave").textContent=S.graveyards.c.length;$("pHp").textContent=S.pHp;$("cHp").textContent=S.cHp;document.querySelectorAll(".kingZone").forEach(z=>{const side=z.classList.contains("player")?"p":"c";z.querySelector(".king").textContent=(side==="p"?"あなたの王":"相手の王")+(spellsBlocked(side)?" 🔒封魔":"")});$("mana").textContent=S.manaBySide.p+"/"+S.maxManaBySide.p;$("cpuMana").textContent=S.manaBySide.c+"/"+S.maxManaBySide.c;$("turn").textContent=S.turn;CardResourceUI.render({enemyHand:S.cHand.length,ownDeck:S.deck.length,enemyDeck:S.cDeck.length});$("globalEnchantCount").textContent=activeGlobalEnchantments().length;document.querySelector(".kingZone.enemy").classList.toggle("attackable",S.side==="p"&&S.piece!==null&&!!S.board[S.piece]&&kingAtk(S.board[S.piece],S.piece));
+function render(){if(S.gameOver){NormalGameUI.cancelTurnPresentation();NormalGameUI.clearOpponentCards();}CardTacticsBGM.setActive(!S.gameOver&&!document.getElementById("app").classList.contains("gameScreenHidden"));NormalGameUI.renderTurn({activeSide:S.side,viewer:"p",ended:S.gameOver});rememberCpuBattleBoard();syncCpuBattleChoice(); const targetHighlights=GameCore.selectedTargets();const combatHighlights=S.piece!==null||S.cpuPreview?GameCore.queryCombat(S.cpuPreview?.from??S.piece):null;updateUndoButton();$("pGrave").textContent=S.graveyards.p.length;$("cGrave").textContent=S.graveyards.c.length;$("pHp").textContent=S.pHp;$("cHp").textContent=S.cHp;document.querySelectorAll(".kingZone").forEach(z=>{const side=z.classList.contains("player")?"p":"c";z.querySelector(".king").textContent=(side==="p"?"あなたの王":"相手の王")+(spellsBlocked(side)?" 🔒封魔":"")});$("mana").textContent=S.manaBySide.p+"/"+S.maxManaBySide.p;$("cpuMana").textContent=S.manaBySide.c+"/"+S.maxManaBySide.c;globalThis.AttributeManaScreen?.refresh();$("turn").textContent=S.turn;CardResourceUI.render({enemyHand:S.cHand.length,ownDeck:S.deck.length,enemyDeck:S.cDeck.length});$("globalEnchantCount").textContent=activeGlobalEnchantments().length;document.querySelector(".kingZone.enemy").classList.toggle("attackable",S.side==="p"&&S.piece!==null&&!!S.board[S.piece]&&kingAtk(S.board[S.piece],S.piece));
 document.querySelectorAll('.kingZone').forEach(z=>{const side=z.classList.contains('enemy')?'c':'p';z.classList.toggle('spellTarget',S.side==='p'&&(targetHighlights.choices.some(a=>R13View.atKing(a,side))||targetHighlights.stage==='none'&&S.card!=null&&S.hand[S.card]==='マナ'&&side==='p'&&targetHighlights.choices.length>0));});
 for(const [id,side] of [['enemyPedestal','enemy'],['playerPedestal','player']]){
  const pedestal=$(id),zone=document.querySelector('.kingZone.'+side);
@@ -7575,7 +7811,7 @@ for(const [id,side] of [['enemyPedestal','enemy'],['playerPedestal','player']]){
 }
 let b=$("board");b.innerHTML="";for(let r=0;r<5;r++)for(let c=0;c<5;c++){let k=I(r,c),e=document.createElement("div");e.className="cell";if(S.piece===k)e.classList.add("selected");if(targetHighlights.stage==='guardian'&&targetHighlights.choices.some(a=>a.to===k))e.classList.add('summonTarget');if(S.side==='p'&&targetHighlights.choices.some(a=>a.type==='summon'&&a.to===k))e.classList.add('summonTarget');if(EnchantmentZone.attachedToCell(k).some(e=>e.cardId==="マイン"&&e.owner==="p"))e.classList.add("mineCell","ownMine");if(publicCellEnchantments(k,"p").length)e.classList.add("cellEnchanted");if(S.side==='p'&&targetHighlights.choices.some(a=>a.type!=='summon'&&R13View.atCell(S,a,k)))e.classList.add(S.kingAttackMode?'attackTarget':'spellTarget');if(S.tokenPlacement?.choices.includes(k))e.classList.add("summonTarget");if(S.cpuPreview?.from===k)e.classList.add("cpuSelected");let p=S.board[k];if(S.piece!==null||S.cpuPreview){let origin=S.cpuPreview?.from??S.piece;let q=S.board[origin];if(q){let canMove=S.cpuPreview?.kind==="attack"?false:combatHighlights.moves.includes(k),canAttack=S.cpuPreview?.kind==="move"?false:combatHighlights.attackRange.includes(k);if(canMove&&canAttack)e.classList.add("bothTarget");else if(canMove)e.classList.add("moveTarget");else if(canAttack)e.classList.add("attackTarget")}}if(p){let z=document.createElement("div");z.className="piece "+(p.side==="p"?"player":"cpu")+(p.berserk>0?" berserk":"");z.innerHTML=`${GameCore.combatRights(p).attack?'<span class="actionDot attack" aria-label="攻撃可能"></span>':''}${GameCore.combatRights(p).move?'<span class="actionDot move" aria-label="移動可能"></span>':''}<div class="pieceOrb" aria-hidden="true"></div><div class="pieceHud"><div class="pieceHudName">${p.type}</div><div class="pieceHudStats">❤️${p.hp} ⚔️${power(p)}</div></div>${p.berserk>0?`<span class="buffTag">狂化 ${p.berserk}</span>`:""}`;e.appendChild(z)}e.onclick=()=>clickCell(r,c);b.appendChild(e)}
 renderPieceOverlay();
-let h=$("hand");h.innerHTML="";S.hand.forEach((t,i)=>{let d=T[t]||SPELL[t]||ENCHANT[t],spell=!!SPELL[t],enchant=!!ENCHANT[t],e=document.createElement("div");e.className="card"+(spell?" spell":enchant?" enchant":"")+(S.card===i?" selected":"");e.innerHTML=NormalGameUI.cardHTML(t,d,{spell,enchant,text:CARD_TEXT[t]});e.onclick=()=>pickCard(i);h.appendChild(e)});renderInfo();TutorialController.decorate()}
+let h=$("hand");h.innerHTML="";S.hand.forEach((t,i)=>{let d=T[t]||SPELL[t]||ENCHANT[t],spell=!!SPELL[t],enchant=!!ENCHANT[t],e=document.createElement("div");e.className="card"+(spell?" spell":enchant?" enchant":"")+(S.card===i?" selected":"");e.innerHTML=NormalGameUI.cardHTML(t,d,{spell,enchant,text:CARD_TEXT[t]});globalThis.AttributeManaScreen?.renderCard(e,t);e.onclick=()=>globalThis.AttributeManaScreen?AttributeManaScreen.pick(i):pickCard(i);h.appendChild(e)});renderInfo();TutorialController.decorate()}
 // Presentation/CPU adapters: legality, payment, damage and entry jobs stay in Core.
 function castCreaturePair(k){
  const cardId=S.hand[S.card];
@@ -7807,12 +8043,12 @@ function publishCoreCommand(result,initial=false){
  }
  function playCardUnified(side,index,target,extra={}){
   if(EffectEngine.resolving||EffectEngine.queue.length||pendingSummonAbilities.length)return {ok:false,code:'RESOLUTION_BUSY'};
-  return finishR5Command(R5Command.play(S,side,index,target,CARD_DEFINITIONS,extra));
+  return finishR5Command(R5Command.play(S,side,index,target,CARD_DEFINITIONS,S.attributeMana?{...extra,payment:AttributeManaScreen.getCardPayment(side,index)}:extra));
  }
  function summonCardUnified(side,index,k){
   if(EffectEngine.resolving||EffectEngine.queue.length||pendingSummonAbilities.length)return {ok:false,code:'RESOLUTION_BUSY'};
   if(!GameCore.cardQuery(side,index).choices.some(a=>a.to===k))return {ok:false,code:'INVALID_TARGET'};
-  const result=R4Command.summon(S,side,index,k,CARD_DEFINITIONS);publishCoreCommand(result);return result;
+  const result=R4Command.summon(S,side,index,k,CARD_DEFINITIONS,globalThis.AttributeManaScreen?.getCardPayment(side,index));publishCoreCommand(result);return result;
  }
  const GameEvents={
   listeners:new Map(),
@@ -7879,7 +8115,7 @@ const GameCore={
     const piece=S.board[from];
     if(!piece||S.board[to]||!rel(piece,from).includes(to))return null;
     if(EffectEngine.resolving||EffectEngine.queue.length||pendingSummonAbilities.length)return null;
-    const result=finishR5Command(R4Command.execute(S,{type:'move',side:S.side,from,to},CARD_DEFINITIONS));
+    const result=finishR5Command(R4Command.execute(S,{type:'move',side:S.side,from,to,payment:globalThis.AttributeManaScreen?.getFlexPayment(S.side,{type:'move',from})},CARD_DEFINITIONS));
     return result.ok?piece:null;
   },
   damageCreature(k,amount){
@@ -7906,8 +8142,8 @@ const GameCore={
     GameEvents.emit("king:damaged",{side,amount,hp:S[key]});
     return defeated;
   },
-  attackCreature(from,to){if(r10ResolutionBusy())return null;ensureA1Ids();const result=R4Command.attack(S,from,to,CARD_DEFINITIONS);return publishCoreCommand(result)?result.hit:null;},
-  attackKing(from){if(r10ResolutionBusy())return null;ensureA1Ids();const result=R4Command.attack(S,from,null,CARD_DEFINITIONS);return publishCoreCommand(result)?result.hit:null;}
+  attackCreature(from,to){if(r10ResolutionBusy())return null;ensureA1Ids();const result=R4Command.attack(S,from,to,CARD_DEFINITIONS,globalThis.AttributeManaScreen?.getFlexPayment(S.side,{type:"attack_creature",from}));return publishCoreCommand(result)?result.hit:null;},
+  attackKing(from){if(r10ResolutionBusy())return null;ensureA1Ids();const result=R4Command.attack(S,from,null,CARD_DEFINITIONS,globalThis.AttributeManaScreen?.getFlexPayment(S.side,{type:"attack_king",from}));return publishCoreCommand(result)?result.hit:null;}
 };
 // 召喚イベントで能力を記録し、配置・マイン処理の後に解決する。
 // プレイヤーの配置先選択とCPUの自動選択は offerBarricade に委ねる。
@@ -7937,7 +8173,7 @@ function offerBarricade(side,k){const choices=barricadeChoices(k);if(!choices.le
  S.tokenPlacement={choices,side,cell:k,sourceInstanceId:S.board[k]?.sourceInstanceId};S.piece=null;S.inspect=null;msg("守備兵：左右どちらにバリケードを生成するか、緑色のマスを選んでください。","guide");render();}
 function beginSorcererAbility(){if(S.side!=='p'||!GameCore.abilityQuery('p','sorcerer_bolt',S.piece).length)return;S.sorcererMode=!S.sorcererMode;S.card=null;msg(S.sorcererMode?'ソーサラーの魔法：対象のクリーチャーまたは王をタップ。':'魔法の対象選択を解除しました。',"guide");render();}
 // 操作方法に依存しないソーサラーの共通能力処理。対象選択と表示は呼び出し側で行う。
-function resolveSorcererBolt(side,from,target){if(!GameCore.abilityAllowed(side,'sorcerer_bolt',from,target))return null;const victim=target?.kind==='piece'?S.board[target.k]:null;const r=finishR5Command(R5Command.activate(S,side,'sorcerer_bolt',from,target,CARD_DEFINITIONS));if(!r.ok)return null;return {kind:target.kind,k:target.k,side:target.side,victim,gameOver:S.gameOver};}
+function resolveSorcererBolt(side,from,target){if(!GameCore.abilityAllowed(side,'sorcerer_bolt',from,target))return null;const victim=target?.kind==='piece'?S.board[target.k]:null;const r=finishR5Command(R5Command.activate(S,side,'sorcerer_bolt',from,target,CARD_DEFINITIONS,globalThis.AttributeManaScreen?.getFlexPayment(side,{type:"activate_ability",abilityId:'sorcerer_bolt'})));if(!r.ok)return null;return {kind:target.kind,k:target.k,side:target.side,victim,gameOver:S.gameOver};}
 function toggleHealing(){
  if(S.sorcererMode==='heal')S.sorcererMode=false;
  else if(GameCore.abilityQuery('p','heal',S.piece).length)S.sorcererMode='heal';
@@ -7973,7 +8209,7 @@ function usePaidAbility(id,target){
  if(!GameCore.abilityAllowed('p',id,S.piece,target))return;
  const undoable=id==='wind_push';
  if(undoable)beginPlayerActionUndo();
- const result=finishR5Command(R5Command.activate(S,'p',id,S.piece,target,CARD_DEFINITIONS));
+ const result=finishR5Command(R5Command.activate(S,'p',id,S.piece,target,CARD_DEFINITIONS,globalThis.AttributeManaScreen?.getFlexPayment('p',{type:"activate_ability",abilityId:id})));
  if(!result.ok){
   if(undoable)cancelPlayerActionUndo();
   return;
@@ -8385,6 +8621,7 @@ const cpuWait=async()=>{await waitForPlayerChoice();return CpuPresentation.wait(
   const other = side => side === 'p' ? 'c' : 'p';
   const copy = value => JSON.parse(JSON.stringify(value));
   const unknown = '@cpu-unknown';
+  const mana = Core.attributeMana;
   const endTurn = side => ({type: 'end_turn', side});
   const limits = Object.freeze({depth: 3, rootWidth: 32, width: 8, beam: 3, finalists: 5, replyWidth: 5, replyDepth: 3, nodes: 180});
   const gachiLimits = Object.freeze({...limits, gachi: true, rootWidth: 40, width: 10, beam: 4,
@@ -8448,6 +8685,46 @@ const cpuWait=async()=>{await waitForPlayerChoice();return CpuPresentation.wait(
     return null;
   }
 
+  // The same payment reducer is used by both players. Keep a few different
+  // remainders in the beam, ordered by what the actor could still cast.
+  function handManaValue(cards, defs, pool, spentCard, future = false) {
+    const capacity = pool.red + pool.blue + pool.neutral;
+    let value = 0;
+    for (const card of cards) {
+      if (card.instanceId === spentCard || !mana.colorOf(card.cardId)) continue;
+      const {color, cost, required} = mana.requirement(card.cardId, defs[card.cardId]);
+      const colorShort = Math.max(0, required - pool[color]);
+      const totalShort = Math.max(0, cost - capacity);
+      if (!colorShort && !totalShort) value += 0.24 + 0.05 * cost;
+      else if (future && colorShort + totalShort <= 2) value += 0.12 / (colorShort + totalShort);
+    }
+    return value;
+  }
+
+  function paymentVariants(state, side, actions, defs, {boardOnly = false} = {}) {
+    const player = state.players[side];
+    if (!player.attributeMana) return actions;
+    const hand = state.private[side].hand, cache = new Map();
+    return actions.flatMap(action => {
+      if (action.type === 'charge_mana') return [action];
+      const rule = action.cardId ? mana.requirement(action.cardId, defs[action.cardId]) : undefined;
+      const cost = rule?.cost ?? Core.flexManaCost(state, action, defs);
+      if (!cost) return [action];
+      const key = action.cardId ?? cost;
+      if (!cache.has(key)) {
+        const available = player.attributeMana.available;
+        const options = mana.options(player, cost, rule);
+        const rated = options.map(payment => ({
+          payment, value: handManaValue(hand, defs, Object.fromEntries(
+            mana.colors.map(color => [color, available[color] - payment[color]])), action.instanceId)
+        }));
+        rated.sort((a, b) => b.value - a.value);
+        cache.set(key, rated.slice(0, boardOnly ? 1 : 3).map(item => item.payment));
+      }
+      return cache.get(key).map(payment => ({...action, payment}));
+    });
+  }
+
   function candidates(state, side, defs, {boardOnly = false} = {}) {
     if (state.server.gameOver) return [];
     const pending = pendingActions(state, side);
@@ -8463,13 +8740,15 @@ const cpuWait=async()=>{await waitForPlayerChoice();return CpuPresentation.wait(
     for (const abilityId of ['awaken_attack', 'royal_wind']) {
       actions.push(...Core.queryAbility(state, side, {abilityId}, defs));
     }
-    if (boardOnly) return actions;
+    if (boardOnly) return paymentVariants(state, side, actions, defs, {boardOnly});
 
     // Equal copies are interchangeable for this search. Keep the real ID of one copy.
     const seen = new Set();
     for (const card of state.private[side].hand) {
       if (!Object.hasOwn(defs, card.cardId) || seen.has(card.cardId)) continue;
       seen.add(card.cardId);
+      if (mana.canCharge(state.players[side]) && mana.colorOf(card.cardId))
+        actions.push({type: 'charge_mana', side, cardId: card.cardId, instanceId: card.instanceId});
       const query = selection => Core.queryCard(state, side, selection, defs);
       const initial = query(card);
       for (const action of initial.choices) {
@@ -8483,7 +8762,7 @@ const cpuWait=async()=>{await waitForPlayerChoice();return CpuPresentation.wait(
       }
     }
     actions.push(endTurn(side));
-    return actions;
+    return paymentVariants(state, side, actions, defs);
   }
 
   function evaluator(defs, side, gachi) {
@@ -8579,11 +8858,19 @@ const cpuWait=async()=>{await waitForPlayerChoice();return CpuPresentation.wait(
       for (const owner of [side, enemy]) {
         const sign = owner === side ? 1 : -1;
         const player = state.players[owner];
-        const mana = state.server.manaBonus?.[owner] ?? 0;
+        const attribute = player.attributeMana;
+        const manaBonus = attribute ? 0 : state.server.manaBonus?.[owner] ?? 0;
         const hand = state.private[owner].hand.length, deck = state.private[owner].deck.length;
         total += sign * (0.47 * player.kingHp - (player.kingHp <= 5 ? (6 - player.kingHp) * 0.4 : 0)
-          + 1.5 * mana + (owner === state.activeSide ? 0.16 * player.mana : 0)
+          + 1.5 * manaBonus + (owner === state.activeSide ? 0.16 * player.mana : 0)
           + Math.min(hand, 7) * 1.4 + Math.max(0, hand - 7) * 0.5 - Math.max(0, 4 - deck) * 0.7);
+        if (attribute) {
+          const ramp = 2.65 * Math.min(player.maxMana, 5) + 1.3 * Math.max(0, player.maxMana - 5);
+          const future = handManaValue(state.private[owner].hand, defs, attribute.total, undefined, true);
+          const immediate = owner === state.activeSide
+            ? handManaValue(state.private[owner].hand, defs, attribute.available) : 0;
+          total += sign * (ramp + 0.85 * future + 0.55 * immediate);
+        }
       }
       for (const [cell, piece] of state.board.entries()) {
         if (piece) total += (piece.side === side ? 1 : -1) * unit(state, piece, cell);
@@ -8629,6 +8916,15 @@ const cpuWait=async()=>{await waitForPlayerChoice();return CpuPresentation.wait(
         cache.set(key, value);
         return (moving.side === actor ? 1 : -1) * value;
       };
+      if (action.type === 'charge_mana') {
+        const player = state.players[actor], current = player.attributeMana.available;
+        const color = mana.colorOf(action.cardId);
+        const cards = state.private[actor].hand;
+        const after = {...current, [color]: current[color] + 1};
+        const potential = handManaValue(cards, defs, after, action.instanceId)
+          - handManaValue(cards, defs, current);
+        return (player.maxMana < 5 ? 7 : 2) + 4 * potential;
+      }
       if (action.type === 'attack_king') return kingPriority(power);
       if (action.type === 'attack_creature') return 4 + damagePriority(power, to);
       if (action.type === 'move') return travel(piece, action.from, to);
@@ -8693,7 +8989,8 @@ const cpuWait=async()=>{await waitForPlayerChoice();return CpuPresentation.wait(
       // targets cannot crowd out every attack, summon or alternative spell.
       const groups = new Set(), selected = new Set();
       for (const action of sorted) {
-        const group = action.cardId || action.abilityId || action.type;
+        const group = action.type === 'charge_mana' ? 'charge-' + mana.colorOf(action.cardId)
+          : action.cardId || action.abilityId || action.type;
         if (!groups.has(group)) selected.add(action);
         groups.add(group);
         if (selected.size >= Math.ceil(width / 2)) break;
@@ -9033,7 +9330,7 @@ async function runTacticalCpu(difficulty) {
   }
 }
 
-async function cpu(){if(!TutorialController.active&&["tactical","gachi"].includes((globalThis.StoryController?.inBattle?StoryController.episode.match.difficulty:VisualSettings.state.cpuDifficulty)))return runTacticalCpu((globalThis.StoryController?.inBattle?StoryController.episode.match.difficulty:VisualSettings.state.cpuDifficulty));if(S.side==="c"&&!S.gameOver){await cpuCreatureAbilities();await cpuRoyalWind();await cpuThreeCards();await cpuTargetSpells();}
+async function cpu(){if(!TutorialController.active&&["tactical","gachi"].includes((isAttributeManaPage?"gachi":globalThis.StoryController?.inBattle?StoryController.episode.match.difficulty:VisualSettings.state.cpuDifficulty)))return runTacticalCpu((isAttributeManaPage?"gachi":globalThis.StoryController?.inBattle?StoryController.episode.match.difficulty:VisualSettings.state.cpuDifficulty));if(S.side==="c"&&!S.gameOver){await cpuCreatureAbilities();await cpuRoyalWind();await cpuThreeCards();await cpuTargetSpells();}
   if(S.gameOver||S.side!=="c")return;
   // この検証版では、封魔を使えるならほかのカードより先に使用する。
   const sealIndex=S.cHand.indexOf("封魔");
@@ -9123,7 +9420,7 @@ async function cpu(){if(!TutorialController.active&&["tactical","gachi"].include
   if(S.gameOver)return;
   // 「つよい」はここからクリーチャー行動だけを攻撃型1手先読みに差し替える。
   // 「よわい」はこの分岐を通らず、以下の従来アルゴリズムをそのまま実行する。
-  if((globalThis.StoryController?.inBattle?StoryController.episode.match.difficulty:VisualSettings.state.cpuDifficulty)==="strong"){
+  if((isAttributeManaPage?"gachi":globalThis.StoryController?.inBattle?StoryController.episode.match.difficulty:VisualSettings.state.cpuDifficulty)==="strong"){
     await strongCpuCreaturePhase();
     if(S.pHp<=0||S.gameOver)return;
     finishCpuTurn();return;
@@ -9176,10 +9473,10 @@ function win(reason="相手の王HPが0になりました。",alreadySettled=fal
 function lose(x,alreadySettled=false){CardTacticsBGM.setActive(false);if(S.gameOver&&!alreadySettled)return;S.gameOver=true;render();$("resultTitle").textContent="敗北";$("resultText").textContent=x;document.body.classList.add("result-open");$("overlay").classList.add("show")}
 $("tutorialBack").onclick=()=>TutorialController.backExplanation();$("tutorialNext").onclick=()=>TutorialController.next();$("endTurn").onclick=endTurn;$("undoOne").onclick=undoOneAction;a4SetTimeout(()=>{if(S.side==="p"&&!S.gameOver)seedActionSnapshot();},0);
 $("playAgain").onclick=()=>{
-  sessionStorage.setItem("cardTacticsStartInGame","1");
+  cpuSessionStorage.setItem("cardTacticsStartInGame","1");
   location.reload();
 };
-function initializeCpuDeckMatch(){initializeMatchRandom();S.deck=globalThis.StoryController?.inBattle?StoryController.deckFor("player"):playerDeck();S.cDeck=globalThis.StoryController?.inBattle?StoryController.deckFor("friend"):CpuDeckSettings.forMatch();publishCoreCommand(R12Core.initializeLegacyMatch(S,undefined,chooseCpuFirstSide(),true),true);render();}
+function initializeCpuDeckMatch(){initializeMatchRandom();if(isAttributeManaPage){S.deck=AttributeManaScreen.deckFor("p");S.cDeck=AttributeManaScreen.deckFor("c");}else S.deck=globalThis.StoryController?.inBattle?StoryController.deckFor("player"):playerDeck();if(!isAttributeManaPage)S.cDeck=globalThis.StoryController?.inBattle?StoryController.deckFor("friend"):CpuDeckSettings.forMatch();publishCoreCommand(R12Core.initializeLegacyMatch(S,undefined,chooseCpuFirstSide(),true,isAttributeManaPage),true);render();}
 
 
 // Visual settings: deliberately independent from game rules/state.
@@ -9217,8 +9514,8 @@ if(typeof ResizeObserver!=='undefined'){
 window.addEventListener('resize',syncInfoPanelHeight);window.addEventListener('resize',queueScrollHints);
 window.addEventListener('orientationchange',syncInfoPanelHeight);
 requestAnimationFrame(syncInfoPanelHeight);requestAnimationFrame(updateScrollHints);
-if(sessionStorage.getItem("cardTacticsStartInGame")==="1"){
-  sessionStorage.removeItem("cardTacticsStartInGame");
+if(!isAttributeManaPage&&cpuSessionStorage.getItem("cardTacticsStartInGame")==="1"){
+  cpuSessionStorage.removeItem("cardTacticsStartInGame");
   startGameScreen();
 }
 </script><script>
@@ -9232,9 +9529,9 @@ tutorialWrap('useSelectedMana','use',()=>null);
 tutorialWrap('endTurn','end',()=>null);
 $('endTurn').onclick=()=>endTurn();
 function syncCpuSpeedChoices(){document.querySelectorAll('[data-cpu-speed]').forEach(b=>{const selected=b.dataset.cpuSpeed===CpuPresentation.mode;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected));});}
-try{const saved=JSON.parse(localStorage.getItem('phase2VisualSettings')||'{}').cpuSpeed;if(['normal','fast','skip'].includes(saved))CpuPresentation.setMode(saved);}catch{}
+try{const saved=JSON.parse(cpuLocalStorage.getItem('phase2VisualSettings')||'{}').cpuSpeed;if(['normal','fast','skip'].includes(saved))CpuPresentation.setMode(saved);}catch{}
 syncCpuSpeedChoices();document.getElementById('settingsButton').addEventListener('click',syncCpuSpeedChoices);
-document.querySelectorAll('[data-cpu-speed]').forEach(button=>button.onclick=()=>{CpuPresentation.setMode(button.dataset.cpuSpeed);try{const saved=JSON.parse(localStorage.getItem('phase2VisualSettings')||'{}');localStorage.setItem('phase2VisualSettings',JSON.stringify({...saved,cpuSpeed:CpuPresentation.mode}));}catch{}syncCpuSpeedChoices();});
+document.querySelectorAll('[data-cpu-speed]').forEach(button=>button.onclick=()=>{CpuPresentation.setMode(button.dataset.cpuSpeed);try{const saved=JSON.parse(cpuLocalStorage.getItem('phase2VisualSettings')||'{}');cpuLocalStorage.setItem('phase2VisualSettings',JSON.stringify({...saved,cpuSpeed:CpuPresentation.mode}));}catch{}syncCpuSpeedChoices();});
 // Block every unrelated clickable control, including info/graveyard and navigation.
 document.addEventListener('click',event=>{
  if(!TutorialController.active)return;
@@ -9306,7 +9603,7 @@ return {actions,create};
 (()=>{
  const replay=document.getElementById('playAgain'),title=document.getElementById('resultToTitle');
  const context=()=>({mode:S.mode,tutorial:TutorialController.active,ended:S.gameOver});
- const controller=P2ResultNavigation.create({context,storage:sessionStorage,stop:()=>{a4StopPresentation();clearOneStepUndo();},onExit:detail=>document.dispatchEvent(new CustomEvent('p2b1:exit',{detail})),navigate:()=>location.reload()});
+ const controller=P2ResultNavigation.create({context,storage:cpuSessionStorage,stop:()=>{a4StopPresentation();clearOneStepUndo();},onExit:detail=>document.dispatchEvent(new CustomEvent('p2b1:exit',{detail})),navigate:()=>location.reload()});
  function refresh(){globalThis.StoryController?.refreshResult();const allowed=globalThis.StoryController?.inBattle?[]:P2ResultNavigation.actions(context());replay.hidden=!allowed.includes('replay');replay.disabled=replay.hidden||controller.leaving;title.hidden=!allowed.includes('title');title.disabled=title.hidden||controller.leaving;if(S.gameOver&&S.draw&&!TutorialController.active){document.getElementById('resultTitle').textContent='引き分け';document.getElementById('resultText').textContent='この対戦は引き分けです。';}}
  function exit(action,options){const result=controller.exit(action,options);refresh();return result;}
  replay.onclick=()=>exit('replay');title.onclick=()=>exit('title');
@@ -9387,7 +9684,7 @@ const StoryController = globalThis.StoryController = (()=>{
   next.hidden=true;lines=[...(episode.resultRoutes[S.draw?'draw':S.winner]||[]),...episode.closing];index=0;
   el('storyScreen').hidden=false;show('storyConversation');dialogue();el('storyDialogue').focus();
  }
- function exit(){sessionStorage.removeItem('cardTacticsStartInGame');returnToTitle();}
+ function exit(){cpuSessionStorage.removeItem('cardTacticsStartInGame');returnToTitle();}
  el('storyEntry').onclick=start;
  el('storyDestination').onclick=()=>{if(phase!=='map')return;phase='before';lines=episode.before;index=0;show('storyConversation');dialogue();el('storyDialogue').focus();};
  el('storyDialogue').onclick=advance;el('storyBattle').onclick=battle;next.onclick=after;
@@ -9398,5 +9695,354 @@ const StoryController = globalThis.StoryController = (()=>{
  el('settingsButton').addEventListener('click',()=>{cpuGroup.hidden=phase==='battle';deckGroup.hidden=phase==='battle';});
  function deckFor(side){if(episode.match[side+'Deck']!=='initial')throw Error('Unknown story deck');return sh(DeckLibrary.initialCardIds());}
  return {episode,deckFor,get phase(){return phase;},get inBattle(){return phase==='battle';},refreshResult};
+})();
+</script><main id="attributeSetup" hidden>
+  <header class="attributeHeading"><div><h1>属性マナ試作</h1><p data-attribute-build></p></div><a href="./">通常タイトルへ</a></header>
+  <p>初期手札7枚・マナ0。自分のターンに手札を1枚マナへ置けます。マナ化は任意で、使用済みマナは自分のターン開始時に回復します。対戦画面の赤・青・無は未使用／総量です。「可・済・満」は、そのターンのマナ化が可能・使用済み・上限のいずれかを示します。</p>
+  <div class="attributeDeckChoices">
+    <label>自分のデッキ <select id="attributePlayerDeck"></select></label>
+    <label>CPU（ガチ）のデッキ <select id="attributeCpuDeck"></select></label>
+  </div>
+  <button type="button" id="attributeStart">対戦を始める</button>
+  <details id="attributeEditor">
+    <summary>試作用デッキを編集</summary>
+    <div class="attributeEditorControls">
+      <label>編集するデッキ <select id="attributeEditDeck"></select></label>
+      <button type="button" id="attributeResetDeck">元の構成に戻す</button>
+      <label>カード名 <input id="attributeFilter" type="search"></label>
+      <label>属性 <select id="attributeColorFilter"><option value="">すべて</option><option value="red">赤</option><option value="blue">青</option><option value="neutral">無属性</option></select></label>
+      <label><input type="checkbox" id="attributeInDeck">採用中のみ</label>
+    </div>
+    <p id="attributeDeckStatus" role="status"></p>
+    <div id="attributeCards"></div>
+  </details>
+</main>
+<dialog id="attributeDialog" aria-labelledby="attributeDialogTitle">
+  <h2 id="attributeDialogTitle"></h2>
+  <p id="attributeDialogHelp"></p>
+  <div id="attributeDialogContent"></div>
+  <button type="button" id="attributeCancel">閉じる</button>
+</dialog>
+<script>(function(root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.AttributeManaDecks = factory();
+})(globalThis, function() {
+  'use strict';
+  const neutral = {歩兵: 4, 銀級兵: 3, 金級兵: 2, 槍兵: 3, 前線兵: 3};
+  return Object.freeze({
+    red: Object.freeze({name: '赤単色', counts: Object.freeze({...neutral,
+      ゴブリン: 4, 戦列兵: 3, 盗賊: 3, 歴戦の傭兵: 3, ファイヤーボルト: 3,
+      サラマンダー: 3, バーサーク: 2, 崩れゆく巨像: 2, 狂信者: 2})}),
+    blue: Object.freeze({name: '青単色', counts: Object.freeze({...neutral,
+      ポーン: 4, ホープ: 3, チャリオット: 3, マナ: 3, 竜巻: 3,
+      ヒーラー: 2, ソーサラー: 3, 踊り子: 2, 隠密: 2})}),
+    mixed: Object.freeze({name: '赤青混合', counts: Object.freeze({...neutral,
+      ゴブリン: 3, ポーン: 3, 盗賊: 3, 戦列兵: 2, 歴戦の傭兵: 3,
+      ファイヤーボルト: 3, ホープ: 2, 踊り子: 2, 竜巻: 2, マナ: 2})})
+  });
+});
+
+globalThis.AttributeManaScreen = (() => {
+  const M = R12Core.attributeMana, decks = AttributeManaDecks;
+  const el = id => document.getElementById(id);
+  const labels = {red: '赤', blue: '青', neutral: '無属性'};
+  const short = {...labels, neutral: '無'};
+  const order = ['neutral', 'blue', 'red'];
+  const priorities = order.flatMap(first => order.filter(color => color !== first)
+    .map(second => [first, second, order.find(color => color !== first && color !== second)]));
+  let priority = priorities[0], selected = null, flexSelection = null;
+  const storageKey = 'trialDecksV1';
+  const setup = el('attributeSetup'), dialog = el('attributeDialog');
+  const playerSelect = el('attributePlayerDeck'), cpuSelect = el('attributeCpuDeck');
+  const editSelect = el('attributeEditDeck'), cardList = el('attributeCards');
+  const enter = el('attributeStart'), status = el('attributeDeckStatus');
+  const definitions = CARD_DEFINITIONS;
+  const startLabel = '対戦を始める';
+  let edited = {}, saveError = '';
+
+  function validDraft(counts) {
+    return DeckValidation.isRecord(counts)
+      && Object.entries(counts).every(([name, n]) => M.colorOf(name) && definitions[name]?.deckType === 'normal'
+        && Number.isInteger(n) && n >= 0 && n <= 4);
+  }
+  function load() {
+    let data;
+    try { data = JSON.parse(cpuLocalStorage.getItem(storageKey)); }
+    catch { saveError = '試作データを読み込めませんでした。'; }
+    for (const [id, entry] of Object.entries(decks)) {
+      edited[id] = validDraft(data?.edited?.[id]) ? data.edited[id] : {...entry.counts};
+    }
+    playerSelect.value = Object.hasOwn(decks, data?.player) ? data.player : 'mixed';
+    cpuSelect.value = Object.hasOwn(decks, data?.cpu) ? data.cpu : 'mixed';
+    editSelect.value = playerSelect.value;
+  }
+  function save() {
+    try {
+      cpuLocalStorage.setItem(storageKey, JSON.stringify({edited, player: playerSelect.value, cpu: cpuSelect.value}));
+      saveError = '';
+    } catch { saveError = '試作データを保存できませんでした。'; }
+  }
+  function deckFor(side) {
+    const value = side === 'p' ? playerSelect.value : cpuSelect.value;
+    return sh(DeckValidation.toCardIds(edited[value]));
+  }
+  function text(id) {
+    const {color, cost, required} = M.requirement(id, definitions[id]);
+    const part = required ? short[color] + required + (cost > required ? '＋任意' + (cost - required) : '') : cost ? '任意' + cost : '支払いなし';
+    return labels[color] + ' ｜ ' + cost + 'マナ（' + part + '）';
+  }
+  function label(value, color) {
+    const span = document.createElement('span');
+    span.textContent = value;
+    span.className = 'attributeColor ' + color;
+    return span;
+  }
+  function button(text, click, disabled = false) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = text;
+    b.disabled = disabled;
+    b.addEventListener('click', click);
+    return b;
+  }
+  function updateSetup() {
+    const totals = [playerSelect, cpuSelect].map(select => DeckValidation.total(edited[select.value]));
+    enter.disabled = totals.some(total => total !== 40);
+    enter.textContent = enter.disabled ? '双方のデッキを40枚にしてください' : startLabel;
+    const counts = edited[editSelect.value], total = DeckValidation.total(counts);
+    status.textContent = [decks[editSelect.value].name + ' ' + total + ' / 40枚', saveError].filter(Boolean).join('　');
+    const filter = el('attributeFilter').value.trim(), color = el('attributeColorFilter').value;
+    const rows = [];
+    for (const type of ['creature', 'spell', 'enchant']) {
+      for (const [id, def] of Object.entries(definitions)) {
+        const attr = M.colorOf(id), count = counts[id] ?? 0;
+        if (def.type !== type || def.deckType !== 'normal' || !attr || !id.includes(filter)
+          || (color && color !== attr) || (el('attributeInDeck').checked && !count)) continue;
+        const row = document.createElement('div'), legend = document.createElement('div');
+        row.className = 'attributeDeckRow';
+        row.dataset.cardId = id;
+        legend.textContent = id;
+        const cost = document.createElement('small');
+        cost.append(label(text(id), attr));
+        legend.append(cost);
+        const minus = button('−', () => change(id, -1, 'minus'), count === 0);
+        const plus = button('＋', () => change(id, 1, 'plus'), count === 4 || total >= 40);
+        minus.dataset.count = 'minus';
+        plus.dataset.count = 'plus';
+        minus.setAttribute('aria-label', id + 'を1枚減らす');
+        plus.setAttribute('aria-label', id + 'を1枚増やす');
+        row.append(legend, minus, document.createTextNode(String(count)), plus);
+        rows.push(row);
+      }
+    }
+    cardList.replaceChildren(...rows);
+  }
+  function change(id, delta, direction) {
+    const counts = edited[editSelect.value];
+    counts[id] = (counts[id] ?? 0) + delta;
+    save();
+    updateSetup();
+    const row = [...cardList.children].find(item => item.dataset.cardId === id);
+    (row?.querySelector('[data-count="' + direction + '"]:not(:disabled)') ?? row?.querySelector('button:not(:disabled)'))?.focus();
+  }
+  function renderCard(element, id) {
+    if (!S.attributeMana) return;
+    const cost = element.querySelector('.cost');
+    cost.classList.add('attributeCost');
+    cost.replaceChildren(label(text(id), M.colorOf(id)));
+    element.tabIndex = 0;
+    element.setAttribute('role', 'button');
+    element.setAttribute('aria-label', id + ' ' + text(id));
+    element.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      element.click();
+    });
+  }
+  function showDialog(title, help, ...content) {
+    el('attributeDialogTitle').textContent = title;
+    el('attributeDialogHelp').textContent = help;
+    el('attributeDialogContent').replaceChildren(...content);
+    if (!dialog.open) dialog.showModal();
+  }
+  function charge(index, instanceId) {
+    if (S.cardIdentities?.p.hand[index]?.instanceId !== instanceId || S.side !== 'p' || !GameCore.combatInputAllowed()) return;
+    beginPlayerActionUndo();
+    const result = R4Command.execute(S, {type: 'charge_mana', side: 'p', instanceId}, definitions);
+    if (!publishCoreCommand(result)) {
+      cancelPlayerActionUndo();
+      return;
+    }
+    dialog.close();
+    S.card = null;
+    S.piece = null;
+    S.inspect = null;
+    S.kingAttackMode = false;
+    S.sorcererMode = false;
+    S.teleportSource = null;
+    delete S.teleportIdentity;
+    S.dispelTarget = null;
+    clearPayments();
+    render();
+    commitPlayerActionUndo();
+  }
+  function clearPayments() { selected = null; flexSelection = null; }
+  function remainText(available, payment) {
+    return '残す ' + M.colors.map(color => short[color] + (available[color] - payment[color])).join('・');
+  }
+  function pick(index) {
+    if (!S.attributeMana) { pickCard(index); return; }
+    if (S.side !== 'p' || NormalGameUI.turnPresentationBusy() || !GameCore.combatInputAllowed()) return;
+    const card = S.cardIdentities.p.hand[index];
+    if (!card) return;
+    const revision = S.revision;
+    const rule = M.requirement(card.cardId, definitions[card.cardId]);
+    const view = R13View.view(S, 'p');
+    const player = view.players.p;
+    const available = player.attributeMana.available;
+    const payments = M.options(player, rule.cost, rule, priority);
+    const usable = payments.length > 0 && GameCore.cardQuery('p', index).choices.length > 0;
+    const paymentSelect = document.createElement('select'), paymentLabel = document.createElement('label');
+    for (const [i, payment] of payments.entries())
+      paymentSelect.add(new Option((i === 0 ? '自動 ｜ ' : '') + remainText(available, payment), String(i)));
+    paymentSelect.id = 'attributePayment';
+    paymentLabel.hidden = !usable || payments.length < 2;
+    paymentLabel.append('使用後のマナ', paymentSelect);
+    const use = button('使う', () => {
+      if (S.revision !== revision || S.side !== 'p' || !GameCore.combatInputAllowed()) return;
+      dialog.close();
+      selected = {instanceId: card.instanceId, payment: payments[Number(paymentSelect.value)]};
+      S.card = null;
+      pickCard(index);
+    }, !usable);
+    const convert = button('マナにする', () => {
+      if (S.revision !== revision) return;
+      showDialog(card.cardId + 'をマナにする', labels[rule.color] + 'マナが1増え、手札からマナ領域に移動します。',
+        button('マナ化を確定', () => { if (S.revision === revision) charge(index, card.instanceId); }));
+    }, player.attributeMana.used || S.maxManaBySide.p >= 10);
+    const reason = usable ? '' : payments.length ? ' ｜ 現在は使用できません' : ' ｜ 必要な色または量が不足';
+    showDialog(card.cardId, text(card.cardId) + reason, paymentLabel, use, convert);
+  }
+  function getCardPayment(side, index) {
+    if (side !== 'p' || !selected) return;
+    if (S.cardIdentities?.p.hand[index]?.instanceId === selected.instanceId) return selected.payment;
+  }
+  function getFlexPayment(side, action) {
+    if (side !== 'p' || !S.attributeMana) return;
+    const view = R13View.view(S, side), cost = R12Core.flexManaCost(view, action, definitions);
+    if (!cost) return;
+    const explicit = flexSelection?.revision === S.revision && flexSelection.cost === cost ? flexSelection.payment : undefined;
+    if (explicit && M.payment(view.players[side], cost, explicit)) return explicit;
+    return M.options(view.players[side], cost, undefined, priority)[0];
+  }
+  function flexControls(pool) {
+    const player = R13View.view(S, 'p').players.p;
+    const cost = document.createElement('select'), allocation = document.createElement('select');
+    const labelCost = document.createElement('label'), labelAllocation = document.createElement('label');
+    cost.id = 'attributeFlexCost';
+    allocation.id = 'attributeFlexPayment';
+    const onTurn = S.side === 'p' && GameCore.combatInputAllowed();
+    const choices = [1, 2, 3, 4].filter(n => M.options(player, n, undefined, priority).length > 1);
+    if (!onTurn || !choices.length) return [];
+    cost.add(new Option('自動', ''));
+    for (const amount of choices) cost.add(new Option(amount + 'マナ', String(amount)));
+    labelCost.append('次の能力・通常行動の支払い', cost);
+    labelAllocation.append('使用後のマナ', allocation);
+    function options() {
+      const amount = Number(cost.value);
+      const options = amount ? M.options(player, amount, undefined, priority) : [];
+      labelAllocation.hidden = options.length === 0;
+      allocation.replaceChildren(...options.map((payment, index) =>
+        new Option(remainText(pool.available, payment), String(index))));
+      const matched = flexSelection?.revision === S.revision && flexSelection.cost === amount
+        ? options.findIndex(value => M.colors.every(color => value[color] === flexSelection.payment[color])) : -1;
+      if (matched >= 0) allocation.selectedIndex = matched;
+      if (options.length) flexSelection = {revision: S.revision, cost: amount, payment: options[allocation.selectedIndex]};
+      else flexSelection = null;
+      allocation.onchange = () => {
+        flexSelection = {revision: S.revision, cost: amount, payment: options[allocation.selectedIndex]};
+      };
+    }
+    if (flexSelection?.revision === S.revision) cost.value = String(flexSelection.cost);
+    cost.addEventListener('change', options);
+    options();
+    return [labelCost, labelAllocation];
+  }
+  function showPool(side) {
+    if (!S.attributeMana || NormalGameUI.turnPresentationBusy() || S.pendingChoice || S.pendingSummon) return;
+    const pool = S.attributeMana[side], list = document.createElement('ol');
+    for (const card of pool.cards) {
+      const row = document.createElement('li'), color = M.colorOf(card.cardId);
+      row.append(label(short[color] + ' ' + card.cardId, color));
+      list.append(row);
+    }
+    const nodes = list.childElementCount ? [list] : [];
+    if (side === 'p') {
+      const pref = document.createElement('label'), select = document.createElement('select');
+      for (const colors of priorities)
+        select.add(new Option(colors.map(color => labels[color]).join(' → '), colors.join(','), false, colors === priority));
+      select.addEventListener('change', () => { priority = priorities[select.selectedIndex]; });
+      pref.append('任意マナの支払い順', select);
+      nodes.push(pref, ...flexControls(pool));
+    }
+    const extra = pool.total.neutral - pool.cards.filter(card => M.colorOf(card.cardId) === 'neutral').length;
+    showDialog((side === 'p' ? '自分' : 'CPU') + 'のマナ領域',
+      (list.childElementCount ? 'マナに置いたカード' : 'マナに置いたカードはありません。')
+      + (extra > 0 ? ' ｜ 効果で増えた無属性 ' + extra : ''), ...nodes);
+  }
+  function refresh() {
+    if (!S.attributeMana) return;
+    for (const [side, id] of [['p', 'mana'], ['c', 'cpuMana']]) {
+      const root = el(id).parentElement, pool = S.attributeMana[side];
+      let value = root.querySelector('.attributePool');
+      if (!value) {
+        value = button('', () => showPool(side));
+        value.className = 'attributePool';
+        root.append(value);
+      }
+      const counts = M.colors.map(color => short[color] + pool.available[color] + '/' + pool.total[color]);
+      const used = pool.used ? '済' : S.maxManaBySide[side] >= 10 ? '満' : '可';
+      value.setAttribute('aria-label', (side === 'p' ? '自分' : 'CPU') + 'のマナ領域 ' + counts.join(' ') + ' マナ化 ' + used);
+      value.replaceChildren(...counts.map((text, index) => label(text, M.colors[index])));
+      const badge = document.createElement('span');
+      badge.className = 'attributeUsed';
+      badge.textContent = used;
+      value.append(badge);
+    }
+  }
+  function start() {
+    if (setup.hidden || enter.disabled || ![playerSelect, cpuSelect].every(item => DeckValidation.valid(edited[item.value]))) return;
+    setup.hidden = true;
+    const note = el('cpuDeckMatchNotice');
+    note.textContent = '属性マナ試作 ｜ 自分 ' + decks[playerSelect.value].name + '・CPU ' + decks[cpuSelect.value].name;
+    note.hidden = false;
+    startGameScreen();
+  }
+  if (isAttributeManaPage) {
+    document.body.classList.add('attribute-mana-page');
+    el('titleScreen').style.display = 'none';
+    const build = document.querySelector('.titleVersion').textContent;
+    setup.querySelector('[data-attribute-build]').textContent = build;
+    for (const menu of [playerSelect, cpuSelect, editSelect])
+      for (const [id, entry] of Object.entries(decks)) menu.add(new Option(entry.name, id));
+    load();
+    for (const menu of [playerSelect, cpuSelect]) menu.addEventListener('change', () => { save(); updateSetup(); });
+    for (const id of ['attributeEditDeck', 'attributeFilter', 'attributeColorFilter', 'attributeInDeck'])
+      el(id).addEventListener('input', updateSetup);
+    el('attributeResetDeck').addEventListener('click', () => {
+      edited[editSelect.value] = {...decks[editSelect.value].counts};
+      save();
+      updateSetup();
+    });
+    el('attributeCancel').addEventListener('click', () => dialog.close());
+    enter.addEventListener('click', start);
+    setup.hidden = false;
+    updateSetup();
+    if (cpuSessionStorage.getItem('cardTacticsStartInGame') === '1') {
+      cpuSessionStorage.removeItem('cardTacticsStartInGame');
+      start();
+    }
+  }
+  return {deckFor, pick, renderCard, getCardPayment, getFlexPayment, refresh, clearPayments};
 })();
 </script></body></html>

@@ -276,11 +276,12 @@ function describeBattleAction(events,{viewer,activeSide,before,after,turn,defini
  const first=(...types)=>events.find(e=>types.includes(e.type));
  const card=events.find(e=>e.type==='card:played'&&visibleCardUse(e,viewer)&&Object.hasOwn(definitions,e.cardId));
  const hiddenCard=events.some(e=>e.type==='card:played'&&!visibleCardUse(e,viewer));
+ const charge=first('mana:charged');
  const start=first('turn:started'),turnEnd=first('turn:ended');
  const attack=first('creature:attacked','creature:attack-resolved');
  const ability=first('creature:ability-used','king:ability-used','king:attack-targeted'),move=first('creature:moved');
  const end=first('game:over');
- const primary=card||start||ability||attack||move;
+ const primary=card||charge||start||ability||attack||move;
  const lines=[],defeated=[];
  let title='',short='',drawSide=null,drawCount=0;
  const add=(text,summary='')=>lines.push({text,summary});
@@ -297,6 +298,7 @@ function describeBattleAction(events,{viewer,activeSide,before,after,turn,defini
   :unit(e.target||board[e.to]);
  const causeNames={salamander_counter:'反撃',attack_destroy_damaged:'破壊能力'};
  if(card)title=label(card.side)+'：'+card.cardId+(definitions[card.cardId].type==='creature'?'を召喚':'を使用');
+ else if(charge)title=label(charge.side)+'：'+charge.cardId+'をマナに置いた';
  else if(start)title='ターン '+(turn??after?.turn??'')+'｜'+label(start.side)+'のターン開始';
  else if(ability){
   const source=ability.type==='creature:ability-used'?name(board[ability.from]):'王';
